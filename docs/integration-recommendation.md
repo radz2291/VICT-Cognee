@@ -18,7 +18,7 @@ necessarily a two-process design.
 | Retrieval subset (first release) | `CHUNKS`, `CHUNKS_LEXICAL`, `SUMMARIES`, `GRAPH_COMPLETION` with `only_context=True` | Proven keyless, sub-second, evidence-shaped; completion types wait for an LLM-port story |
 | Write subset (first release) | `add`, `cognify`, `forget` (**dataset-level only**), `datasets.list_data/get_status` | All proven; `update` excluded (LLM-gated), `remember`/`improve` deferred |
 | Isolation model | 1 cognee dataset per VICT consumer-scope (e.g. per user or per workspace) + NodeSets for sub-scoping; map VICT actor → cognee user for the multi-user path | Dataset isolation proven (0 identity overlap); node_set filtering proven; user isolation proven at three layers; avoids cognee tenants/roles (server surface) in first release |
-| Deletion posture | **Dataset-level `forget` only** in the first-release surface. Its observed behavior: name resolution and scoped search stop resolving (404) — but physical purge of graph/vector storage is **not yet verified** (open finding, proof §7). Item-level `forget` is **not exposed at all** (leaves a phantom vector hit; no repair demonstrated) | Item-level forget leaves a phantom vector hit (proof §7, open finding); dataset-level name-resolution cleanliness is observed; storage-level purge remains open |
+| Deletion posture | **Dataset-level `forget` only** in the first-release surface. C2 update: file-level physical purge of the dataset's graph/vector stores observed and verified after restart (c2-feasibility-report §5). Item-level `forget` is **not exposed at all** (leaves a phantom vector hit; no repair demonstrated) | Item-level forget leaves a phantom vector hit (proof §7, open finding); dataset-level purge verified at file level in C2 |
 | Deployment defaults | Embedded lancedb + ladybug + sqlite, storage roots redirected under VICT app-data, model caches pinned via `FASTEMBED_CACHE_PATH`/`HF_HOME`, `AUTO_FEEDBACK=false`, telemetry off unless the host opts in | Proof §3 findings; local-first alignment |
 | Effect classes (proposal input) | `add`=write (idempotent by content hash), `cognify`=write (long-running), `search*`=read, `forget(dataset)`=write (purge depth unresolved — open finding), `prune`/`forget(everything)`=irreversible (excluded from pack surface) | Maps observed behavior onto the VICT effect model; final classes are pack-design decisions |
 | Version policy | Pin exact cognee version in the pack; declare `victCompatibility` against the release set the pack is verified with | Upstream moves fast (v1.6.1 is days old); ECO-002 compatibility obligation |
@@ -34,6 +34,12 @@ Rejected routes (with reasons):
   disjoint storage; re-evaluate when the Rust engine matures.
 
 ## 2. Proposed first-release boundary
+
+> **C2 revision (2026-09-25, docs/c2-feasibility-report.md §6): scored lexical
+> search is REMOVED** — the scored retriever cannot combine scores with safe
+> dataset/NodeSet scoping through a supported API. Dataset-level `forget` is
+> upgraded: file-level physical purge observed and verified after restart.
+> The list below is the C1 proposal, superseded by the C2 report's §6 table.
 
 **In (candidate capabilities — names are placeholders, not API design):**
 
