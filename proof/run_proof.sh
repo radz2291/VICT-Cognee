@@ -11,18 +11,29 @@
 #   2. generates proof/.env from .env.example with absolute paths (git-ignored)
 #   3. runs smoke_01 and every battery SEQUENTIALLY (never concurrently — see report §3.8)
 #   4. leaves JSON records in proof/results/ and console logs in *.output.txt
+#
+# DISK/TEMP fallback: on machines where a second full venv cannot be installed (free
+# space < ~2 GB, or %TEMP% being cleaned mid-install), set PROOF_PY to the python.exe
+# of an existing venv that satisfies requirements-frozen.txt, e.g.:
+#   PROOF_PY=/c/Users/you/workspace/proof/.venv/Scripts/python.exe bash run_proof.sh --skip-install
+# The code under test still comes from THIS checkout; only the interpreter is reused.
 set -euo pipefail
 
 cd "$(dirname "$0")"
 PROOF_DIR="$(pwd -W 2>/dev/null || pwd)"   # Windows absolute path for .env
 
-if [ ! -d .venv ]; then
+if [ -n "${PROOF_PY:-}" ]; then
+  PY="$PROOF_PY"
+  echo "== using PROOF_PY=$PY (code under test still from this checkout) =="
+elif [ ! -d .venv ]; then
   echo "== creating venv =="
   python -m venv .venv
+  PY=.venv/Scripts/python
+else
+  PY=.venv/Scripts/python
 fi
-PY=.venv/Scripts/python
 
-if [ "${1:-}" != "--skip-install" ]; then
+if [ "${1:-}" != "--skip-install" ] && [ -z "${PROOF_PY:-}" ]; then
   echo "== installing pinned cognee (this caches models on first cognify) =="
   "$PY" -m pip install --quiet "cognee[gliner]==1.6.1"
   "$PY" -m pip freeze > requirements-frozen.txt
