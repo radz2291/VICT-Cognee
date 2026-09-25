@@ -1,0 +1,36 @@
+[
+  {
+    "probe": "principals",
+    "outcome": "OBSERVED",
+    "detail": {
+      "default": "b27e7d08",
+      "user_b": "38d074ef"
+    }
+  },
+  {
+    "probe": "default user -> userb_private by name",
+    "outcome": "EXPECTED-FAILURE",
+    "detail": "DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'userb_private'. Dataset names resolve only among the datasets you own in the current tenant; pass dataset_ids for datasets shared with you. (Status code: 404)"
+  },
+  {
+    "probe": "default user -> unrestricted search for user-B secret",
+    "outcome": "OBSERVED",
+    "detail": {
+      "ids": [],
+      "texts": [],
+      "datasets_seen": []
+    }
+  },
+  {
+    "probe": "user B -> own dataset",
+    "outcome": "OBSERVED",
+    "detail": {
+      "ids": [
+        "93cc017d-c647-57d8-bc17-1fc0f6c39cb5"
+      ],
+      "texts": [
+        "Secret note for user B only: the vault code is 4471."
+      ]
+    }
+  }
+]

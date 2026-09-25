@@ -1,0 +1,54 @@
+[
+  {
+    "probe": "baseline search (before forget)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "hits": 1,
+      "texts": [
+        "Playbook: when the nightly ETL fails, page the on-call analyst, snapshot staging, open a bridge."
+      ]
+    }
+  },
+  {
+    "probe": "forget(data_id) + registry count",
+    "outcome": "OBSERVED",
+    "detail": {
+      "forget_result": {
+        "data_id": "44d75e38-f82d-45ae-963e-1f6bbb6025d5",
+        "dataset_id": "af0a7276-17df-51c2-9544-0e3ad0bd33b7",
+        "status": "success"
+      },
+      "data_items": 0
+    }
+  },
+  {
+    "probe": "RESIDUE PROBE: search after forget + re-cognify",
+    "outcome": "OBSERVED",
+    "detail": {
+      "hits": 1,
+      "texts": []
+    }
+  },
+  {
+    "probe": "graph contents after forget (residue?)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "node_count": 0,
+      "edge_count": 0,
+      "node_types": []
+    }
+  },
+  {
+    "probe": "forget(dataset) result",
+    "outcome": "OBSERVED",
+    "detail": {
+      "dataset_id": "af0a7276-17df-51c2-9544-0e3ad0bd33b7",
+      "status": "success"
+    }
+  },
+  {
+    "probe": "search after dataset forget",
+    "outcome": "EXPECTED-FAILURE",
+    "detail": "DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'residue'. Dataset names resolve only among the datasets you own in the current tenant; pass dataset_ids for datasets shared with you. (Status code: 404)"
+  }
+]

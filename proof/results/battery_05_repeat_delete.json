@@ -1,0 +1,92 @@
+[
+  {
+    "probe": "add() x3 identical document",
+    "outcome": "OBSERVED",
+    "detail": {
+      "run1": "PipelineRunCompleted(status='PipelineRunCompleted', pipeline_run_id=UUID('3b343e95-9c65-4817-8f67-c07b790233c8'), datase",
+      "run2": "PipelineRunCompleted(status='PipelineRunCompleted', pipeline_run_id=UUID('8e7d7825-6ffe-4fbb-8aa5-f5d99055afd0'), datase",
+      "run3": "PipelineRunCompleted(status='PipelineRunCompleted', pipeline_run_id=UUID('6bbb489c-d0b7-4c5f-b49e-0fe357057d11'), datase",
+      "note": "does ingestion deduplicate by content hash?"
+    }
+  },
+  {
+    "probe": "stored data items after triple add",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 1,
+      "ids": [
+        "c5971b3e"
+      ]
+    }
+  },
+  {
+    "probe": "retrieval after triple add + single cognify",
+    "outcome": "OBSERVED",
+    "detail": {
+      "hits": 1,
+      "previews": [
+        "{'dataset_id': UUID('a17438e7-a0f5-5066-878f-a18a45530e63'), 'dataset_name': 'repeat', 'dataset_tena"
+      ]
+    }
+  },
+  {
+    "probe": "cognify() twice on unchanged dataset",
+    "outcome": "OBSERVED",
+    "detail": {
+      "first_seconds": 0.35,
+      "second_seconds": 0.38,
+      "hits_after": 1,
+      "note": "incremental loading should make re-cognify cheap and non-duplicating"
+    }
+  },
+  {
+    "probe": "forget(data_id=first of 3)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "result": "{'data_id': 'c5971b3e-7659-45da-91b6-b87763653d40', 'dataset_id': 'a17438e7-a0f5-5066-878f-a18a45530e63', 'status': 'success'}"
+    },
+    "seconds": 1.117
+  },
+  {
+    "probe": "data items after single forget",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 0
+    }
+  },
+  {
+    "probe": "retrieval after single forget + re-cognify",
+    "outcome": "OBSERVED",
+    "detail": {
+      "hits": 1,
+      "note": "if chunks survive because duplicates remain, evidence shows retention"
+    }
+  },
+  {
+    "probe": "forget(dataset='repeat')",
+    "outcome": "OBSERVED",
+    "detail": {
+      "result": "{'dataset_id': 'a17438e7-a0f5-5066-878f-a18a45530e63', 'status': 'success'}"
+    }
+  },
+  {
+    "probe": "retrieval after dataset forget",
+    "outcome": "EXPECTED-FAILURE",
+    "detail": "NoDataError: NoDataError: No searchable memory in dataset 'repeat' (id: a17438e7-a0f5-5066-878f-a18a45530e63): no data has been added; add data and run cognify before searching. (Status code: 404)"
+  },
+  {
+    "probe": "datasets after forget(dataset)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "datasets": [
+        "<cognee.modules.data.models.Dataset.Dataset object at 0x000001BB48C0EB10>"
+      ],
+      "note": "is the dataset registry row gone?"
+    }
+  },
+  {
+    "probe": "delete compensation (VICT irreversible/write classification input)",
+    "outcome": "UNTESTED",
+    "detail": "long-term provenance of deleted edges (re-ingestion after forget) partially covered here; cross-user cascade untested keylessly"
+  }
+]

@@ -1,0 +1,87 @@
+[
+  {
+    "probe": "dataset isolation (identity overlap)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "alice_ids": [
+        "a6a20031-a0d1-5a91-9c13-a30944d20920"
+      ],
+      "trader_ids": [
+        "7ddd715f-bc71-5578-bf23-f2ff65a9309a"
+      ],
+      "overlap": 0,
+      "trader_texts": [
+        "Synthetic Trading-like data (C1 proof) \u2014 evidence-governed trading OS flavor.\nMi"
+      ],
+      "note": "overlap must be 0; trader_texts shows whether the trader hit is a genuine match or a zero-similarity fallback (BM25/vector top-k without threshold)"
+    }
+  },
+  {
+    "probe": "scoped query for trader-only content inside alice_world",
+    "outcome": "OBSERVED",
+    "detail": {
+      "alice_ids": [
+        "a6a20031-a0d1-5a91-9c13-a30944d20920"
+      ],
+      "texts": [
+        "Synthetic Quellight-like data (C1 proof) \u2014 user-memory/conversation product flav"
+      ],
+      "note": "does alice_world return trader content it does not contain?"
+    }
+  },
+  {
+    "probe": "search without datasets arg (default scope)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "datasets_seen": [
+        "alice_world",
+        "trader_world"
+      ],
+      "count": 2,
+      "note": "expected: all datasets visible to the calling user"
+    }
+  },
+  {
+    "probe": "node_set scoping (identity + text)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "preferences_ids": [
+        "fed0afee-2146-5719-bd04-d09a2dc20a2a"
+      ],
+      "incidents_ids": [
+        "f255dd0b-13cb-5b59-b25a-a7bb191db972"
+      ],
+      "unscoped_ids": [
+        "fed0afee-2146-5719-bd04-d09a2dc20a2a",
+        "f255dd0b-13cb-5b59-b25a-a7bb191db972"
+      ],
+      "preferences_texts": [
+        "Tagged memory A: the user prefers dark mode in all dashboards."
+      ],
+      "incidents_texts": [
+        "Tagged memory B: incident postmortem filed for checkout outage."
+      ],
+      "note": "scoped results should differ by node_name filter"
+    }
+  },
+  {
+    "probe": "default user",
+    "outcome": "OBSERVED",
+    "detail": {
+      "id": "eb80d8f5",
+      "email": "default_user@example.com"
+    }
+  },
+  {
+    "probe": "create_user(trader-b@example.com)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "id": "58ee3840"
+    }
+  },
+  {
+    "probe": "user isolation",
+    "outcome": "ERROR-UNEXPECTED",
+    "detail": "DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'userb_private'. Dataset names resolve only among the datasets you own in the current tenant; pass dataset_ids for datasets shared with you. (Status code: 404)"
+  }
+]

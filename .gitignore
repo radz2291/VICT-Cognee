@@ -10,6 +10,7 @@ upstream/
 # Node SDK test checkout
 ts-sdk/node_modules/
 ts-sdk/package-lock.json
+ts-sdk/.cognee_system/
 
 # Cognee runtime state (databases, caches, logs, models)
 .cognee/

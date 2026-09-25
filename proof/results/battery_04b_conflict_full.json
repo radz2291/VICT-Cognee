@@ -1,0 +1,76 @@
+[
+  {
+    "probe": "conflict: side-specific chunk retrieval",
+    "outcome": "OBSERVED",
+    "detail": {
+      "saturday_query_texts": [
+        "Rule: the backup job runs on Saturday. Contradicting memo: the backup job was moved to Sunday."
+      ],
+      "sunday_query_texts": [
+        "Rule: the backup job runs on Saturday. Contradicting memo: the backup job was moved to Sunday."
+      ]
+    }
+  },
+  {
+    "probe": "conflict: FULL graph context",
+    "outcome": "OBSERVED",
+    "detail": {
+      "context": "The question is: `when does the backup job run`\nand here is the context provided with a set of relationships from a knowledge graph separated by \\n---\\n each represented as node1 -- relation -- node2 triplet: `Nodes:\nNode: Rule: the backup job runs on Saturday.... [backup, job, rule]\n__node_content_start__\nRule: the backup job runs on Saturday. Contradicting memo: the backup job was moved to Sunday.\n__node_content_end__\n\nNode: backup job\n__node_content_start__\nbackup job\n__node_content_end__\n\nNode: backup job occurred_on Saturday; backup job occurred_on... [backup, job, occurred_on]\n__node_content_start__\nbackup job occurred_on Saturday; backup job occurred_on Sunday\ndate: Saturday, Sunday; document: memo; role: backup job\n__node_content_end__\n\nNode: role\n__node_content_start__\nrole\n__node_content_end__\n\nNode: sunday\n__node_content_start__\nSunday\n__node_content_end__\n\nNode: saturday\n__node_content_start__\nSaturday\n__node_content_end__\n\nNode: text_3f966488e7e948f7e600f6f8bdbb72b2\n__node_content_start__\nNone\n__node_content_end__\n\nNode: memo\n__node_content_start__\nmemo\n__node_content_end__\n\nNode: date\n__node_content_start__\ndate\n__node_content_end__\n\nNode: document\n__node_content_start__\ndocument\n__node_content_end__\n\n\nConnections:\nRule: the backup job runs on Saturday.... [backup, job, rule] --[contains]--> backup job  (Document chunk mentions backup job: backup job)\nbackup job occurred_on Saturday; backup job occurred_on... [backup, job, occurred_on] --[made_from]--> Rule: the backup job runs on Saturday.... [backup, job, rule]  (backup job occurred_on Saturday; backup job occurred_on Sunday date: Saturday, S made from Rule: the backup job runs on Saturday. Contradicting memo: the backup job was mo.)\nbackup job --[is_a]--> role  (backup job is a role.)\nbackup job --[occurred_on]--> sunday  (backup job occurred on sunday.)\nbackup job --[occurred_on]--> saturday  (backup job occurred on saturday.)\nRule: the backup job runs on Saturday.... [backup, job, rule] --[is_part_of]--> text_3f966488e7e948f7e600f6f8bdbb72b2  (Rule: the backup job runs on Saturday. Contradicting memo: the backup job was mo is part of text_3f966488e7e948f7e600f6f8bdbb72b2.)\nRule: the backup job runs on Saturday.... [backup, job, rule] --[contains]--> memo  (Document chunk mentions memo: memo)\nRule: the backup job runs on Saturday.... [backup, job, rule] --[contains]--> saturday  (Document chunk mentions saturday: Saturday)\nRule: the backup job runs on Saturday.... [backup, job, rule] --[contains]--> sunday  (Document chunk mentions sunday: Sunday)\nsunday --[is_a]--> date  (sunday is a date.)\nsaturday --[is_a]--> date  (saturday is a date.)\nmemo --[is_a]--> document  (memo is a document.)`\n"
+    }
+  },
+  {
+    "probe": "direct graph read (nodes/edges)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "node_count": 10,
+      "edge_count": 12,
+      "nodes": [
+        "backup job occurred_on Saturday; backup job occurred_on Sunday\ndate: Saturday, Sunday; document: memo; role: backup job",
+        "Rule: the backup job runs on Saturday. Contradicting memo: the backup job was moved to Sunday.",
+        "text_3f966488e7e948f7e600f6f8bdbb72b2",
+        "saturday",
+        "date",
+        "sunday",
+        "memo",
+        "document",
+        "backup job",
+        "role"
+      ],
+      "edges": [
+        "9d092915 -[made_from]-> a17f808e",
+        "a17f808e -[is_part_of]-> 8fe3c2b5",
+        "a17f808e -[contains]-> 7f089d36",
+        "a9fca05e -[occurred_on]-> 7f089d36",
+        "7f089d36 -[is_a]-> b19433ae",
+        "90915823 -[is_a]-> b19433ae",
+        "a17f808e -[contains]-> 90915823",
+        "a9fca05e -[occurred_on]-> 90915823",
+        "a17f808e -[contains]-> 75a6f93c",
+        "75a6f93c -[is_a]-> 3d897781",
+        "a17f808e -[contains]-> a9fca05e",
+        "a9fca05e -[is_a]-> c37fc488"
+      ]
+    }
+  },
+  {
+    "probe": "correction: side-specific chunk retrieval",
+    "outcome": "OBSERVED",
+    "detail": {
+      "old_query_texts": [
+        "Original policy: the API rate limit is 100 requests per minute.",
+        "Policy update: the API rate limit is now 250 requests per minute; the old 100 rpm limit no longer applies."
+      ],
+      "new_query_texts": [
+        "Policy update: the API rate limit is now 250 requests per minute; the old 100 rpm limit no longer applies.",
+        "Original policy: the API rate limit is 100 requests per minute."
+      ]
+    }
+  },
+  {
+    "probe": "correction: FULL graph context",
+    "outcome": "OBSERVED",
+    "detail": {
+      "context": "The question is: `API rate limit per minute`\nand here is the context provided with a set of relationships from a knowledge graph separated by \\n---\\n each represented as node1 -- relation -- node2 triplet: `Nodes:\nNode: quantity: 100, 250 requests per minute; technology:... [quantity, 100, 250]\n__node_content_start__\nquantity: 100, 250 requests per minute; technology: API\n__node_content_end__\n\nNode: Policy update: the API rate limit is... [limit, policy, update]\n__node_content_start__\nPolicy update: the API rate limit is now 250 requests per minute; the old 100 rpm limit no longer applies.\n__node_content_end__\n\nNode: quantity: 100; technology: API... [quantity, 100, technology]\n__node_content_start__\nquantity: 100; technology: API\n__node_content_end__\n\nNode: Original policy: the API rate limit is... [original, policy, api]\n__node_content_start__\nOriginal policy: the API rate limit is 100 requests per minute.\n__node_content_end__\n\nNode: 250 requests per minute\n__node_content_start__\n250 requests per minute\n__node_content_end__\n\nNode: text_0efa9912ad7c749fb8b10fb78de6042d\n__node_content_start__\nNone\n__node_content_end__\n\nNode: text_404ced019b604c1eeba4e5612a4728b8\n__node_content_start__\nNone\n__node_content_end__\n\nNode: quantity\n__node_content_start__\nquantity\n__node_content_end__\n\nNode: api\n__node_content_start__\nAPI\n__node_content_end__\n\nNode: 100\n__node_content_start__\n100\n__node_content_end__\n\nNode: technology\n__node_content_start__\ntechnology\n__node_content_end__\n\n\nConnections:\nquantity: 100, 250 requests per minute; technology:... [quantity, 100, 250] --[made_from]--> Policy update: the API rate limit is... [limit, policy, update]  (quantity: 100, 250 requests per minute; technology: API made from Policy update: the API rate limit is now 250 requests per minute; the old 100 rp.)\nquantity: 100; technology: API... [quantity, 100, technology] --[made_from]--> Original policy: the API rate limit is... [original, policy, api]  (quantity: 100; technology: API made from Original policy: the API rate limit is 100 requests per minute..)\nPolicy update: the API rate limit is... [limit, policy, update] --[contains]--> 250 requests per minute  (Document chunk mentions 250 requests per minute: 250 requests per minute)\nOriginal policy: the API rate limit is... [original, policy, api] --[is_part_of]--> text_0efa9912ad7c749fb8b10fb78de6042d  (Original policy: the API rate limit is 100 requests per minute. is part of text_0efa9912ad7c749fb8b10fb78de6042d.)\nPolicy update: the API rate limit is... [limit, policy, update] --[is_part_of]--> text_404ced019b604c1eeba4e5612a4728b8  (Policy update: the API rate limit is now 250 requests per minute; the old 100 rp is part of text_404ced019b604c1eeba4e5612a4728b8.)\n250 requests per minute --[is_a]--> quantity  (250 requests per minute is a quantity.)\nPolicy update: the API rate limit is... [limit, policy, update] --[contains]--> api  (Document chunk mentions api: API)\nOriginal policy: the API rate limit is... [original, "
+    }
+  }
+]

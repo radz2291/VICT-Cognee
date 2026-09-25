@@ -1,0 +1,40 @@
+[
+  {
+    "probe": "search nonexistent dataset",
+    "outcome": "OBSERVED",
+    "detail": "CogneeValidationError: SearchPreconditionError: Search prerequisites not met: no database/default user found. Initialize Cognee before searching by:\n\u2022 running `await cognee.add(...)` followed by `await cognee.cognify()`. (Status code: 422)",
+    "seconds": 0.069
+  },
+  {
+    "probe": "cognify nonexistent dataset",
+    "outcome": "OBSERVED",
+    "detail": "returned without error?"
+  },
+  {
+    "probe": "add(int) unsupported input",
+    "outcome": "OBSERVED",
+    "detail": "IngestionError: IngestionError: Data type not supported: <class 'int'> (Status code: 415)"
+  },
+  {
+    "probe": "forget(random uuid)",
+    "outcome": "OBSERVED",
+    "detail": "PermissionDeniedError: PermissionDeniedError: Request owner does not have necessary permission: [delete] for all datasets requested. (Status code: 403)",
+    "seconds": 0.097
+  },
+  {
+    "probe": "GRAPH_COMPLETION without LLM key",
+    "outcome": "EXPECTED-FAILURE",
+    "detail": "LLMAPIKeyNotSetError: LLMAPIKeyNotSetError: LLM API key is not set. (Status code: 422) Fix: Set LLM_API_KEY in your .env (copy .env.template to start). Cognee defaults to the OpenAI provider; set LLM_PROVIDER and LLM_MODEL as well to use another provider, and configure EM",
+    "seconds": 0.714
+  },
+  {
+    "probe": "datasets.get_status",
+    "outcome": "OBSERVED",
+    "detail": {
+      "status": {
+        "3bc88d65-2d9b-55c7-8380-cdd79479d08c": "PipelineRunStatus.DATASET_PROCESSING_COMPLETED",
+        "499ec014-674e-5787-9741-6eac65ef2713": "PipelineRunStatus.DATASET_PROCESSING_COMPLETED"
+      }
+    }
+  }
+]
