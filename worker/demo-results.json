@@ -1,0 +1,95 @@
+{
+  "marker": "C2-WORKER-DEMO-1790339168535",
+  "scenarios": [
+    {
+      "scenario": "startup-cold",
+      "ms": 26551,
+      "import_ms": 25979,
+      "rss_bytes": 327606272
+    },
+    {
+      "scenario": "scoped-sequence",
+      "add_ms": 2730,
+      "cognify_ms": 34669,
+      "search_ms": 940,
+      "hits": 3,
+      "marker_hits": 1,
+      "scope_note": "ops carry dataset name; search scope recorded for C2 findings"
+    },
+    {
+      "scenario": "memory-after-cognify",
+      "pid": null,
+      "rss_bytes": 1991045120,
+      "uptime_s": 97.12,
+      "ops_served": 4
+    },
+    {
+      "scenario": "clean-shutdown",
+      "ms": 3960,
+      "exit": {
+        "code": 0,
+        "signal": null,
+        "at_ms": 101323
+      }
+    },
+    {
+      "scenario": "restart-persistence",
+      "warm_start_ms": 27713,
+      "search_ms": 27752,
+      "hits": 3,
+      "marker_hits": 1,
+      "persisted": true
+    },
+    {
+      "scenario": "structured-errors",
+      "unknown_op": "UNKNOWN_OP",
+      "bad_params": "INVALID_PARAMS"
+    },
+    {
+      "scenario": "second-shutdown",
+      "ms": 3204,
+      "exit": {
+        "code": 0,
+        "signal": null,
+        "at_ms": 62006
+      }
+    },
+    {
+      "scenario": "killed-worker",
+      "resolved": "rejected",
+      "code": "WORKER_DIED",
+      "outcome": "unknown",
+      "exit": {
+        "code": null,
+        "signal": "SIGKILL",
+        "at_ms": 27333
+      },
+      "semantics": "mutating op reported outcome=unknown; NO automatic retry"
+    },
+    {
+      "scenario": "post-kill-reconciliation",
+      "read_back_hits": 3,
+      "write_landed": false,
+      "note": "reconciliation by read-back only; the interrupted write itself was never retried"
+    },
+    {
+      "scenario": "memory-post-kill",
+      "pid": null,
+      "rss_bytes": 955252736,
+      "uptime_s": 56.03,
+      "ops_served": 1
+    },
+    {
+      "scenario": "final-shutdown",
+      "ms": 3420
+    }
+  ],
+  "timings": {
+    "cold_start_ms": 26551,
+    "add_ms": 2730,
+    "cognify_ms": 34669,
+    "search_ms": 940,
+    "clean_shutdown_ms": 3960,
+    "warm_start_ms": 27713
+  }
+}

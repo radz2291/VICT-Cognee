@@ -1,0 +1,177 @@
+{
+  "battery": "08",
+  "users": {
+    "A": "7d430bb4-00b1-406d-8666-0edebde5adba",
+    "B": "08ed4316-3445-4b04-a754-217a41d53509"
+  },
+  "entries": [
+    {
+      "probe": "add 3 datasets (A: alpha+beta, B: gamma)",
+      "outcome": "OBSERVED",
+      "detail": {
+        "docs": 3
+      },
+      "seconds": 81.909
+    },
+    {
+      "probe": "cognify all three datasets",
+      "outcome": "OBSERVED",
+      "detail": {
+        "note": "per-user cognify"
+      },
+      "seconds": 4.292
+    },
+    {
+      "probe": "A: direct BM25 clean default context (query 'ledger')",
+      "outcome": "OBSERVED",
+      "detail": {
+        "hits": 1,
+        "alpha_hits": 0,
+        "beta_hits": 0,
+        "note": "no dataset context ever set in this task: user-wide store across datasets; no dataset param exists",
+        "rows_head": [
+          {
+            "dataset": null,
+            "text_head": "Gamma private note C2GAMMA-KW9-MARKER: user B private ledger, drawdown",
+            "score": 0.28768207245178085
+          }
+        ]
+      },
+      "seconds": 0.185
+    },
+    {
+      "probe": "BM25ChunksRetriever accepts dataset kwarg",
+      "outcome": "EXPECTED-FAILURE",
+      "detail": {
+        "error": "BM25ChunksRetriever.__init__() got an unexpected keyword argument 'dataset'"
+      },
+      "seconds": 0.0
+    },
+    {
+      "probe": "A: CHUNKS no scope (alpha query)",
+      "outcome": "OBSERVED",
+      "detail": {
+        "hits": 3,
+        "alpha_leak": 1,
+        "beta_leak": 1,
+        "datasets_seen": [
+          "c2_alpha",
+          "c2_beta",
+          "c2_worker_demo"
+        ]
+      },
+      "seconds": 22.692
+    },
+    {
+      "probe": "A: CHUNKS datasets=[c2_alpha]",
+      "outcome": "OBSERVED",
+      "detail": {
+        "hits": 1,
+        "alpha_leak": 1,
+        "beta_leak": 0,
+        "datasets_seen": [
+          "c2_alpha"
+        ]
+      },
+      "seconds": 0.76
+    },
+    {
+      "probe": "A: CHUNKS datasets=[nonexistent]",
+      "outcome": "EXPECTED-FAILURE",
+      "detail": {
+        "error": "NoDataError: NoDataError: No searchable memory in dataset 'c2_does_not_exist' (id: 2b22ce00-a81f-5d2b-9bf7-dc3cf13682fb): no data has"
+      },
+      "seconds": 0.672
+    },
+    {
+      "probe": "B: CHUNKS no scope",
+      "outcome": "OBSERVED",
+      "detail": {
+        "hits": 1,
+        "alpha_leak": 0,
+        "beta_leak": 0,
+        "datasets_seen": [
+          "c2_gamma"
+        ]
+      },
+      "seconds": 12.407
+    },
+    {
+      "probe": "B: CHUNKS datasets=[A's c2_alpha]",
+      "outcome": "EXPECTED-FAILURE",
+      "detail": {
+        "error": "DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'c2_alpha'. Dataset names resolve only among the datasets you own in the cur"
+      },
+      "seconds": 0.09
+    },
+    {
+      "probe": "A: direct BM25 AFTER scoped searches (same task)",
+      "outcome": "OBSERVED",
+      "detail": {
+        "hits": 1,
+        "rows_head": [
+          {
+            "text_head": "Gamma private note C2GAMMA-KW9-MARKER: user B private ledger, drawdown",
+            "score": 0.28768207245178085
+          }
+        ],
+        "note": "CONTEXTVAR HAZARD: retriever sees the last-searched dataset's store, not the user-wide store \u2014 integrators must isolate contexts per request"
+      },
+      "seconds": 0.014
+    },
+    {
+      "probe": "A: direct BM25 inside dataset context (c2_alpha)",
+      "outcome": "OBSERVED",
+      "detail": {
+        "hits": 1,
+        "alpha_hits": 1,
+        "beta_hits": 0,
+        "note": "decisive: scores AND scope together if beta_hits==0",
+        "rows_head": [
+          {
+            "text_head": "Alpha ledger note C2ALPHA-QX7-MARKER: Quellight settlement windows clo",
+            "score": 0.28768207245178085
+          }
+        ]
+      },
+      "seconds": 0.377
+    },
+    {
+      "probe": "A: CHUNKS_LEXICAL datasets=[c2_alpha]",
+      "outcome": "OBSERVED",
+      "detail": {
+        "hits": 1,
+        "beta_leak": 0,
+        "datasets_seen": [
+          "c2_alpha"
+        ],
+        "score_fields": 0
+      },
+      "seconds": 0.752
+    },
+    {
+      "probe": "A: CHUNKS node_name=[no-such-set]",
+      "outcome": "OBSERVED",
+      "detail": {
+        "hits": 0,
+        "belongs_to_set_present_in_payloads": true,
+        "note": "pre-filter via payload.belongs_to_set at the vector store"
+      },
+      "seconds": 0.91
+    },
+    {
+      "probe": "score separation probe (no threshold adopted)",
+      "outcome": "OBSERVED",
+      "detail": {
+        "on_corpus_scores": [
+          0.279199481010437
+        ],
+        "off_corpus_scores": [
+          0.47403138875961304
+        ],
+        "note": "raw cosine distances; separation observed, no universal threshold"
+      },
+      "seconds": 1.61
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "battery": "09b",
+  "dataset_id": "92fb099e-fa0f-59b8-9ba4-703f02d181af",
+  "entries": [
+    {
+      "probe": "restart: user-wide CHUNKS search",
+      "outcome": "OBSERVED",
+      "detail": {
+        "total_hits": 5,
+        "deleted_content_hits": 0,
+        "leaked_heads": []
+      },
+      "seconds": 92.366
+    },
+    {
+      "probe": "restart: scoped search on deleted name",
+      "outcome": "EXPECTED-FAILURE",
+      "detail": {
+        "error": "DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'c2_del'. Dataset names resolve only among the datasets you own in"
+      },
+      "seconds": 0.351
+    },
+    {
+      "probe": "restart: per-dataset store files on disk",
+      "outcome": "OBSERVED",
+      "detail": {
+        "dataset_id": "92fb099e-fa0f-59b8-9ba4-703f02d181af",
+        "files": [],
+        "physical_purge": "files removed"
+      }
+    }
+  ]
+}

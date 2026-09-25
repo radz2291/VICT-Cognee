@@ -1,0 +1,52 @@
+{
+  "battery": "09a",
+  "dataset_id": "92fb099e-fa0f-59b8-9ba4-703f02d181af",
+  "user_id": "7d430bb4-00b1-406d-8666-0edebde5adba",
+  "entries": [
+    {
+      "probe": "setup c2_del (2 docs) + cognify",
+      "outcome": "OBSERVED",
+      "detail": {},
+      "seconds": 176.668
+    },
+    {
+      "probe": "pre-delete: scoped CHUNKS search",
+      "outcome": "OBSERVED",
+      "detail": {
+        "dataset_id": "92fb099e-fa0f-59b8-9ba4-703f02d181af",
+        "hits": 1,
+        "store_files": [
+          {
+            "file": ".cognee\\system\\databases\\7d430bb4-00b1-406d-8666-0edebde5adba\\92fb099e-fa0f-59b8-9ba4-703f02d181af.lance.db",
+            "bytes": 4096,
+            "mtime": 1790341228.4053051
+          },
+          {
+            "file": ".cognee\\system\\databases\\7d430bb4-00b1-406d-8666-0edebde5adba\\92fb099e-fa0f-59b8-9ba4-703f02d181af.lbug",
+            "bytes": 1765376,
+            "mtime": 1790341231.0432057
+          }
+        ]
+      }
+    },
+    {
+      "probe": "forget(dataset='c2_del')",
+      "outcome": "OBSERVED",
+      "detail": {
+        "returned": "{'dataset_id': '92fb099e-fa0f-59b8-9ba4-703f02d181af', 'status': 'success'}"
+      },
+      "seconds": 8.029
+    },
+    {
+      "probe": "post-delete (same process): name resolution + store files",
+      "outcome": "OBSERVED",
+      "detail": {
+        "search_after": {
+          "typed_failure": "DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'c2_del'. Dataset names resolve only among the datasets "
+        },
+        "store_files_after": [],
+        "files_still_on_disk": false
+      }
+    }
+  ]
+}

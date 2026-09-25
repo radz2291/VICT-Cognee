@@ -1,0 +1,71 @@
+
+[2m2026-09-25T13:00:59.468880[0m [[32m[1minfo     [0m] [1mDeleted old log file: C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\logs\2026-09-25_12-26-10.log[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:00:59.470879[0m [[32m[1minfo     [0m] [1mLog file created at: C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\logs\2026-09-25_13-00-58.log[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m [36mlog_file[0m=[35mC:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\logs\2026-09-25_13-00-58.log[0m
+
+[2m2026-09-25T13:00:59.473880[0m [[33m[1mwarning  [0m] [1mCognee 1.0 changes: New API — remember/recall/forget/improve (V1 add/cognify/search still work). Session memory enabled by default (CACHING=false to disable). Multi-user access control on by default (ENABLE_BACKEND_ACCESS_CONTROL=false to disable). Agents (@cognee.agent) auto-verified on registration. See https://docs.cognee.ai/[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:00:59.476879[0m [[32m[1minfo     [0m] [1mLogging initialized           [0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m [36mcognee_version[0m=[35m1.6.1[0m [36mdatabase_path[0m=[35mC:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\system\databases[0m [36mos_info[0m=[35m'Windows 11 (10.0.26200)'[0m [36mpython_version[0m=[35m3.12.10[0m [36mstructlog_version[0m=[35m25.5.0[0m
+
+[2m2026-09-25T13:00:59.477876[0m [[32m[1minfo     [0m] [1mDatabase storage: C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\system\databases[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:01:43.406865[0m [[32m[1minfo     [0m] [1mauth posture: authentication=required, multi_tenant=enabled (default (no env vars set))[0m [[0m[1m[34mget_authenticated_user[0m][0m
+[store-guard:battery_common import] OK — all destructive roots inside C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof
+[store-guard:battery_common import]   system_root -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\system
+[store-guard:battery_common import]   data_root -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\data
+[store-guard:battery_common import]   cache_root -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\cache
+[store-guard:battery_common import]   logs_root -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\logs
+[store-guard:battery_common import]   repos_root -> C:/Users/RZ1/Desktop/RZ/260925-VCT-Cognee/proof/.cognee/repos
+[store-guard:battery_common import]   vector_db_url -> \\?\C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\system\databases\cognee.lancedb
+[store-guard:battery_common import]   graph_file_path -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.cognee\system\databases\cognee_graph_ladybug
+
+[2m2026-09-25T13:01:55.117289[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'settlement audit'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:02:28.769895[0m [[32m[1minfo     [0m] [1mLoading local model BAAI/bge-small-en-v1.5 from C:\Users\RZ1\AppData\Local\Temp\fastembed_cache[0m [[0m[1m[34mFastembedEmbeddingEngine[0m][0m
+
+[2m2026-09-25T13:02:40.923065[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'settlement audit'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:02:45.441909[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'settlement audit'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:02:47.017314[0m [[33m[1mwarning  [0m] [1mSearch attempt on an empty knowledge graph - no data has been added to this dataset: residue[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:02:47.023364[0m [[33m[1mwarning  [0m] [1mSearch attempt on an empty knowledge graph[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:02:47.089063[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'settlement audit'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:02:48.772641[0m [[33m[1mwarning  [0m] [1mSearch attempt on an empty knowledge graph - no data has been added to this dataset: c2_does_not_exist[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:02:48.776667[0m [[33m[1mwarning  [0m] [1mSearch attempt on an empty knowledge graph[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:02:48.843102[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'settlement audit'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:03:10.995327[0m [[32m[1minfo     [0m] [1mFound 1 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:03:12.891930[0m [[32m[1minfo     [0m] [1mFound 1 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:03:19.925914[0m [[32m[1minfo     [0m] [1mFound 1 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:03:20.646129[0m [[31m[1merror    [0m] [1mDocumentChunk_text collection not found in vector database[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:03:20.648153[0m [[31m[1merror    [0m] [1mNoDataError raised (Status code: 404)[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:03:20.648153[0m [[31m[1merror    [0m] [1mNoDataError raised (Status code: 404)[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:03:21.928279[0m [[31m[1merror    [0m] [1mDocumentChunk_text collection not found in vector database[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T13:03:21.928279[0m [[31m[1merror    [0m] [1mNoDataError raised (Status code: 404)[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:03:21.930307[0m [[31m[1merror    [0m] [1mNoDataError raised (Status code: 404)[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:03:21.932337[0m [[33m[1mwarning  [0m] [1mDataset without searchable memory: Dataset 'residue' (id: 954ba777-cf71-5e84-abae-cfb8802c0347): no data has been added; add data and run cognify before searching.[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T13:03:21.934117[0m [[33m[1mwarning  [0m] [1mDataset without searchable memory: Dataset 'c2_does_not_exist' (id: 2b22ce00-a81f-5d2b-9bf7-dc3cf13682fb): no data has been added; add data and run cognify before searching.[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+[OBSERVED] restart: user-wide CHUNKS search (92.37s)
+    {"total_hits": 5, "deleted_content_hits": 0, "leaked_heads": []}
+
+[2m2026-09-25T13:03:23.445396[0m [[31m[1merror    [0m] [1mDatasetNotFoundError raised (Status code: 404)[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+[EXPECTED-FAILURE] restart: scoped search on deleted name (0.35s)
+    {"error": "DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'c2_del'. Dataset names resolve only among the datasets you own in"}
+[OBSERVED] restart: per-dataset store files on disk
+    {"dataset_id": "92fb099e-fa0f-59b8-9ba4-703f02d181af", "files": [], "physical_purge": "files removed"}
+[+   92.90s] BATTERY 09b COMPLETE
