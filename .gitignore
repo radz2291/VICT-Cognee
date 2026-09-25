@@ -1,0 +1,24 @@
+# Disposable proof workspace for the proposed @vict/cognee pack (C0/C1 discovery).
+# Local-only git root; deliberately NO remote (none has been supplied).
+
+# Python virtualenv for the pinned cognee proof
+proof/.venv/
+
+# Upstream cognee clone (own git repo, pinned separately; never edited)
+upstream/
+
+# Node SDK test checkout
+ts-sdk/node_modules/
+ts-sdk/package-lock.json
+
+# Cognee runtime state (databases, caches, logs, models)
+.cognee/
+proof/.cognee/
+proof/data/
+proof/.env
+proof/logs/
+logs/
+
+# Python noise
+__pycache__/
+*.pyc
