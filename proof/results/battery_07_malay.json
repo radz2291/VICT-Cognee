@@ -1,0 +1,454 @@
+[
+  {
+    "probe": "CHUNKS malay->malay (success-expected)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "my-001/005 chunk first",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        }
+      ]
+    },
+    "seconds": 1.423
+  },
+  {
+    "probe": "CHUNKS malay->malay lore (success-expected)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "my-002 chunk first",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        }
+      ]
+    },
+    "seconds": 1.059
+  },
+  {
+    "probe": "CHUNKS english->malay cross-lingual",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "my-001/005 somewhere in top-k",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        }
+      ]
+    },
+    "seconds": 0.691
+  },
+  {
+    "probe": "CHUNKS english->mixed content",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "my-003 somewhere in top-k",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        }
+      ]
+    },
+    "seconds": 0.807
+  },
+  {
+    "probe": "CHUNKS malay off-corpus (failure-expected)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "no relevant hit; observe what surfaces",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        }
+      ]
+    },
+    "seconds": 0.715
+  },
+  {
+    "probe": "CHUNKS english off-corpus (failure-expected)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "no relevant hit; observe what surfaces",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        }
+      ]
+    },
+    "seconds": 0.725
+  },
+  {
+    "probe": "BM25 malay token",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "my-001/005 chunk",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        }
+      ]
+    },
+    "seconds": 0.597
+  },
+  {
+    "probe": "BM25 malay entity phrase",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "my-002 chunk",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        }
+      ]
+    },
+    "seconds": 0.549
+  },
+  {
+    "probe": "BM25 mixed id",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "my-003 chunk",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        }
+      ]
+    },
+    "seconds": 0.508
+  },
+  {
+    "probe": "BM25 nonsense token (failure-expected)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "expectation": "top-k returned anyway at score 0 (no threshold)",
+      "hits": [
+        {
+          "dataset": "malay_probe",
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."
+        },
+        {
+          "dataset": "malay_probe",
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."
+        }
+      ]
+    },
+    "seconds": 0.625
+  },
+  {
+    "probe": "public API with_scores via retriever_specific_config",
+    "outcome": "OBSERVED",
+    "detail": {
+      "result_item_type": "dict",
+      "has_score_field": false,
+      "first_item_keys": [
+        "belongs_to_set",
+        "chunk_index",
+        "chunk_size",
+        "chunker_id",
+        "content_hash",
+        "created_at",
+        "cut_type",
+        "document_id"
+      ],
+      "verdict": "NO scores \u2014 config silently dropped by CHUNKS_LEXICAL registry"
+    }
+  },
+  {
+    "probe": "direct BM25ChunksRetriever chunk load",
+    "outcome": "OBSERVED",
+    "detail": {
+      "chunks_loaded_in_user_scope": 5
+    }
+  },
+  {
+    "probe": "direct with_scores + threshold 0.1: real token",
+    "outcome": "OBSERVED",
+    "detail": {
+      "scored_hits": [
+        {
+          "score": 0.8533,
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekada"
+        },
+        {
+          "score": 0.8533,
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum "
+        },
+        {
+          "score": 0.0,
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna se"
+        },
+        {
+          "score": 0.0,
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sek"
+        },
+        {
+          "score": 0.0,
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu b"
+        }
+      ],
+      "after_threshold": 2
+    },
+    "seconds": 0.001
+  },
+  {
+    "probe": "direct with_scores + threshold 0.1: nonsense token",
+    "outcome": "OBSERVED",
+    "detail": {
+      "scored_hits": [
+        {
+          "score": 0.0,
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekada"
+        },
+        {
+          "score": 0.0,
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum "
+        },
+        {
+          "score": 0.0,
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna se"
+        },
+        {
+          "score": 0.0,
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sek"
+        },
+        {
+          "score": 0.0,
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu b"
+        }
+      ],
+      "after_threshold": 0
+    },
+    "seconds": 0.001
+  },
+  {
+    "probe": "direct with_scores + threshold 0.1: mixed id",
+    "outcome": "OBSERVED",
+    "detail": {
+      "scored_hits": [
+        {
+          "score": 4.2263,
+          "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna se"
+        },
+        {
+          "score": 0.9319,
+          "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu b"
+        },
+        {
+          "score": 0.0,
+          "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekada"
+        },
+        {
+          "score": 0.0,
+          "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum "
+        },
+        {
+          "score": 0.0,
+          "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sek"
+        }
+      ],
+      "after_threshold": 2
+    },
+    "seconds": 0.003
+  },
+  {
+    "probe": "gliner_demo entities extracted from Malay corpus",
+    "outcome": "OBSERVED",
+    "detail": {
+      "node_count": 38,
+      "edge_count": 38,
+      "sample_entity_texts": [
+        "2026-09-15",
+        "5 petang",
+        "aetheria council",
+        "curfew",
+        "data memory",
+        "farid kerana",
+        "hari khamis",
+        "jumaat",
+        "majlis serambi",
+        "my-001",
+        "nurul",
+        "proposal-2026-091",
+        "setiap jumaat sebelum pukul 5 petang",
+        "text_63857492ac7ac5757abcd155df6bfc2d",
+        "text_75b909c4faea4e422c11557223d6d11e",
+        "text_c3fa690385b304ca30c9410ce1799d6a",
+        "text_db659df86444fe91f086ebd413f4a4f6",
+        "text_df137305730c38c159f02d4d2b8651d8",
+        "tujuh hari penuh"
+      ]
+    }
+  },
+  {
+    "probe": "suitability verdict inputs",
+    "outcome": "UNTESTED",
+    "detail": {
+      "note": "semantic cross-lingual quality and Malay extraction quality are reported as observations on bge-small-en-v1.5 + gliner2.5-base-v1; no non-English embedding/extraction model was benchmarked side-by-side"
+    }
+  }
+]

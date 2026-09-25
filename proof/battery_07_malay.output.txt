@@ -1,0 +1,568 @@
+
+[2m2026-09-25T10:45:32.452087[0m [[32m[1minfo     [0m] [1mLog file created at: C:\Users\RZ1\.cognee\logs\2026-09-25_10-45-31.log[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m [36mlog_file[0m=[35mC:\Users\RZ1\.cognee\logs\2026-09-25_10-45-31.log[0m
+
+[2m2026-09-25T10:45:32.452087[0m [[33m[1mwarning  [0m] [1mCognee 1.0 changes: New API — remember/recall/forget/improve (V1 add/cognify/search still work). Session memory enabled by default (CACHING=false to disable). Multi-user access control on by default (ENABLE_BACKEND_ACCESS_CONTROL=false to disable). Agents (@cognee.agent) auto-verified on registration. See https://docs.cognee.ai/[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T10:45:32.454098[0m [[32m[1minfo     [0m] [1mLogging initialized           [0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m [36mcognee_version[0m=[35m1.6.1[0m [36mdatabase_path[0m=[35mC:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\cognee\.cognee_system\databases[0m [36mos_info[0m=[35m'Windows 11 (10.0.26200)'[0m [36mpython_version[0m=[35m3.12.10[0m [36mstructlog_version[0m=[35m25.5.0[0m
+
+[2m2026-09-25T10:45:32.454098[0m [[32m[1minfo     [0m] [1mDatabase storage: C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\cognee\.cognee_system\databases[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T10:46:01.800395[0m [[32m[1minfo     [0m] [1mauth posture: authentication=required, multi_tenant=enabled (default (no env vars set))[0m [[0m[1m[34mget_authenticated_user[0m][0m
+
+[1msetup plugin alembic.autogenerate.schemas[0m
+
+[1msetup plugin alembic.autogenerate.tables[0m
+
+[1msetup plugin alembic.autogenerate.types[0m
+
+[1msetup plugin alembic.autogenerate.constraints[0m
+
+[1msetup plugin alembic.autogenerate.defaults[0m
+
+[1msetup plugin alembic.autogenerate.comments[0m
+
+[1msetup plugin alembic.ext.checkconstraint_byname[0m
+
+[1mUsing database: sqlite+aiosqlite:///C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\cognee\.cognee_system\databases/cognee_db[0m
+
+[1mContext impl SQLiteImpl.      [0m
+
+[1mWill assume non-transactional DDL.[0m
+
+[1mRunning upgrade  -> 8057ae7329c2, Initial migration[0m
+
+[1mRunning upgrade 8057ae7329c2 -> 482cd6517ce4, Add default user[0m
+
+[1mRunning upgrade 482cd6517ce4 -> 1d0bb7fede17, Add pipeline run status[0m
+
+[1mRunning upgrade 1d0bb7fede17 -> ab7e313804ae, permission_system_rework[0m
+
+[1mRunning upgrade ab7e313804ae -> e4ebee1091e7, Expand data model info[0m
+
+[1mRunning upgrade e4ebee1091e7 -> b9274c27a25a, kuzu-11-migration[0m
+
+[1mRunning upgrade b9274c27a25a -> 1daae0df1866, incremental_loading[0m
+
+[1mRunning upgrade 1daae0df1866 -> 9e7a3cb85175, loader_separation[0m
+
+[1mRunning upgrade 9e7a3cb85175 -> 45957f0a9849, Add notebook table[0m
+
+[1mRunning upgrade 45957f0a9849 -> 211ab850ef3d, Add sync_operations table[0m
+
+[1mRunning upgrade 211ab850ef3d -> c946955da633, Multi Tenant Support[0m
+
+[1mRunning upgrade c946955da633 -> 76625596c5c3, Expand dataset database for multi user[0m
+
+[1mRunning upgrade 76625596c5c3 -> 46a6ce2bd2b2, Expand dataset database with json connection field[0m
+
+[1mRunning upgrade 46a6ce2bd2b2 -> a1b2c3d4e5f6, Add label column to data table[0m
+
+[1mRunning upgrade a1b2c3d4e5f6 -> e1ec1dcb50b6, add_last_accessed_to_data[0m
+
+[1mRunning upgrade e1ec1dcb50b6 -> 1a58b986e6e1, Enable delete for old tutorial notebooks[0m
+
+[1mRunning upgrade 1a58b986e6e1 -> 84e5d08260d6, Replace graph ledger table with nodes and edges tables[0m
+
+[1mRunning upgrade 84e5d08260d6 -> 18f01b0a0b4c, create principal configuration table[0m
+
+[1mRunning upgrade 18f01b0a0b4c -> b1c2d3e4f5a6, add_user_api_key_table[0m
+
+[1mRunning upgrade b1c2d3e4f5a6 -> f1a2b3c4d5e6, add_importance_weight_to_data[0m
+
+[1mRunning upgrade f1a2b3c4d5e6 -> d4e5f6a7b8c9, add dataset_configuration table[0m
+
+[1mRunning upgrade d4e5f6a7b8c9 -> 6ee94db7381f, remove unique constraint tenant name[0m
+
+[1mRunning upgrade 6ee94db7381f -> b2c3d4e5f6a7, add created_at index to queries and results tables[0m
+
+[1mRunning upgrade b2c3d4e5f6a7 -> 7c5d4e2f8a91, Add parent_user_id to users[0m
+
+[1mRunning upgrade 7c5d4e2f8a91 -> 24f5d4f64d0d, Add session lifecycle tables.[0m
+
+[1mRunning upgrade 24f5d4f64d0d -> 760ef4f08ef0, change node label and type to text[0m
+
+[1mRunning upgrade 760ef4f08ef0 -> c1a2b3d4e5f9, Add Cognee version and migration revision tracking to dataset_database[0m
+
+[1mRunning upgrade c1a2b3d4e5f9 -> d8f4a1b2c3e9, Add the single-row global_database_version table[0m
+
+[1mRunning upgrade d8f4a1b2c3e9 -> aa753a730673, add pipeline run id to nodes and edges[0m
+
+[1mRunning upgrade aa753a730673 -> b2c4d6e8f0a1, add_integration_credentials_table[0m
+
+[1mRunning upgrade b2c4d6e8f0a1 -> c3d5e7f9a1b2, dedupe cache_session_context and add unique entry index[0m
+
+[1mRunning upgrade c3d5e7f9a1b2 -> d4e6f8a0b2c3, add_integration_credentials_workspace_id[0m
+
+[1mRunning upgrade d4e6f8a0b2c3 -> e5a7b9c1d3f4, add_dataset_id_to_queries_and_results[0m
+
+[1mRunning upgrade e5a7b9c1d3f4 -> c5d7e9f1a3b5, add_dataset_id_to_data[0m
+
+[1mRunning upgrade c5d7e9f1a3b5 -> d6e8f0a2b4c6, backfill_dataset_scoped_data_drop_dataset_data[0m
+
+[1mRunning upgrade d6e8f0a2b4c6 -> f2b4c6d8e0a1, add_system_metadata_to_data[0m
+
+[1mRunning upgrade f2b4c6d8e0a1 -> b8c1d3e5f7a9, Add provenance_entries table[0m
+
+[1mRunning upgrade b8c1d3e5f7a9 -> a7f3c9e1b5d2, Extend pipeline_runs into the operation record (SDK-399)[0m
+
+[1mRunning upgrade a7f3c9e1b5d2 -> c7e2a9b4d1f3, add_created_and_last_used_to_user_api_key[0m
+
+[1mRunning upgrade c7e2a9b4d1f3 -> c4e8a1f6b3d7, Index pipeline_runs on (created_at, id)[0m
+
+[1mRunning upgrade c4e8a1f6b3d7 -> b3d5f7a9c1e2, add_graph_metrics_has_full_metrics[0m
+
+[1mRunning upgrade b3d5f7a9c1e2 -> d1e2f3a4b5c6, Add composite index on pipeline_runs for the /status latest-run lookup[0m
+
+[1mRunning upgrade d1e2f3a4b5c6 -> f3a7b9c1d2e4, Add the compact graph edge evidence sidecar.[0m
+
+[1mRunning upgrade f3a7b9c1d2e4 -> 1c22e6cb5aec, Reconcile every database to the chain's frozen truth[0m
+
+[1mRunning upgrade 1c22e6cb5aec -> a7c2e9f4b8d1, Add agent_id to session_records for agent-to-search attribution[0m
+
+[1mRunning upgrade a7c2e9f4b8d1 -> e7f9a1c3d5b8, Add composite index on data for the dataset listing[0m
+
+[1mRelational migrations applied (target head).[0m
+
+[1mUsing database: sqlite+aiosqlite:///C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\cognee\.cognee_system\databases/cognee_db[0m
+
+[1mContext impl SQLiteImpl.      [0m
+
+[1mWill assume non-transactional DDL.[0m
+
+[1mRelational migrations applied (target head).[0m
+
+[2m2026-09-25T10:46:13.432387[0m [[32m[1minfo     [0m] [1mSkipping LLM connection test: this pipeline has no LLM task.[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T10:46:13.432387[0m [[32m[1minfo     [0m] [1mTesting connection to Embedding endpoint...[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T10:46:39.759789[0m [[32m[1minfo     [0m] [1mLoading local model BAAI/bge-small-en-v1.5 from C:\Users\RZ1\AppData\Local\Temp\fastembed_cache[0m [[0m[1m[34mFastembedEmbeddingEngine[0m][0m
+
+[2m2026-09-25T10:46:49.366676[0m [[32m[1minfo     [0m] [1mAuto-detected embedding dimensions from connection test: 384[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+
+[2m2026-09-25T10:46:49.787118[0m [[32m[1minfo     [0m] [1mPipeline run started: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:49.807011[0m [[32m[1minfo     [0m] [1mCoroutine task started: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:49.814814[0m [[32m[1minfo     [0m] [1mCoroutine task started: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:49.816828[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset starting[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.818842[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] starting: save files and compute content hashes (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.818842[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] finished in 0.000 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.818842[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] starting: resolve data IDs (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.853263[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] finished in 0.031 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.853263[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] starting: process files and build data records (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.853263[0m [[32m[1minfo     [0m] [1mRegistered loader: pypdf_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.855280[0m [[32m[1minfo     [0m] [1mRegistered loader: text_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.855280[0m [[32m[1minfo     [0m] [1mRegistered loader: code_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.855280[0m [[32m[1minfo     [0m] [1mRegistered loader: image_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.855280[0m [[32m[1minfo     [0m] [1mRegistered loader: audio_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.857298[0m [[32m[1minfo     [0m] [1mRegistered loader: video_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.857298[0m [[32m[1minfo     [0m] [1mRegistered loader: csv_loader [0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.857298[0m [[32m[1minfo     [0m] [1mRegistered loader: advanced_pdf_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.862361[0m [[32m[1minfo     [0m] [1mRegistered loader: docling_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.862361[0m [[32m[1minfo     [0m] [1mRegistered loader: dlt_csv_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.LoaderEngine[0m][0m
+
+[2m2026-09-25T10:46:49.872434[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] finished in 0.031 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.872434[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] starting: DB commit (1 new, 0 updated)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.918577[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] finished in 0.032 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.918577[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset finished in 0.094 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:49.920191[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:49.921641[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:49.923371[0m [[32m[1minfo     [0m] [1mPipeline run completed: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:51.384749[0m [[32m[1minfo     [0m] [1mPipeline run started: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:51.386510[0m [[32m[1minfo     [0m] [1mCoroutine task started: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:51.390542[0m [[32m[1minfo     [0m] [1mCoroutine task started: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:51.392556[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset starting[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.392556[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] starting: save files and compute content hashes (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.394569[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] finished in 0.000 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.396584[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] starting: resolve data IDs (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.424242[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] finished in 0.031 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.426259[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] starting: process files and build data records (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.453978[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] finished in 0.031 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.453978[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] starting: DB commit (1 new, 0 updated)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.487492[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] finished in 0.032 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.487492[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset finished in 0.094 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:51.487492[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:51.489507[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:51.491522[0m [[32m[1minfo     [0m] [1mPipeline run completed: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:52.172415[0m [[32m[1minfo     [0m] [1mPipeline run started: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:52.174429[0m [[32m[1minfo     [0m] [1mCoroutine task started: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:52.178201[0m [[32m[1minfo     [0m] [1mCoroutine task started: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:52.184244[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset starting[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.186256[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] starting: save files and compute content hashes (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.196016[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] finished in 0.000 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.197031[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] starting: resolve data IDs (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.243409[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] finished in 0.047 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.243409[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] starting: process files and build data records (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.270877[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] finished in 0.031 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.272893[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] starting: DB commit (1 new, 0 updated)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.312433[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] finished in 0.047 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.312433[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset finished in 0.141 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:52.314475[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:52.316488[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:52.318507[0m [[32m[1minfo     [0m] [1mPipeline run completed: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:53.004182[0m [[32m[1minfo     [0m] [1mPipeline run started: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:53.010217[0m [[32m[1minfo     [0m] [1mCoroutine task started: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:53.014248[0m [[32m[1minfo     [0m] [1mCoroutine task started: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:53.020034[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset starting[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.020034[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] starting: save files and compute content hashes (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.020034[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] finished in 0.000 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.022047[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] starting: resolve data IDs (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.059782[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] finished in 0.047 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.061793[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] starting: process files and build data records (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.083423[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] finished in 0.015 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.083423[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] starting: DB commit (1 new, 0 updated)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.115107[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] finished in 0.032 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.117119[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset finished in 0.094 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:53.117119[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:53.119130[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:53.119130[0m [[32m[1minfo     [0m] [1mPipeline run completed: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:54.040100[0m [[32m[1minfo     [0m] [1mPipeline run started: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:54.042115[0m [[32m[1minfo     [0m] [1mCoroutine task started: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:54.051918[0m [[32m[1minfo     [0m] [1mCoroutine task started: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:54.066004[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset starting[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.066004[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] starting: save files and compute content hashes (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.067758[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] finished in 0.000 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.067758[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] starting: resolve data IDs (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.147009[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] finished in 0.078 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.147009[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] starting: process files and build data records (1 items)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.176975[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] finished in 0.031 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.178727[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] starting: DB commit (1 new, 0 updated)[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.230340[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] finished in 0.047 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.230340[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset finished in 0.156 seconds[0m [[0m[1m[34mcognee.tasks.ingestion.ingest_data[0m][0m
+
+[2m2026-09-25T10:46:54.232359[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:54.232359[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:54.250227[0m [[32m[1minfo     [0m] [1mPipeline run completed: `62575bba-3e77-5f93-a04b-ec239c0ffd02`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:54.418497[0m [[33m[1mwarning  [0m] [1mExtracting the knowledge graph with the GLiNER demo extractor: cognee's open-source local extraction, free to use with no LLM key. The production-grade GLiNER extraction (higher accuracy and broader label coverage) is available with a cognee enterprise licence; write to social@cognee.ai to explore the options.[0m [[0m[1m[34mcognify.config[0m][0m
+
+[2m2026-09-25T10:46:56.496706[0m [[32m[1minfo     [0m] [1mPipeline run started: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:56.498719[0m [[32m[1minfo     [0m] [1mCoroutine task started: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.502496[0m [[32m[1minfo     [0m] [1mCoroutine task started: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.524420[0m [[32m[1minfo     [0m] [1mPipeline run started: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:56.528463[0m [[32m[1minfo     [0m] [1mCoroutine task started: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.531491[0m [[32m[1minfo     [0m] [1mCoroutine task started: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.543569[0m [[32m[1minfo     [0m] [1mLoading local model fastino/gliner2.5-base-v1 from C:\Users\RZ1\.cache\huggingface\hub[0m [[0m[1m[34mgliner.extractor[0m][0m
+
+[2m2026-09-25T10:46:56.563180[0m [[32m[1minfo     [0m] [1mPipeline run started: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:56.563180[0m [[32m[1minfo     [0m] [1mCoroutine task started: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.569233[0m [[32m[1minfo     [0m] [1mCoroutine task started: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.581071[0m [[32m[1minfo     [0m] [1mPipeline run started: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:56.585100[0m [[32m[1minfo     [0m] [1mCoroutine task started: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.589139[0m [[32m[1minfo     [0m] [1mCoroutine task started: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.610237[0m [[32m[1minfo     [0m] [1mPipeline run started: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:46:56.612250[0m [[32m[1minfo     [0m] [1mCoroutine task started: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:46:56.614265[0m [[32m[1minfo     [0m] [1mCoroutine task started: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\gliner2\models\boundary\model.py:2101: UserWarning: Checkpoint uses legacy list-valued extra_special_tokens metadata; loading with compatibility normalization.
+  tokenizer = load_extractor_tokenizer(tokenizer_source)
+C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\gliner2\models\boundary\model.py:1147: RuntimeWarning: Encoder rejected attn_implementation='sdpa'; falling back to 'eager' (DebertaV2Model does not support an attention implementation through torch.nn.functional.scaled_dot_product_attention yet. Please request the support for this architecture: https://github.com/huggingface/transformers/issues/28005. If you believe this error is a bug, please open an issue in Transformers GitHub repository and load your model with the argument `attn_implementation="eager"` meanwhile. Example: `model = AutoModel.from_pretrained("openai/whisper-tiny", attn_implementation="eager")`)
+  self.encoder = self._load_encoder(
+
+[2m2026-09-25T10:47:20.195179[0m [[32m[1minfo     [0m] [1mGLiNER model fastino/gliner2.5-base-v1 ready in 23.7s[0m [[0m[1m[34mgliner.extractor[0m][0m
+
+[2m2026-09-25T10:47:30.196723[0m [[32m[1minfo     [0m] [1mGLiNER schema for text_63857492ac7ac5757abcd155df6bfc2d resolved from label_bank: 1 entity types, 0 relation types[0m [[0m[1m[34mgliner.tasks[0m][0m
+
+[2m2026-09-25T10:47:30.198479[0m [[32m[1minfo     [0m] [1mAsync Generator task started: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:47:30.284314[0m [[32m[1minfo     [0m] [1mCoroutine task started: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:47:38.799196[0m [[32m[1minfo     [0m] [1mGLiNER schema for text_db659df86444fe91f086ebd413f4a4f6 resolved from label_bank: 4 entity types, 0 relation types[0m [[0m[1m[34mgliner.tasks[0m][0m
+
+[2m2026-09-25T10:47:38.801208[0m [[32m[1minfo     [0m] [1mAsync Generator task started: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:47:38.892333[0m [[32m[1minfo     [0m] [1mCoroutine task started: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:47:47.781904[0m [[32m[1minfo     [0m] [1mGLiNER schema for text_c3fa690385b304ca30c9410ce1799d6a resolved from label_bank: 3 entity types, 0 relation types[0m [[0m[1m[34mgliner.tasks[0m][0m
+
+[2m2026-09-25T10:47:47.785935[0m [[32m[1minfo     [0m] [1mAsync Generator task started: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:47:47.873169[0m [[32m[1minfo     [0m] [1mCoroutine task started: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:47:55.718097[0m [[32m[1minfo     [0m] [1mGLiNER schema for text_df137305730c38c159f02d4d2b8651d8 resolved from label_bank: 2 entity types, 0 relation types[0m [[0m[1m[34mgliner.tasks[0m][0m
+
+[2m2026-09-25T10:47:55.720113[0m [[32m[1minfo     [0m] [1mAsync Generator task started: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:47:55.831090[0m [[32m[1minfo     [0m] [1mCoroutine task started: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:03.671541[0m [[32m[1minfo     [0m] [1mGLiNER schema for text_75b909c4faea4e422c11557223d6d11e resolved from label_bank: 3 entity types, 1 relation types[0m [[0m[1m[34mgliner.tasks[0m][0m
+
+[2m2026-09-25T10:48:03.671541[0m [[32m[1minfo     [0m] [1mAsync Generator task started: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:03.736676[0m [[32m[1minfo     [0m] [1mCoroutine task started: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:05.493808[0m [[32m[1minfo     [0m] [1mCoroutine task started: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:07.471855[0m [[32m[1minfo     [0m] [1mCoroutine task started: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:10.175849[0m [[32m[1minfo     [0m] [1mCoroutine task started: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:14.406178[0m [[32m[1minfo     [0m] [1mCoroutine task started: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:17.051142[0m [[32m[1minfo     [0m] [1mCoroutine task started: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.095732[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.099542[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.101560[0m [[32m[1minfo     [0m] [1mAsync Generator task completed: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.102861[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.104871[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.106881[0m [[32m[1minfo     [0m] [1mPipeline run completed: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:48:29.243534[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.249576[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.257370[0m [[32m[1minfo     [0m] [1mAsync Generator task completed: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.257370[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.261393[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:29.267434[0m [[32m[1minfo     [0m] [1mPipeline run completed: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:48:31.031133[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:31.034904[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:31.038931[0m [[32m[1minfo     [0m] [1mAsync Generator task completed: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:31.040943[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:31.042954[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:31.042954[0m [[32m[1minfo     [0m] [1mPipeline run completed: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:48:32.623375[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.627398[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.629408[0m [[32m[1minfo     [0m] [1mAsync Generator task completed: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.631418[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.635442[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.635442[0m [[32m[1minfo     [0m] [1mPipeline run completed: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+
+[2m2026-09-25T10:48:32.877416[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.882837[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.886857[0m [[32m[1minfo     [0m] [1mAsync Generator task completed: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.888867[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.890880[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+
+[2m2026-09-25T10:48:32.894905[0m [[32m[1minfo     [0m] [1mPipeline run completed: `35a72bd5-21ff-5552-801b-2170a0046f16`[0m [[0m[1m[34mrun_tasks_with_telemetry()[0m][0m
+sync_operations table already exists, skipping creation
+principal_configuration table already exists, skipping creation
+session_records table already exists, skipping creation
+session_model_usage table already exists, skipping creation
+[+  183.89s] malay_probe cognified (5 entries) in 145.3s
+
+[2m2026-09-25T10:48:34.034182[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'Bila Nurul mahu ringkasan mingguannya?'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T10:48:34.379524[0m [[32m[1minfo     [0m] [1mFound 5 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+[OBSERVED] CHUNKS malay->malay (success-expected) (1.42s)
+    {"expectation": "my-001/005 chunk first", "hits": [{"dataset": "malay_probe", "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."}, {"dataset": "malay_probe", "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelu
+
+[2m2026-09-25T10:48:35.282062[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'Apakah peraturan siaran magic di Aetheria?'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T10:48:35.442713[0m [[32m[1minfo     [0m] [1mFound 5 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+[OBSERVED] CHUNKS malay->malay lore (success-expected) (1.06s)
+    {"expectation": "my-002 chunk first", "hits": [{"dataset": "malay_probe", "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."}, {"dataset": "malay_probe", "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu be
+
+[2m2026-09-25T10:48:36.145130[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'Nurul weekly report deadline'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T10:48:36.255193[0m [[32m[1minfo     [0m] [1mFound 5 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+[OBSERVED] CHUNKS english->malay cross-lingual (0.69s)
+    {"expectation": "my-001/005 somewhere in top-k", "hits": [{"dataset": "malay_probe", "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum pukul 5 petang."}, {"dataset": "malay_probe", "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkas
+
+[2m2026-09-25T10:48:36.882973[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'proposal 2026-091 rejection reason'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T10:48:37.000535[0m [[32m[1minfo     [0m] [1mFound 5 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+[OBSERVED] CHUNKS english->mixed content (0.81s)
+    {"expectation": "my-003 somewhere in top-k", "hits": [{"dataset": "malay_probe", "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."}, {"dataset": "malay_probe", "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa ge
+
+[2m2026-09-25T10:48:37.653163[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'jadual penerbangan ke Pulau Pinang'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T10:48:37.762155[0m [[32m[1minfo     [0m] [1mFound 5 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+[OBSERVED] CHUNKS malay off-corpus (failure-expected) (0.71s)
+    {"expectation": "no relevant hit; observe what surfaces", "hits": [{"dataset": "malay_probe", "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."}, {"dataset": "malay_probe", "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. M
+
+[2m2026-09-25T10:48:38.403426[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'quantum flux capacitor overheating'[0m [[0m[1m[34mChunksRetriever[0m][0m
+
+[2m2026-09-25T10:48:38.488736[0m [[32m[1minfo     [0m] [1mFound 5 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+[OBSERVED] CHUNKS english off-corpus (failure-expected) (0.72s)
+    {"expectation": "no relevant hit; observe what surfaces", "hits": [{"dataset": "malay_probe", "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu berlangsung."}, {"dataset": "malay_probe", "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan
+
+[2m2026-09-25T10:48:39.007090[0m [[32m[1minfo     [0m] [1mInitializing LexicalRetriever by loading DocumentChunks from graph engine[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:39.070565[0m [[32m[1minfo     [0m] [1mInitialized with 5 document chunks[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:39.072583[0m [[32m[1minfo     [0m] [1mRetrieved 5/5 chunks for query (len=1)[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] BM25 malay token (0.60s)
+    {"expectation": "my-001/005 chunk", "hits": [{"dataset": "malay_probe", "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."}, {"dataset": "malay_probe", "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum puku
+
+[2m2026-09-25T10:48:39.644006[0m [[32m[1minfo     [0m] [1mInitializing LexicalRetriever by loading DocumentChunks from graph engine[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:39.656105[0m [[32m[1minfo     [0m] [1mInitialized with 5 document chunks[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:39.656105[0m [[32m[1minfo     [0m] [1mRetrieved 5/5 chunks for query (len=2)[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] BM25 malay entity phrase (0.55s)
+    {"expectation": "my-002 chunk", "hits": [{"dataset": "malay_probe", "text": "Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis\nSerambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh."}, {"dataset": "malay_probe", "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringk
+
+[2m2026-09-25T10:48:40.157595[0m [[32m[1minfo     [0m] [1mInitializing LexicalRetriever by loading DocumentChunks from graph engine[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:40.167420[0m [[32m[1minfo     [0m] [1mInitialized with 5 document chunks[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:40.169437[0m [[32m[1minfo     [0m] [1mRetrieved 5/5 chunks for query (len=3)[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] BM25 mixed id (0.51s)
+    {"expectation": "my-003 chunk", "hits": [{"dataset": "malay_probe", "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir."}, {"dataset": "malay_probe", "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu ber
+
+[2m2026-09-25T10:48:40.739006[0m [[32m[1minfo     [0m] [1mInitializing LexicalRetriever by loading DocumentChunks from graph engine[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:40.756921[0m [[32m[1minfo     [0m] [1mInitialized with 5 document chunks[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:40.756921[0m [[32m[1minfo     [0m] [1mRetrieved 5/5 chunks for query (len=1)[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] BM25 nonsense token (failure-expected) (0.62s)
+    {"expectation": "top-k returned anyway at score 0 (no threshold)", "hits": [{"dataset": "malay_probe", "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara."}, {"dataset": "malay_probe", "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada 
+
+[2m2026-09-25T10:48:41.475486[0m [[32m[1minfo     [0m] [1mInitializing LexicalRetriever by loading DocumentChunks from graph engine[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:41.485310[0m [[32m[1minfo     [0m] [1mInitialized with 5 document chunks[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:41.487327[0m [[32m[1minfo     [0m] [1mRetrieved 5/5 chunks for query (len=1)[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] public API with_scores via retriever_specific_config
+    {"result_item_type": "dict", "has_score_field": false, "first_item_keys": ["belongs_to_set", "chunk_index", "chunk_size", "chunker_id", "content_hash", "created_at", "cut_type", "document_id"], "verdict": "NO scores \u2014 config silently dropped by CHUNKS_LEXICAL registry"}
+
+[2m2026-09-25T10:48:41.653988[0m [[32m[1minfo     [0m] [1mInitializing LexicalRetriever by loading DocumentChunks from graph engine[0m [[0m[1m[34mLexicalRetriever[0m][0m
+
+[2m2026-09-25T10:48:41.671849[0m [[32m[1minfo     [0m] [1mInitialized with 5 document chunks[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] direct BM25ChunksRetriever chunk load
+    {"chunks_loaded_in_user_scope": 5}
+
+[2m2026-09-25T10:48:41.671849[0m [[32m[1minfo     [0m] [1mRetrieved 5/5 chunks for query (len=1)[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] direct with_scores + threshold 0.1: real token (0.00s)
+    {"scored_hits": [{"score": 0.8533, "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekada"}, {"score": 0.8533, "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum "}, {"score": 0.0, "text": "The proposal PROPOSAL-2026-091 was rejected by Farid ke
+
+[2m2026-09-25T10:48:41.673865[0m [[32m[1minfo     [0m] [1mRetrieved 5/5 chunks for query (len=1)[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] direct with_scores + threshold 0.1: nonsense token (0.00s)
+    {"scored_hits": [{"score": 0.0, "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak\nmahu jadual terperinci; cukup sekada"}, {"score": 0.0, "text": "PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan\nlagi pada Jumaat. Masa kekal sebelum "}, {"score": 0.0, "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana b
+
+[2m2026-09-25T10:48:41.673865[0m [[32m[1minfo     [0m] [1mRetrieved 5/5 chunks for query (len=3)[0m [[0m[1m[34mLexicalRetriever[0m][0m
+[OBSERVED] direct with_scores + threshold 0.1: mixed id (0.00s)
+    {"scored_hits": [{"score": 4.2263, "text": "The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data\nmemory dapat dipadam oleh pengguna se"}, {"score": 0.9319, "text": "Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew\nuntuk semua warga semasa gerhana itu b"}, {"score": 0.0, "text": "Nurul lebih suka ringkasan mingguan setiap Jumaat sebel
+
+[2m2026-09-25T10:48:41.701560[0m [[32m[1minfo     [0m] [1mRetrieved 38 nodes and 38 edges in 0.02 seconds[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+[OBSERVED] gliner_demo entities extracted from Malay corpus
+    {"node_count": 38, "edge_count": 38, "sample_entity_texts": ["2026-09-15", "5 petang", "aetheria council", "curfew", "data memory", "farid kerana", "hari khamis", "jumaat", "majlis serambi", "my-001", "nurul", "proposal-2026-091", "setiap jumaat sebelum pukul 5 petang", "text_63857492ac7ac5757abcd155df6bfc2d", "text_75b909c4faea4e422c11557223d6d11e", "text_c3fa690385b304ca30c9410ce1799d6a", "text_
+[UNTESTED] suitability verdict inputs
+    {"note": "semantic cross-lingual quality and Malay extraction quality are reported as observations on bge-small-en-v1.5 + gliner2.5-base-v1; no non-English embedding/extraction model was benchmarked side-by-side"}
+[+  192.39s] record saved -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\clean-checkout\proof\results\battery_07_malay.json

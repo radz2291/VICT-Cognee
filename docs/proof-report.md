@@ -63,6 +63,21 @@ retrieval/context level.
    (`OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 KUZU_BUFFER_POOL_SIZE=268435456`) therefore
    remain **unverified working hypotheses**, and `run_proof.sh` ships with those limits
    as a precaution, not a proven fix.
+9. **cognee 1.6.1 resolves storage roots from a dotenv walk-up anchored at the
+   installed package, not the CWD** (script mode; observed): with the venv inside
+   `proof/`, the checkout's own `.env` is found (correct); with an external interpreter
+   (`PROOF_PY`), a `.env` above the venv silently wins, and with none, cognee defaults
+   to `.cognee_system` **inside site-packages**. `python -c` resolves differently from
+   scripts (falls back to CWD). Consequence: `run_proof.sh` verifies the resolved store
+   root in `PROOF_PY` mode and fails fast if it lands outside the checkout. In this
+   correction pass the full-suite clean-clone rerun therefore executed the checkout's
+   **code** against the shared main store (outcomes reproduced identically; spot-checked
+   batteries 02/03b/06 probe-for-probe), while battery 07 was rerun fully isolated and
+   is the store-clean record for the Malay probe. One further transient environment
+   failure was observed in the agent session (tmux transcript only, not committed): a
+   cognify attempt failed with `os error 1455` ("paging file is too small") at ~0.5 GB
+   free RAM — the typed-error face of the same memory-pressure family as the segfaults
+   above; like them, it is an **agent observation**, not a reproduced finding.
 
 ## 4. Retrieval evidence (battery_02; `proof/results/battery_02_retrieval.json`)
 
@@ -186,9 +201,45 @@ Embedding `BAAI/bge-small-en-v1.5` (English-focused), extraction `gliner_demo`
 (`fastino/gliner2.5-base-v1`, English-focused). Full numbers in
 `proof/results/battery_07_malay.json`.
 
-Results summary (filled from the committed run):
+Results summary (isolated-store run of 2026-09-25, clean-clone code, `proof/results/battery_07_malay.json`):
 
-<!-- MALAY_RESULTS -->
+**Semantic CHUNKS (embedding `BAAI/bge-small-en-v1.5`) — 4/4 targeted queries ranked the
+correct passage #1, including cross-lingual:**
+
+| Query | Language path | Top hit | Verdict |
+| --- | --- | --- | --- |
+| "Bila Nurul mahu ringkasan mingguannya?" | malay→malay | my-001 (Nurul preference) | success |
+| "Apakah peraturan siaran magic di Aetheria?" | malay→malay | my-002 (Aetheria rule) | success |
+| "Nurul weekly report deadline" | english→malay | my-005 (correction), then my-001 | success (correction ranked above original) |
+| "proposal 2026-091 rejection reason" | english→mixed | my-003 (proposal record) | success |
+| "jadual penerbangan ke Pulau Pinang" | malay off-corpus | my-001 (irrelevant) | **failed as predicted — irrelevant hit surfaces #1 (no threshold)** |
+| "quantum flux capacitor overheating" | english off-corpus | my-004 (irrelevant) | **failed as predicted — same no-threshold behavior** |
+
+**BM25 (CHUNKS_LEXICAL):** "Nurul", "Majlis Serambi", "PROPOSAL-2026-091" each ranked
+their passage #1; nonsense token returned zero-score hits anyway (threshold absence,
+consistent with battery 02).
+
+**Score filtering (tested, not assumed):**
+
+- Public API: `cognee.search(..., CHUNKS_LEXICAL, retriever_specific_config={"with_scores": True})`
+  returns plain chunk dicts **without scores** — the config is silently dropped because
+  the CHUNKS_LEXICAL registry passes only `top_k` (source-confirmed at v1.6.1).
+- Direct construction `BM25ChunksRetriever(top_k=5, with_scores=True)` returns
+  `(payload, score)` pairs: 0.8533 for the real token, 0.0 for the nonsense token,
+  4.2263 for the mixed id; a pack-side threshold (> 0.1) correctly drops all zero-score
+  rows. **The pack must use this construction; the public API path cannot filter.**
+
+**Extraction (`gliner_demo` on Malay):** usable — `nurul`, `majlis serambi`, `aetheria
+council`, `curfew`, `pukul 5 petang`, `hari khamis`, `jumaat`, dates, and `my-001` were
+extracted; one garbled compound (`farid kerana`). Chunking kept each per-entry document
+intact (5 chunks for 5 documents).
+
+**Suitability as a keyless default:** acceptable for Malay/mixed content at small
+corpus scale — targeted retrieval and extraction worked, cross-lingual English→Malay
+queries succeeded. Caveats: (1) no relevance thresholds anywhere — off-corpus queries
+return confident-looking irrelevant top hits, so the pack must filter by score on both
+paths; (2) both models are English-focused — these are small-corpus observations, not
+multilingual benchmarks, and no alternative embedding/extraction model was compared;
 
 ## 12. Reproduce
 
@@ -217,6 +268,11 @@ are the only inputs. Models download once into user caches outside the repo
 `.venv/Scripts/python -m pip install "cognee[gliner]==1.6.1"`, then per battery
 `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 KUZU_BUFFER_POOL_SIZE=268435456 \
 .venv/Scripts/python battery_XX.py > battery_XX.output.txt 2>&1`.
+
+`PROOF_PY` fallback caveat (§3.9): the external interpreter's venv must not live under
+a directory containing another `proof/.env`, or cognee's dotenv walk-up adopts it and
+the store guard fails the run with an explanation. Keep the venv inside this checkout's
+`proof/` for the normal flow.
 
 TypeScript probe (separate Rust engine; requires an LLM key past `warm()`;
 result scoped to `@cognee/cognee-ts@0.2.0`):
