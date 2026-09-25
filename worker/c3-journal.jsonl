@@ -1,0 +1,12 @@
+{"state": "begun", "key": "k-qa-alpha-1", "op": "add", "dataset": "qa__alpha", "items_before": 0, "started_at": 1790353442.5177007, "pid": 8124}
+{"state": "completed", "key": "k-qa-alpha-1", "op": "add", "dataset": "qa__alpha", "items_before": 0, "items_after": 1, "started_at": 1790353442.4223804, "completed_at": 1790353457.1742306, "pid": 8124}
+{"state": "begun", "key": "k-qa-alpha-c1", "op": "cognify", "dataset": "qa__alpha", "items_before": 1, "started_at": 1790353457.2913973, "pid": 8124}
+{"state": "completed", "key": "k-qa-alpha-c1", "op": "cognify", "dataset": "qa__alpha", "items_before": 1, "items_after": 1, "started_at": 1790353457.2435973, "completed_at": 1790353475.3119073, "pid": 8124}
+{"state": "begun", "key": "k-delay-1", "op": "add", "dataset": "qa__delayed", "items_before": 0, "started_at": 1790353475.7608752, "pid": 8124}
+{"state": "completed", "key": "k-delay-1", "op": "add", "dataset": "qa__delayed", "items_before": 0, "items_after": 1, "started_at": 1790353488.2435193, "completed_at": 1790353502.576686, "pid": 5460}
+{"state": "begun", "key": "k-delay-c1", "op": "cognify", "dataset": "qa__delayed", "items_before": 1, "started_at": 1790353503.0578537, "pid": 5460}
+{"state": "completed", "key": "k-delay-c1", "op": "cognify", "dataset": "qa__delayed", "items_before": 1, "items_after": 1, "started_at": 1790353517.839126, "completed_at": 1790353681.5686257, "pid": 2436}
+{"state": "begun", "key": "k-zeta-1", "op": "add", "dataset": "zeta__bravo", "items_before": 0, "started_at": 1790353681.964662, "pid": 2436}
+{"state": "completed", "key": "k-zeta-1", "op": "add", "dataset": "zeta__bravo", "items_before": 0, "items_after": 1, "started_at": 1790353681.9487104, "completed_at": 1790353682.5818954, "pid": 2436}
+{"state": "begun", "key": "k-zeta-c1", "op": "cognify", "dataset": "zeta__bravo", "items_before": 1, "started_at": 1790353682.7246046, "pid": 2436}
+{"state": "completed", "key": "k-zeta-c1", "op": "cognify", "dataset": "zeta__bravo", "items_before": 1, "items_after": 1, "started_at": 1790353682.6453614, "completed_at": 1790353691.4468255, "pid": 2436}

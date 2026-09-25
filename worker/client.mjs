@@ -50,6 +50,7 @@ export class WorkerClient {
   spawnChild() {
     const args = [this.workerPath];
     for (const ns of this.opts.namespaces) args.push('--allow-ns', ns);
+    if (this.opts.storeRoot) args.push('--store-root', this.opts.storeRoot);
     this.child = spawn(this.pythonPath, args, {
       cwd: this.opts.cwd,
       env: { ...process.env, PYTHONUNBUFFERED: '1' },
@@ -144,7 +145,8 @@ export class WorkerClient {
   }
 
   /** One serialized op with deadline; mutating timeout => unknown outcome. */
-  request(op, params = {}, { deadlineMs = 120_000, mutating = false, retryKey = null } = {}) {
+  request(op, params = {}, { deadlineMs = 120_000, mutating = false,
+    idempotencyKey = null } = {}) {
     const run = async () => {
       await this._lifecycle();
       const id = String(this.nextId++);
@@ -155,7 +157,7 @@ export class WorkerClient {
             this.poisoned = true; // §7.2: kill + respawn before next request
             reject(new WorkerError('COGNEE_WRITE_UNKNOWN',
               `mutating op '${op}' exceeded ${deadlineMs}ms deadline; outcome unknown`,
-              { op, retryKey: retryKey ?? params.retryKey ?? null,
+              { op, idempotencyKey: idempotencyKey ?? params.idempotencyKey ?? null,
                 datasetName: params.datasetName }));
           } else {
             reject(new WorkerError('CLIENT_DEADLINE',

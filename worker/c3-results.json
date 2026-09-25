@@ -1,32 +1,70 @@
 {
   "proof": "c3-worker-contract",
-  "started": "2026-09-25T14:28:18.802Z",
-  "duration_s": 174,
+  "store": "fresh (proof/.cognee-c3)",
+  "started": "2026-09-25T16:23:51.795Z",
+  "duration_s": 300,
   "results": [
     {
       "id": "s1",
-      "name": "startup guard + ready",
+      "name": "startup guard + ready (fresh store)",
       "outcome": "PASS",
       "detail": {
-        "protocol": "vict-cognee-worker/2",
-        "import_ms": 22849,
+        "protocol": "vict-cognee-worker/3",
+        "import_ms": 10205,
         "namespaces": [
           "qa",
           "zeta"
         ],
+        "storeRoot": "C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-c3",
         "rss_mb": 329
       },
-      "ms": 23312
+      "ms": 10627
     },
     {
       "id": "s2",
-      "name": "scoped write + search returns candidates",
+      "name": "add fresh-execution with item counts",
+      "outcome": "PASS",
+      "detail": {
+        "datasetName": "qa.alpha",
+        "idempotencyKey": "k-qa-alpha-1",
+        "reconciled": "fresh-execution",
+        "itemsBefore": 0,
+        "itemsAfter": 1,
+        "deduplicated": false,
+        "duration_ms": 14750
+      },
+      "ms": 14755
+    },
+    {
+      "id": "s2",
+      "name": "same key replays known outcome (no re-exec)",
+      "outcome": "PASS",
+      "detail": {
+        "datasetName": "qa.alpha",
+        "idempotencyKey": "k-qa-alpha-1",
+        "reconciled": "replayed-known-outcome",
+        "itemsBefore": 0,
+        "itemsAfter": 1,
+        "deduplicated": false,
+        "duration_ms": 8
+      },
+      "ms": 11
+    },
+    {
+      "id": "s2",
+      "name": "scoped chunk search returns declared fields",
       "outcome": "PASS",
       "detail": {
         "total": 1,
-        "firstScore": 0.22952473163604736
+        "hitFields": [
+          "text",
+          "score",
+          "datasetName"
+        ],
+        "firstScore": 0.25775325298309326,
+        "truncated": false
       },
-      "ms": 32111
+      "ms": 18492
     },
     {
       "id": "s3",
@@ -36,7 +74,7 @@
         "expected": "COGNEE_SCOPE_REJECTED",
         "got": "COGNEE_SCOPE_REJECTED: namespace 'evil' is not granted (allowed: ['qa', 'zeta'])"
       },
-      "ms": 4
+      "ms": 3
     },
     {
       "id": "s3",
@@ -46,7 +84,7 @@
         "expected": "COGNEE_SCOPE_REJECTED",
         "got": "COGNEE_SCOPE_REJECTED: request is unscoped: datasetName is required"
       },
-      "ms": 3
+      "ms": 2
     },
     {
       "id": "s3",
@@ -55,6 +93,39 @@
       "detail": {
         "expected": "COGNEE_SCOPE_REJECTED",
         "got": "COGNEE_SCOPE_REJECTED: namespace 'evil' is not granted (allowed: ['qa', 'zeta'])"
+      },
+      "ms": 2
+    },
+    {
+      "id": "s3",
+      "name": "unkeyed write rejected (VICT blocks unkeyed replay)",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_PARAMS_REJECTED",
+        "got": "COGNEE_PARAMS_REJECTED: add requires idempotencyKey (VICT CapabilityContext.idempotencyKey)"
+      },
+      "ms": 2
+    },
+    {
+      "id": "s3",
+      "name": "datasetsStatus hides pre-existing out-of-domain datasets",
+      "outcome": "PASS",
+      "detail": {
+        "listed": [
+          "qa.alpha"
+        ],
+        "hiddenDatasets": 2,
+        "leaks": 0
+      },
+      "ms": 0
+    },
+    {
+      "id": "s3",
+      "name": "pre-existing out-of-ns search rejected",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_SCOPE_REJECTED",
+        "got": "COGNEE_SCOPE_REJECTED: namespace 'outside' is not granted (allowed: ['qa', 'zeta'])"
       },
       "ms": 3
     },
@@ -69,40 +140,59 @@
       "name": "delayed add -> deadline expiry -> outcome unknown",
       "outcome": "PASS",
       "detail": {
-        "retryKey": "k-delay-1"
+        "idempotencyKey": "k-delay-1"
       },
-      "ms": 804
+      "ms": 401
     },
     {
       "id": "s4",
-      "name": "reconciliation: post-timeout observation (worker respawned)",
+      "name": "reissue after interruption (durable journal)",
       "outcome": "PASS",
       "detail": {
-        "delayedExists": true,
-        "respawns": 1,
-        "datasets": [
-          "c2_alpha",
-          "c2_beta",
-          "c2_does_not_exist",
-          "c2_worker_demo",
-          "qa.alpha",
-          "qa.alpha",
-          "qa.delayed",
-          "residue",
-          "zeta.bravo",
-          "zz.probe"
-        ]
+        "datasetName": "qa.delayed",
+        "idempotencyKey": "k-delay-1",
+        "reconciled": "reissued-after-interruption",
+        "itemsBefore": 0,
+        "itemsAfter": 1,
+        "deduplicated": false,
+        "duration_ms": 14335
       },
-      "ms": 24193
+      "ms": 26464
     },
     {
       "id": "s4",
-      "name": "keyed re-issue reconciles to one dataset",
+      "name": "post-reissue same key replays known outcome",
       "outcome": "PASS",
       "detail": {
-        "qaDelayedCount": 1
+        "datasetName": "qa.delayed",
+        "idempotencyKey": "k-delay-1",
+        "reconciled": "replayed-known-outcome",
+        "itemsBefore": 0,
+        "itemsAfter": 1,
+        "deduplicated": false,
+        "duration_ms": 12
       },
-      "ms": 29783
+      "ms": 25
+    },
+    {
+      "id": "s4",
+      "name": "cognify interrupted -> outcome unknown",
+      "outcome": "PASS",
+      "detail": {
+        "idempotencyKey": "k-delay-c1"
+      },
+      "ms": 4009
+    },
+    {
+      "id": "s4",
+      "name": "cognify reissue converges (graph searchable after interruption)",
+      "outcome": "PASS",
+      "detail": {
+        "reconciled": "reissued-after-interruption",
+        "itemsAfter": 1,
+        "searchTotal": 3
+      },
+      "ms": 175305
     },
     {
       "id": "s5",
@@ -112,14 +202,14 @@
         "expected": "COGNEE_DATASET_UNKNOWN",
         "got": "COGNEE_DATASET_UNKNOWN: DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'qa__does_not_exist'. Dataset names resolve only among the datasets you ow"
       },
-      "ms": 49
+      "ms": 28
     },
     {
       "id": "s6",
       "name": "second-namespace dataset cognified",
       "outcome": "PASS",
       "detail": {},
-      "ms": 2038
+      "ms": 9507
     },
     {
       "id": "s6",
@@ -128,19 +218,29 @@
       "detail": {
         "total": 1
       },
-      "ms": 675
+      "ms": 585
     },
     {
       "id": "s6",
-      "name": "scoped summaries: namespace isolation",
+      "name": "scoped summaries: BOTH sides populated + isolation",
       "outcome": "PASS",
       "detail": {
         "qa_total": 1,
-        "zeta_total": 0,
+        "zeta_total": 1,
         "qaLeak": false,
-        "zetaLeak": false
+        "zetaLeak": false,
+        "qaFields": [
+          "text",
+          "score",
+          "datasetName"
+        ],
+        "zetaFields": [
+          "text",
+          "score",
+          "datasetName"
+        ]
       },
-      "ms": 989
+      "ms": 922
     },
     {
       "id": "s7",
@@ -150,7 +250,7 @@
         "expected": "COGNEE_PARAMS_REJECTED",
         "got": "COGNEE_PARAMS_REJECTED: topK must be an integer in 1..25"
       },
-      "ms": 4
+      "ms": 3
     },
     {
       "id": "s7",
@@ -160,7 +260,7 @@
         "expected": "COGNEE_PARAMS_REJECTED",
         "got": "COGNEE_PARAMS_REJECTED: datasets must be a list of 1..8 names"
       },
-      "ms": 3
+      "ms": 4
     },
     {
       "id": "s7",
@@ -177,7 +277,7 @@
         "filesBefore": 2,
         "filesAfter": 0
       },
-      "ms": 1483
+      "ms": 33621
     },
     {
       "id": "s8",
@@ -187,17 +287,17 @@
         "expected": "COGNEE_DATASET_UNKNOWN",
         "got": "COGNEE_DATASET_UNKNOWN: DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'qa__delayed'. Dataset names resolve only among the datasets you own in th"
       },
-      "ms": 76
+      "ms": 46
     },
     {
       "id": "s9",
       "name": "clean shutdown",
       "outcome": "PASS",
       "detail": {
-        "stderrLines": 164,
-        "respawns": 2
+        "stderrLines": 274,
+        "respawns": 3
       },
-      "ms": 512
+      "ms": 517
     }
   ]
 }

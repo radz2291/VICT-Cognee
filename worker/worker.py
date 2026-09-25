@@ -1,23 +1,30 @@
-"""Disposable cognee worker v2 for the C3 pack-contract proof (NOT a VICT pack).
+"""Disposable cognee worker v3 for the C3 pack-contract proof (NOT a VICT pack).
 
-Aligned to docs/c3-pack-contract.md §9/§11:
+Aligned to docs/c3-pack-contract.md (§7/§9/§11):
   - stdout carries bounded NDJSON protocol messages ONLY (<= 1 MiB/line);
     all diagnostics go to stderr and are never parsed by the client.
   - Environment pins are set by the worker itself BEFORE cognee is imported
     (vector/graph subprocess layers disabled: killed workers would otherwise
     orphan fork holders of ladybug locks; single-thread + bounded kuzu pool).
   - Storage guard (proof/guard_store_roots.py) fail-closes at startup unless
-    every destructive root resolves inside the pack-owned system root.
-  - Namespace scope enforcement at the interface: every request must carry a
-    dataset address `<ns>.<name>` with ns in the --allow-ns list; unscoped or
-    out-of-namespace requests are rejected (COGNEE_SCOPE_REJECTED) BEFORE any
-    cognee call. top_k is bounded (1..25); responses are bounded with a
-    truncated flag instead of growing unbounded.
-  - Mutating ops are never internally retried; cognify resolves dataset
-    existence first (cognee 1.6.1 cognify on a missing dataset is a silent
-    no-op) and fails COGNEE_DATASET_UNKNOWN.
-  - One op at a time; each op runs in its own asyncio task (cognee's dataset
-    context is a ContextVar that persists across ops in one task).
+    every destructive root resolves inside the --store-root boundary.
+  - Trust boundary: ONE worker per store (one trust domain); namespace scope
+    enforcement at the interface is a SAFETY RAIL, not per-actor authorization.
+    datasetsStatus is scope-filtered: it never lists datasets whose interface
+    address is not `<granted-ns>.<name>`.
+  - Durable keyed reconciliation (VICT idempotencyKey): every add/cognify
+    carries an idempotencyKey (VICT derives one per logical invocation and
+    replays keyed writes with the same key). The worker journals begin/commit
+    records (fsync) inside the store:
+      * completed entry  -> replay recorded outcome, NO re-execution;
+      * begun w/o commit -> previous attempt did not durably complete;
+        outcome unknown -> re-execute (convergent: cognee content-hash dedupe
+        for add; pipeline run status for cognify) and commit fresh counts;
+      * no entry         -> fresh execution.
+    Every response carries item-level counts (itemsBefore/itemsAfter).
+    forget_dataset is NEVER journaled and NEVER auto-retried.
+  - Every worker death with a pending mutation is an unknown outcome (client
+    kills + respawns; the journal makes the reissue reconcile).
 
 Request:  {"id": "<n>", "op": "add|cognify|search_chunks|search_summaries|
            datasets_status|forget_dataset|status|ping|shutdown", ...params}
@@ -43,8 +50,18 @@ os.environ.setdefault("KUZU_BUFFER_POOL_SIZE", "268435456")
 import argparse
 import asyncio
 import hashlib
-import pathlib  # noqa: F401 (used via __import__ below)
+import pathlib
 import re
+
+# ---- explicit dotenv (C1 finding #9: cognee's own load_dotenv() walks up from
+# site-packages and with override=True clobbers process env — neutralize it and
+# load OUR env file explicitly, anchored to the worker's cwd) ----------------
+_ENV_FILE = pathlib.Path.cwd() / ".env"
+import dotenv
+
+_orig_load_dotenv = dotenv.load_dotenv
+dotenv.load_dotenv = lambda *a, **k: False   # neutralize cognee's walk-up load
+_orig_load_dotenv(str(_ENV_FILE), override=True)  # explicit, cwd-anchored
 
 MAX_LINE = 1024 * 1024            # 1 MiB bound on any single protocol line
 MAX_TOP_K = 25                    # contract §4 bound
@@ -52,6 +69,7 @@ MAX_DATASETS = 8                  # per search request
 MAX_CONTENT_CHARS = 512_000
 MAX_QUERY_CHARS = 2_000
 NAME_RE = re.compile(r"^[^.\s]+\.[^.\s]+$")
+JOURNAL_NAME = "c3_idempotency_journal.jsonl"
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "proof"))
 
@@ -82,7 +100,7 @@ def _rss_bytes() -> int:
                             ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
                             ("QuotaPagedPoolUsage", ctypes.c_size_t),
                             ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
-                            ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                            ("QuotaPagedPoolUsage", ctypes.c_size_t),
                             ("PagefileUsage", ctypes.c_size_t),
                             ("PeakPagefileUsage", ctypes.c_size_t)]
 
@@ -106,10 +124,6 @@ def _emit(obj: dict) -> None:
 
 def _dlog(msg: str) -> None:
     print(f"[worker] {msg}", file=sys.stderr, flush=True)
-
-
-def content_key(*parts: str) -> str:
-    return hashlib.sha256("\x00".join(parts).encode("utf-8")).hexdigest()[:32]
 
 
 def to_cognee_name(addr: str) -> str:
@@ -145,46 +159,162 @@ class Scope:
             self.check_name(d)
         return datasets
 
+    def filter_names(self, stored_names: list[str]) -> tuple[list[dict], int]:
+        """Scope-filter a listing of stored cognee names for datasetsStatus.
 
-def _store_files(dataset_id: str):
-    root = pathlib.Path(os.environ.get("SYSTEM_ROOT_DIRECTORY",
-                                       ".cognee/system")) / "databases"
-    return [str(p) for p in root.rglob(f"{dataset_id}.*")]
+        A stored name is exposed ONLY if it maps to '<granted-ns>.<name>'.
+        Everything else (pre-existing un-namespaced datasets, datasets of
+        non-granted namespaces) is HIDDEN — counted, never named. This is a
+        store-safety rail for the one-store-per-trust-domain deployment; it is
+        NOT per-actor authorization.
+        """
+        kept: list[dict] = []
+        hidden = 0
+        for stored in stored_names:
+            ns, sep, rest = stored.partition("__")
+            if sep and ns in self.namespaces and rest:
+                kept.append({"name": f"{ns}.{rest}"})
+            else:
+                hidden += 1
+        return kept, hidden
 
 
-async def resolve_datasets(names: list[str]):
+class IdempotencyJournal:
+    """Durable begin/commit journal for mutating ops (VICT keyed writes).
+
+    Layout: one JSON line per record, fsynced, inside the guarded system root:
+      {"state": "begun", "key", "op", "dataset", "items_before", "started_at"}
+      {"state": "completed", "key", "op", "dataset", "items_before",
+       "items_after", "started_at", "completed_at", "duration_ms"}
+    The latest record for a key decides reconciliation.
+    """
+
+    def __init__(self, path: str):
+        self.path = path
+
+    def find(self, key: str) -> dict | None:
+        """Latest durable record for key, or None."""
+        found = None
+        try:
+            with open(self.path, "r", encoding="utf-8") as fh:
+                for line in fh:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rec = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue  # torn tail write: treat as absent
+                    if rec.get("key") == key:
+                        found = rec
+        except FileNotFoundError:
+            return None
+        return found
+
+    def _append(self, rec: dict) -> None:
+        line = json.dumps(rec, default=str)
+        with open(self.path, "a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+            fh.flush()
+            os.fsync(fh.fileno())
+
+    def begin(self, key: str, op: str, dataset: str, items_before: int) -> None:
+        self._append({"state": "begun", "key": key, "op": op, "dataset": dataset,
+                      "items_before": items_before, "started_at": time.time(),
+                      "pid": os.getpid()})
+
+    def commit(self, key: str, op: str, dataset: str, items_before: int,
+               items_after: int, started_at: float) -> None:
+        self._append({"state": "completed", "key": key, "op": op,
+                      "dataset": dataset, "items_before": items_before,
+                      "items_after": items_after, "started_at": started_at,
+                      "completed_at": time.time(), "pid": os.getpid()})
+
+
+async def resolve_datasets(names: list[str], strict: bool = True):
     """Strict per-principal resolution; raises cognee's typed errors for
     unknown/cross-user names (mapped to COGNEE_DATASET_UNKNOWN by caller)."""
     from cognee.modules.data.methods import get_authorized_existing_datasets
     from cognee.modules.users.methods import get_default_user
 
     user = await get_default_user()
-    return await get_authorized_existing_datasets(names, "read", user, strict=True)
+    return await get_authorized_existing_datasets(names, "read", user, strict=strict)
 
 
-def _bound_search(res, top_k: int):
-    """Normalize cognee search output and bound it (contract §4)."""
+async def count_items(dataset_id) -> int:
+    """Item-level count of a dataset's data rows (cognee registry)."""
+    from cognee.modules.data.methods import get_dataset_data
+
+    try:
+        rows = await get_dataset_data(dataset_id)
+        return len(rows or [])
+    except Exception:  # noqa: BLE001 — counting must never crash a response
+        return -1
+
+
+async def _items_for_dataset_name(cognee_name: str) -> tuple[int, object | None]:
+    """(items, dataset_row|None) — non-strict resolution for journal counts."""
+    try:
+        rows = await resolve_datasets([cognee_name], strict=False)
+    except Exception:  # noqa: BLE001
+        return 0, None
+    if not rows:
+        return 0, None
+    return await count_items(rows[0].id), rows[0]
+
+
+def _system_root() -> str:
+    from cognee.base_config import get_base_config
+
+    return get_base_config().system_root_directory
+
+
+def _store_files(dataset_id: str):
+    root = os.path.join(_system_root(), "databases")
+    return [str(p) for p in pathlib.Path(root).rglob(f"{dataset_id}.*")]
+
+
+def _bound_search(res, top_k: int, dataset_names: list[str]):
+    """Normalize cognee search output and bound it (contract §4/§6).
+
+    Declared hit fields are only those the worker can actually produce:
+      text, score (raw cosine distance, LOWER = BETTER) and — only for
+      single-dataset searches — datasetName. Any further chunk-payload fields
+      are NOT part of the contract and are dropped.
+    """
     rows = json.loads(json.dumps(res, default=str))
-    truncated = False
+    flat: list[dict] = []
     if isinstance(rows, list) and rows and isinstance(rows[0], dict) \
             and "search_result" in rows[0]:
-        count = 0
         for group in rows:
-            sr = group.get("search_result") or []
-            if len(sr) > top_k:
-                group["search_result"] = sr[:top_k]
-                truncated = True
-            count += len(group["search_result"])
-        return {"shape": "grouped", "groups": rows, "total": count,
-                "truncated": truncated}
-    if isinstance(rows, list):
-        truncated = len(rows) > top_k
-        return {"shape": "flat", "hits": rows[:top_k], "total": min(len(rows), top_k),
-                "truncated": truncated}
-    return {"shape": "other", "raw": rows, "total": 0, "truncated": False}
+            flat.extend(group.get("search_result") or [])
+    elif isinstance(rows, list):
+        flat = rows
+    else:
+        return {"hits": [], "total": 0, "truncated": False,
+                "rawShape": type(res).__name__}
+    truncated = len(flat) > top_k
+    hits = []
+    for row in flat[:top_k]:
+        if not isinstance(row, dict):
+            hits.append({"text": str(row)[:500]})
+            continue
+        hit: dict = {}
+        text = row.get("text") or row.get("summary") or row.get("name")
+        if isinstance(text, str):
+            hit["text"] = text[:4000]
+        if "score" in row:
+            try:
+                hit["score"] = float(row["score"])
+            except (TypeError, ValueError):
+                pass
+        if len(dataset_names) == 1:
+            hit["datasetName"] = dataset_names[0]
+        hits.append(hit)
+    return {"hits": hits, "total": len(hits), "truncated": truncated}
 
 
-async def dispatch(op: str, p: dict, scope: Scope):
+async def dispatch(op: str, p: dict, scope: Scope, journal: IdempotencyJournal):
     import cognee
     from cognee.modules.search.types import SearchType
 
@@ -194,30 +324,62 @@ async def dispatch(op: str, p: dict, scope: Scope):
         return {"rss_bytes": _rss_bytes(), "ops_served": p.get("_ops_served", 0),
                 "pid": os.getpid()}
 
-    if op == "add":
-        scope.check_name(p.get("datasetName") or p.get("dataset"))
-        content = p.get("content") or p.get("text")
-        if not isinstance(content, str) or not content:
-            raise ParamsViolation("add requires non-empty content")
-        if len(content) > MAX_CONTENT_CHARS:
-            raise ParamsViolation(f"content exceeds {MAX_CONTENT_CHARS} chars")
-        dataset = p["datasetName"] if "datasetName" in p else p["dataset"]
-        t = time.perf_counter()
-        res = await cognee.add(content, dataset_name=to_cognee_name(dataset))
-        return {"datasetName": dataset,
-                "retryKey": p.get("retryKey") or content_key(dataset, content),
-                "returned": repr(res)[:200],
-                "duration_ms": int((time.perf_counter() - t) * 1000)}
-
-    if op == "cognify":
+    if op in ("add", "cognify"):
+        # ---- interface checks BEFORE any cognee call -----------------------
         scope.check_name(p.get("datasetName") or (p.get("datasets") or [None])[0])
         dataset = p.get("datasetName") or p["datasets"][0]
-        await resolve_datasets([to_cognee_name(dataset)])  # precheck: silent no-op otherwise (C2)
+        key = p.get("idempotencyKey")
+        # VICT passes a deterministic idempotencyKey for keyed writes; the
+        # kernel BLOCKS replay of unkeyed writes, so the interface requires one.
+        if not isinstance(key, str) or not key:
+            raise ParamsViolation(
+                f"{op} requires idempotencyKey (VICT CapabilityContext.idempotencyKey)")
+
+        cognee_name = to_cognee_name(dataset)
+        if op == "cognify":
+            # existence precheck BEFORE journaling: cognee 1.6.1 cognify on a
+            # missing dataset is a silent no-op (C2) — neutralize first
+            await resolve_datasets([cognee_name], strict=True)
+        started_at = time.time()
         t = time.perf_counter()
-        res = await cognee.cognify(datasets=[to_cognee_name(dataset)])
-        return {"datasetName": dataset,
-                "retryKey": p.get("retryKey") or content_key("cognify", dataset),
-                "returned": repr(res)[:200],
+
+        # ---- durable reconciliation ----------------------------------------
+        prior = journal.find(key)
+        if prior and prior.get("state") == "completed":
+            return {"datasetName": dataset, "idempotencyKey": key,
+                    "reconciled": "replayed-known-outcome",
+                    "itemsBefore": prior.get("items_before"),
+                    "itemsAfter": prior.get("items_after"),
+                    "deduplicated": prior.get("items_after") ==
+                                    prior.get("items_before"),
+                    "duration_ms": int((time.perf_counter() - t) * 1000)}
+
+        if prior and prior.get("state") == "begun":
+            # Previous attempt did not durably complete (worker death / lost
+            # process). Outcome unknown -> re-execute (convergent), then commit.
+            reconciled = "reissued-after-interruption"
+            items_before = prior.get("items_before", 0)
+        else:
+            reconciled = "fresh-execution"
+            items_before, _row = await _items_for_dataset_name(cognee_name)
+            journal.begin(key, op, cognee_name, items_before)
+
+        if op == "add":
+            content = p.get("content") or p.get("text")
+            if not isinstance(content, str) or not content:
+                raise ParamsViolation("add requires non-empty content")
+            if len(content) > MAX_CONTENT_CHARS:
+                raise ParamsViolation(f"content exceeds {MAX_CONTENT_CHARS} chars")
+            await cognee.add(content, dataset_name=cognee_name)
+        else:  # cognify (precheck already done above)
+            await cognee.cognify(datasets=[cognee_name])
+
+        items_after, _row = await _items_for_dataset_name(cognee_name)
+        journal.commit(key, op, cognee_name, items_before, items_after, started_at)
+        return {"datasetName": dataset, "idempotencyKey": key,
+                "reconciled": reconciled, "itemsBefore": items_before,
+                "itemsAfter": items_after,
+                "deduplicated": items_after == items_before,
                 "duration_ms": int((time.perf_counter() - t) * 1000)}
 
     if op in ("search_chunks", "search_summaries"):
@@ -236,7 +398,7 @@ async def dispatch(op: str, p: dict, scope: Scope):
         res = await cognee.search(query_text=query, query_type=stype,
                                   datasets=[to_cognee_name(d) for d in datasets],
                                   top_k=top_k)
-        out = _bound_search(res, top_k)
+        out = _bound_search(res, top_k, datasets)
         out["datasets"] = datasets
         out["duration_ms"] = int((time.perf_counter() - t) * 1000)
         return out
@@ -247,11 +409,13 @@ async def dispatch(op: str, p: dict, scope: Scope):
 
         user = await get_default_user()
         rows = await get_authorized_existing_datasets(None, "read", user)
-        listing = [{"name": from_cognee_name(r.name), "datasetId": str(r.id)}
-                   for r in rows]
-        return {"datasets": sorted(listing, key=lambda d: d["name"]), "key": "all"}
+        kept, hidden = scope.filter_names([r.name for r in rows])
+        return {"datasets": sorted(kept, key=lambda d: d["name"]),
+                "hiddenDatasets": hidden, "namespaces": scope.namespaces}
 
     if op == "forget_dataset":
+        # irreversible: journaled NEVER, auto-retried NEVER. An interrupted
+        # forget is an unknown outcome reconciled by observation only.
         scope.check_name(p.get("datasetName"))
         dataset = p["datasetName"]
         (dsrow,) = await resolve_datasets([to_cognee_name(dataset)])
@@ -261,7 +425,6 @@ async def dispatch(op: str, p: dict, scope: Scope):
         res = await cognee.forget(dataset=to_cognee_name(dataset))
         after = _store_files(ds_id)
         return {"datasetName": dataset, "datasetId": ds_id,
-                "returned": repr(res)[:200],
                 "storeFilesBefore": len(before), "storeFilesAfter": len(after),
                 "purged": "file-level" if before and not after else "not-observed",
                 "duration_ms": int((time.perf_counter() - t) * 1000)}
@@ -274,23 +437,27 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--allow-ns", action="append", default=[],
                     help="granted dataset namespace prefix (repeatable)")
+    ap.add_argument("--store-root", default=None,
+                    help="fail-closed containment boundary for the store guard")
     args = ap.parse_args()
     if not args.allow_ns:
         _dlog("FATAL: no --allow-ns granted; refusing to serve")
         return 2
     scope = Scope(args.allow_ns)
 
-    # Guard FIRST (imports cognee; fail closed if roots are not in system root).
+    # Guard FIRST (imports cognee; fail closed if roots are not in the boundary).
     from guard_store_roots import enforce_or_die
 
     # stdout is protocol-only: route the guard's human-readable report to stderr
     import contextlib
     import io
 
+    boundary = args.store_root or (
+        pathlib.Path(__file__).resolve().parents[1] / "proof")
     _guard_out = io.StringIO()
     try:
         with contextlib.redirect_stdout(_guard_out):
-            enforce_or_die(label="worker startup")
+            enforce_or_die(label="worker startup", allow_root=boundary)
     except SystemExit:
         for _gline in _guard_out.getvalue().splitlines():
             _dlog(_gline)
@@ -300,10 +467,13 @@ def main() -> int:
 
     import_ms = int((time.perf_counter() - t0) * 1000)
     _emit({"type": "ready", "pid": os.getpid(), "rss_bytes": _rss_bytes(),
-           "import_ms": import_ms, "protocol": "vict-cognee-worker/2",
-           "allowed_namespaces": args.allow_ns})
+           "import_ms": import_ms, "protocol": "vict-cognee-worker/3",
+           "allowed_namespaces": args.allow_ns,
+           "store_root": str(boundary)})
 
     ops_served = 0
+    journal = IdempotencyJournal(os.path.join(_system_root(), JOURNAL_NAME))
+    _dlog(f"journal at {journal.path}")
 
     def ok(req_id, result):
         _emit({"id": req_id, "ok": True, "result": result})
@@ -343,7 +513,7 @@ def main() -> int:
             return 0
         params = {k: v for k, v in req.items() if k not in ("id", "op")}
         try:
-            result = asyncio.run(dispatch(op, params, scope))
+            result = asyncio.run(dispatch(op, params, scope, journal))
             ops_served += 1
             ok(req_id, result)
         except ScopeViolation as exc:
