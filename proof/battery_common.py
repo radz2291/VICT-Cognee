@@ -1,10 +1,18 @@
-"""Shared helpers for the C1 proof battery (pinned cognee==1.6.1, keyless route)."""
+"""Shared helpers for the proof batteries (pinned cognee==1.6.1, keyless route)."""
 
 from __future__ import annotations
 
 import json
+import sys
 import time
 from pathlib import Path
+
+# Store-root guard FIRST — before cognee is imported anywhere below, verify that
+# every destructive storage root resolved into this disposable proof workspace.
+# Fail closed (exit 2) if uncertain. Applies to .venv and PROOF_PY runs alike.
+from guard_store_roots import enforce_or_die
+
+enforce_or_die(label="battery_common import")
 
 PROOF = Path(__file__).resolve().parent
 RESULTS = PROOF / "results"

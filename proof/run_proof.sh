@@ -25,24 +25,15 @@ PROOF_DIR="$(pwd -W 2>/dev/null || pwd)"   # Windows absolute path for .env
 if [ -n "${PROOF_PY:-}" ]; then
   PY="$PROOF_PY"
   echo "== using PROOF_PY=$PY (code under test still from this checkout) =="
-  # Store-isolation guard: cognee's dotenv discovery in script mode walks up from the
-  # interpreter's venv and may select a .env ABOVE the venv (observed: an external
-  # venv reused another workspace's proof/.env and silently redirected the store).
-  # Verify that the resolved store root is inside THIS checkout, else fail fast.
-  cat > _storecheck.py <<'EOF'
-import cognee
-from cognee.base_config import get_base_config
-print(get_base_config().system_root_directory)
-EOF
-  STORE_CHECK="$(("$PY" _storecheck.py) 2>/dev/null | tail -1 || true)"
-  rm -f _storecheck.py
-  case "$STORE_CHECK" in
-    "$PROOF_DIR"*) echo "   store OK: $STORE_CHECK" ;;
-    "") echo "   ERROR: could not verify cognee store root (import failed?)"; exit 2 ;;
-    *)   echo "   ERROR: cognee resolved its store OUTSIDE this checkout: $STORE_CHECK";
-         echo "   The interpreter's venv tree contains another proof/.env that wins dotenv";
-         echo "   discovery. Move the venv into this checkout or neutralize the other .env."; exit 2 ;;
-  esac
+  # Store-isolation guard: cognee's dotenv discovery in script mode walks up from
+  # the interpreter's venv and may select a .env ABOVE the venv (observed: an
+  # external venv reused another workspace's proof/.env and silently redirected
+  # the store). Verify EVERY destructive root resolves inside THIS checkout's
+  # proof workspace, else fail closed BEFORE any battery (incl. prune_system).
+  (cd "$PROOF_DIR" && "${PY}" guard_store_roots.py) || {
+    echo "   ERROR: store-root guard failed for PROOF_PY — see violations above.";
+    exit 2;
+  }
 elif [ ! -d .venv ]; then
   echo "== creating venv =="
   python -m venv .venv
