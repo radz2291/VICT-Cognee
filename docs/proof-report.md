@@ -52,13 +52,17 @@ retrieval/context level.
    idempotent (`[O]` "Relational migrations applied (target head)").
 6. gliner mode logs "Skipping LLM connection test: this pipeline has no LLM task."
 7. Default auth posture: `authentication=required, multi_tenant=enabled` (startup log).
-8. **Intermittent native segfault (exit 139) at gliner encoder load** on this Windows
-   machine, correlated with free memory (~2.9 GB free at reproduction): 5 crashes across
-   ~10 cognify-bearing process starts; standalone loader runs and cognify with
-   `OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 KUZU_BUFFER_POOL_SIZE=268435456` succeeded.
-   Reproduction commands and logs are in `proof/battery_05b_residue.output.txt` (crashed
-   attempts) and the tmux transcripts. This is a packaging/ops risk for any embedded
-   deployment, not a logic bug.
+8. **Intermittent native segfault (exit 139) during battery cognify runs** on this
+   Windows machine — **agent observation, not a reproduced finding**. The crashes were
+   seen only in the agent's interactive tmux session (5 exit-139 events across ~10
+   battery process starts; logs were overwritten by retries and no crash transcript was
+   committed). A bounded reproduction attempt is committed as
+   `proof/crash-reproduction.log`: 3/3 standalone gliner loader runs at ~2.4 GB free RAM
+   **succeeded without thread limits**, so the loader-only path does not reproduce the
+   crash. The suspected memory correlation and the success of single-thread env limits
+   (`OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 KUZU_BUFFER_POOL_SIZE=268435456`) therefore
+   remain **unverified working hypotheses**, and `run_proof.sh` ships with those limits
+   as a precaution, not a proven fix.
 
 ## 4. Retrieval evidence (battery_02; `proof/results/battery_02_retrieval.json`)
 
@@ -107,8 +111,8 @@ Setup: two datasets (`quellight_like`, `trading_like`) cognified warm in 39.8 s 
 | `add()` ×3 identical document | three `PipelineRunCompleted` returns, **one stored data item** — content-hash dedup at the registry layer |
 | `cognify()` twice on unchanged dataset | 0.35 s / 0.38 s — incremental loading is real; no duplication (search hit count stable) |
 | `forget(data_id=…)` | `{'status': 'success'}`; registry count 0 |
-| **Residue probe** | after forget + re-cognify, CHUNKS still returns **1 hit with empty text**; direct graph read shows **0 nodes / 0 edges** — the graph layer is clean but the **vector layer keeps a phantom embedding row** that still surfaces (contentless hit). `cognee.validate()` exists exactly for cross-store consistency `[D]` — a pack should run it or prefer dataset-level deletes |
-| `forget(dataset=…)` | success; later search → `DatasetNotFoundError` (404); dataset registry row gone |
+| **Residue probe** | after forget + re-cognify, CHUNKS still returns **1 hit with empty text**; direct graph read shows **0 nodes / 0 edges** — the graph layer is clean but the **vector layer keeps a phantom embedding row** that still surfaces (contentless hit). **OPEN FINDING — no repair demonstrated.** `cognee.validate()` is documented for cross-store consistency `[D]` but was **not run**; nothing here shows that it repairs, compacts, or even detects this residue |
+| `forget(dataset=…)` | success; later search by name → `DatasetNotFoundError` (404). **This proves only that name resolution fails after deletion; physical purge of the dataset's graph/vector storage was NOT verified** (no direct storage read was taken after dataset forget — unlike the item-level probe above). Registry row removal is likewise unverified at storage level |
 | `prune_system(metadata=True)` | drops the relational layer including users; a subsequent `setup()` is required before any user op (observed `DatabaseNotCreatedError` otherwise) — matches the "full test teardown" docs `[D]` |
 
 ## 8. Failure behavior (battery_06; `results/battery_06_failures.json`)
@@ -133,9 +137,11 @@ Setup: two datasets (`quellight_like`, `trading_like`) cognified warm in 39.8 s 
   `AGENTIC_COMPLETION`, `CODE`, `GRAPH_REPORT`, `SKILLS`,
   `GRAPH_COMPLETION_DECOMPOSITION`; adds `FEEDBACK`). Mirrors remember/recall/forget/
   improve/memify/update/prune/datasets/sessions/notebooks/users.
-- **Observed keyless behavior**: `new Cognee({}).warm()` fails cleanly with
-  `ComponentError: llm_api_key must be configured`. **No keyless local mode exists in the
-  TS SDK** — the entire keyless proof route is Python-only.
+- **Observed keyless behavior** (tested configuration: `@cognee/cognee-ts@0.2.0`, Node
+  22.13.1, Windows 11): `new Cognee({}).warm()` fails cleanly with
+  `ComponentError: llm_api_key must be configured`. **No keyless local mode exists in
+  the tested TS SDK version** — the entire keyless proof route is Python-only. This
+  result applies to the tested version/environment only; other versions were not tried.
 - Verdict input: the Python API is the only route currently testable end-to-end; the TS
   engine is a tracked-but-later alternative.
 
@@ -152,7 +158,10 @@ Setup: two datasets (`quellight_like`, `trading_like`) cognified warm in 39.8 s 
 6. TS SDK pipeline end-to-end — needs an LLM key (§9).
 7. Cross-user deletion cascades and tenant/role ACL routers — needs a server deployment.
 8. Concurrency/throughput and graph-database subprocess isolation on Windows.
-9. cognee's `validate()` against the observed vector residue (candidate remediation, not run).
+9. cognee's `validate()` against the observed vector residue (**candidate, untested —
+   no claim is made that it repairs the residue**).
+10. Non-English embedding/extraction alternatives (battery 07 observes the
+    English-focused defaults on Malay input; no comparative benchmark was run).
 
 ## 11. Practical latency envelope (observed, this machine)
 
@@ -166,37 +175,56 @@ Setup: two datasets (`quellight_like`, `trading_like`) cognified warm in 39.8 s 
 | gliner model load (warm cache) | 14–23 s per process |
 | CHUNKS / CHUNKS_LEXICAL / SUMMARIES search | 0.24–0.72 s |
 | `add()` ingestion of a small text | <0.1 s (pipeline commit) |
-| `forget(data_id)` | 1.1 s (with graph residue caveats, §7) |
-| `forget(dataset)` | <1 s |
+| `forget(data_id)` | 1.1 s (with the open residue finding, §7) |
+| `forget(dataset)` | <1 s (name-resolution clean; physical purge unverified, §7) |
+
+## 11b. Malay / mixed Malay–English retrieval probe (battery_07; correction pass)
+
+Synthetic Quellight-like Malay content (`proof/data/malay_probe.txt`: 5 entries —
+preferences, world lore, a mixed-language proposal record, an event, a correction).
+Embedding `BAAI/bge-small-en-v1.5` (English-focused), extraction `gliner_demo`
+(`fastino/gliner2.5-base-v1`, English-focused). Full numbers in
+`proof/results/battery_07_malay.json`.
+
+Results summary (filled from the committed run):
+
+<!-- MALAY_RESULTS -->
 
 ## 12. Reproduce
 
+Fresh clone (tested flow — Windows 11, Git for Windows/MINGW64 bash, Python 3.12):
+
 ```bash
-# 1. repos (verify SHAs before anything else)
+# 1. verify pinned SHAs before anything else
 git ls-remote https://github.com/radz2291/vict-02.git HEAD          # a746c34173838eb583d85a909207b6a0a7c7c832
 git ls-remote https://github.com/radz2291/Quellight.git HEAD        # 5f709a536ab1f4d5fea0407db1b9537e0aa7c0f6
 git ls-remote https://github.com/radz2291/VICT-Trading.git HEAD     # 38f654e2ceffa0455fd5e7c2f1b4da24d73aea25
 git ls-remote https://github.com/topoteretes/cognee.git refs/tags/v1.6.1  # eb90d03740755f5252b8b12cce91fd09970f2d81
 
-# 2. environment (from the VICT-Cognee workspace root)
-cd proof
-python -m venv .venv
-.venv/Scripts/python -m pip install "cognee[gliner]==1.6.1"
-.venv/Scripts/python -m pip freeze > requirements-frozen.txt
-# proof/.env pins embeddings/extractor/roots (see repo)
+# 2. clone this workspace and run everything
+git clone https://github.com/radz2291/VICT-Cognee.git
+cd VICT-Cognee/proof
+bash run_proof.sh                 # venv + cognee[gliner]==1.6.1 + .env generation + all batteries
+```
 
-# 3. proof runs (each leaves results/<name>.json + <name>.output.txt)
-.venv/Scripts/python smoke_01.py
-for b in battery_02_retrieval battery_03b_scope battery_03c_userb \
-         battery_04b_conflict_full battery_05_repeat_delete battery_05b_residue \
-         battery_06_failures; do
-  OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 KUZU_BUFFER_POOL_SIZE=268435456 \
-    .venv/Scripts/python $b.py > $b.output.txt 2>&1
-done
+`run_proof.sh` generates `proof/.env` from the committed credential-free
+`proof/.env.example` (substituting the absolute proof directory for `@PROOF_DIR@`),
+exports the single-thread native limits, and runs smoke_01 plus batteries 02, 03, 03b,
+03c, 04, 04b, 05, 05b, 06, and 07 **sequentially**. Committed fixtures in `proof/data/`
+are the only inputs. Models download once into user caches outside the repo
+(`~/.cache/huggingface`, `%TEMP%/fastembed_cache`); all runtime databases stay under
+`proof/.cognee/` (gitignored). Equivalent manual commands: `python -m venv .venv`,
+`.venv/Scripts/python -m pip install "cognee[gliner]==1.6.1"`, then per battery
+`OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 KUZU_BUFFER_POOL_SIZE=268435456 \
+.venv/Scripts/python battery_XX.py > battery_XX.output.txt 2>&1`.
 
-# 4. TS SDK probe (separate engine; requires LLM key past warm())
+TypeScript probe (separate Rust engine; requires an LLM key past `warm()`;
+result scoped to `@cognee/cognee-ts@0.2.0`):
+
+```bash
 cd ../ts-sdk && npm install @cognee/cognee-ts@0.2.0 && node probe_keyless.mjs
 ```
 
 Notes: run batteries **sequentially** (never two cognee processes on one system root);
-keep ~3 GB RAM free or set the single-thread env above (segfault correlation, §3.8).
+`run_proof.sh` ships the single-thread env limits as a precaution (§3.8 — agent
+observation, not a reproduced finding).

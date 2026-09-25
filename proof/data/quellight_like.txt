@@ -1,0 +1,24 @@
+Synthetic Quellight-like data (C1 proof) — user-memory/conversation product flavor.
+Mirrors the KIND of content Quellight owns: user preferences, governed proposals,
+confirmations/rejections, conversation facts. This file is proof input data only;
+Quellight does not use Cognee today and defines nothing about the pack.
+
+--- entry ql-001 ---
+User Alice confirmed a proposal on 2026-09-20: her weekly report must be delivered
+on Fridays before 17:00, and she prefers concise summaries over detailed tables.
+
+--- entry ql-002 ---
+User Bob rejected the autonomous-retention proposal on 2026-09-21. He wants every
+retained memory item to be visible in the memory inbox and deletable by him.
+
+--- entry ql-003 ---
+The Quellight agent must never confirm proposals by itself; only the server-derived
+local user actor can confirm. This rule was ratified in Stage 07C.
+
+--- entry ql-004 ---
+Alice escalated a billing issue on 2026-09-22 and wants finance-team follow-ups
+routed to her work email, not her personal address.
+
+--- entry ql-005 ---
+CORRECTION of entry ql-001: Alice moved the weekly report deadline; the new rule is
+Thursday 12:00 noon, still concise summaries. The Friday rule is superseded.

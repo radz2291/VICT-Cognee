@@ -1,0 +1,24 @@
+Synthetic Malay / mixed Malay–English probe data (C1 correction pass).
+Quellight-like flavor only: user preferences, story-world lore, governed proposals.
+This file is synthetic proof input; Quellight does not use Cognee and defines nothing
+about the proposed pack. No real persons or places.
+
+--- entry my-001 ---
+Nurul lebih suka ringkasan mingguan setiap Jumaat sebelum pukul 5 petang. Dia tidak
+mahu jadual terperinci; cukup sekadar ringkasan ringkas tiga perkara.
+
+--- entry my-002 ---
+Dalam dunia Aetheria, siaran magic selepas tengah malam adalah dilarang oleh Majlis
+Serambi. Pelanggaran menyebabkan sekatan aura selama tujuh hari penuh.
+
+--- entry my-003 ---
+The proposal PROPOSAL-2026-091 was rejected by Farid kerana beliau mahu semua data
+memory dapat dipadam oleh pengguna sendiri, tanpa perlu kebenaran pentadbir.
+
+--- entry my-004 ---
+Peristiwa gerhana berlaku pada 2026-09-15. The Aetheria Council declared a curfew
+untuk semua warga semasa gerhana itu berlangsung.
+
+--- entry my-005 ---
+PEMBETULAN bagi my-001: Nurul kini mahu ringkasan mingguan pada hari Khamis, bukan
+lagi pada Jumaat. Masa kekal sebelum pukul 5 petang.

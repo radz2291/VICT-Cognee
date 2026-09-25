@@ -29,7 +29,7 @@ Evidence codes: `[D]` from cognee source/docs at the pinned tag (not observed he
 | 1.3 | `cognee.search(query, query_type, datasets, node_name, top_k)` — 20 search types `[O]` | read | FRC (subset) | The retrieve leg; retrieval-only types first (see §3) |
 | 1.4 | `cognee.remember(data, dataset_name, session_id?, …)` = add+cognify+improve `[D]` | write | FRC (or LATER) | V2 convenience wrapper; pack may expose raw legs instead to keep effect boundaries explicit — decision recorded in §10 |
 | 1.5 | `cognee.recall(query, datasets, session_id?)` — session-first rule-based retrieval router `[O]` | read | FRC (subset) | Router degrades to CHUNKS when no LLM is configured (`llm_available()` preflight, `[D]` source); observed routing in battery 02 |
-| 1.6 | `cognee.forget(data_id / dataset / everything, memory_only)` — unified deletion `[O]` | write (arguably irreversible for dataset/everything) | FRC | Retention/deletion is a VICT Stage-07D-proven concern; pack must expose it, but "everything" needs elevated policy |
+| 1.6 | `cognee.forget(data_id / dataset / everything, memory_only)` — unified deletion `[O]` | write (arguably irreversible for dataset/everything) | FRC (dataset-scope only; item-scope deferred — residue open finding) | Retention/deletion is a VICT Stage-07D-proven concern; dataset-level forget observed clean at name-resolution level (physical purge unverified); item-level forget leaves a phantom vector hit (proof §7, open finding) |
 | 1.7 | `cognee.update(data_id, data, dataset_id)` — in-place document replace `[O]` | write | FRC | Corrected-information path; keeps data_id, re-extracts touched chunks (docs claim `[D]`; observed battery 04) |
 | 1.8 | `cognee.delete(data_id, dataset_id, mode)` — deprecated alias of datasets.delete_data `[D]` | write | EXCL | Deprecated surface; pack binds to `forget`/`datasets.delete_data` only |
 | 1.9 | `cognee.prune.prune_data / prune_system(graph, vector, metadata, cache)` `[O]` | irreversible | EXCL (pack) / FRC (tooling) | Full-system teardown incl. users/ACLs registry — test fixture only; a product pack must never expose it as a capability |
@@ -83,7 +83,7 @@ Evidence codes: `[D]` from cognee source/docs at the pinned tag (not observed he
 | 5.1 | `graph engine interface`: get_graph_data, get_node(s), add/delete node/edge, source-ref provenance finders `[D]` | read/write | PROV | Raw engine access stays behind the pack; pack exposes read-only inspection capability (counts, graph snapshot via export) instead |
 | 5.2 | `cognee.visualize_graph(path, query?, full=?)` — bounded subgraph HTML render `[D]` | read | LATER | Useful operator surface; needs graph + template rendering; bounded by default (k-hop, max 500 nodes) `[D]` |
 | 5.3 | `cognee.export(dataset, format=[cogx,json,graphml,cypher], destination)` — GraphSnapshot `[D]` | read | LATER | Portability/backup story; aligns with VICT export/retention obligations later |
-| 5.4 | `cognee.validate(dataset)` — cross-store graph/vector consistency report, read-only `[D]` | read | LATER | Excellent fit for VICT verification culture; needs evidence in a later proof |
+| 5.4 | `cognee.validate(dataset)` — cross-store graph/vector consistency report, read-only `[D]` | read | LATER | Excellent fit for VICT verification culture; needs evidence in a later proof. Not claimed to repair the observed item-level residue |
 | 5.5 | `cognee.report(datasets)` — markdown graph insight report `[D]` | read | LATER | Convenience over graph inspection |
 | 5.6 | CYPHER search type (see §3) | read | PROV | Engine-dialect raw query; excluded from normalized surface |
 
@@ -117,7 +117,7 @@ Evidence codes: `[D]` from cognee source/docs at the pinned tag (not observed he
 
 | Surface | Class | Reason |
 | --- | --- | --- |
-| Python SDK (embedded) `[O]` | **FRC route** | The reference engine; full capability surface; pack wraps this in-process |
+| Python SDK (separate worker process) `[O]` | **FRC route** | The reference engine; full capability surface; cognee is Python, so the pack drives it from Node in a **separate worker process** via a bridge (never in the Node process) |
 | HTTP API server (cognee-frontend, FastAPI) `[D]` | LATER | Needed for remote/multi-process deployment; VICT already owns its server boundary — a cognee sidecar server would be a deployment choice, not a pack API |
 | MCP server (cognee-mcp: remember/recall/forget/improve/cognify_status) `[D]` | PROV | Alternative integration route for agent hosts; bypasses VICT capability governance — not the pack route |
 | TypeScript SDK `@cognee/cognee-ts@0.2.0` (cognee-rs Rust engine, Neon bindings) `[D]` | PROV/LATER | Separate Rust implementation: 16 search types (no AGENTIC_COMPLETION/CODE/GRAPH_REPORT/SKILLS/DECOMPOSITION; has FEEDBACK), different default backends (Kuzu graph, brute-force vector). **Not** the same engine — data written by Python is not shared. Parity risk too high for first release; Python route recommended, TS engine tracked |
