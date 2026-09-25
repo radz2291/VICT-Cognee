@@ -37,12 +37,23 @@ async def main() -> None:
     from cognee import SearchType
 
     rec = Record("battery_07_malay")
-    text = open("data/malay_probe.txt", encoding="utf-8").read()
+    raw = open("data/malay_probe.txt", encoding="utf-8").read()
+
+    # Ingest each entry as its OWN document so per-query ranking is meaningful
+    # (first version ingested the whole file as one chunk — every query returned
+    # the same chunk and semantic discrimination was impossible).
+    entries: list[str] = []
+    for section in raw.split("--- entry ")[1:]:
+        body = section.split("---", 1)[1].strip()
+        if body:
+            entries.append(body)
+    assert len(entries) == 5, f"expected 5 entries, parsed {len(entries)}"
 
     t0 = time.perf_counter()
-    await cognee.add(text, dataset_name="malay_probe")
+    for body in entries:
+        await cognee.add(body, dataset_name="malay_probe")
     await cognee.cognify(datasets=["malay_probe"], extractor="gliner_demo")
-    stamp(f"malay_probe cognified in {time.perf_counter() - t0:.1f}s")
+    stamp(f"malay_probe cognified ({len(entries)} entries) in {time.perf_counter() - t0:.1f}s")
 
     # ---------- A. semantic CHUNKS ----------
     semantic_cases = [
