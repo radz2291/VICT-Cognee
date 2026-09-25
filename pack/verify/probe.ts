@@ -1,0 +1,12 @@
+const VICT = 'file:///C:/Users/RZ1/Desktop/RZ/260831-VCT-02';
+const { createRuntime, createInMemoryStores, installCapabilityPack } = await import(`${VICT}/packages/runtime/dist/index.js`);
+const { neutralJsonContract } = await import(`${VICT}/packages/sdk/dist/index.js`);
+import { createCogneePack } from '../src/index.js';
+const pack = createCogneePack({ pythonPath: 'python', workerPath: 'x', cwd: '.', storeRoot: 'C:/tmp', namespaces: ['qa'] });
+const rt = createRuntime({ stores: createInMemoryStores(), authority: { grants: ['cognee.search'] } });
+rt.registerContract(neutralJsonContract as never);
+installCapabilityPack(rt, pack as never);
+const READ_NO_TIMEOUT = { id: 'r1', entry: 'find', nodes: [ { id: 'find', capability: 'cognee.searchChunks', output: 'cognee.search-output' } ], edges: [] };
+const READ_TIMEOUT = { id: 'r2', entry: 'find', nodes: [ { id: 'find', capability: 'cognee.searchChunks', timeoutMs: 120000, output: 'cognee.search-output' } ], edges: [] };
+console.log('no timeout:', (await rt.run((await rt.activate(READ_NO_TIMEOUT as never), { datasets: ['qa.x'], query: 'q' }), { mode: 'test' } as never)).status);
+console.log('with timeout:', (await rt.run((await rt.activate(READ_TIMEOUT as never), { datasets: ['qa.x'], query: 'q' }), { mode: 'test' } as never)).status);

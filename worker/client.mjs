@@ -48,6 +48,7 @@ export class WorkerClient {
     this.poisoned = false;
     this.diag = opts.diag ?? (() => {});
     this.stderrLines = 0;
+    this.stdoutViolations = 0;
     this.respawns = 0;
   }
 
@@ -71,8 +72,12 @@ export class WorkerClient {
       try {
         msg = JSON.parse(line);
       } catch {
-        this.diag(`FATAL: non-JSON on stdout: ${line.slice(0, 80)}`);
-        this.child.kill('SIGKILL');
+        // cognee internals can leak non-protocol lines to stdout (observed:
+        // alembic migration prints on a fresh store's first connect). Demote
+        // to diagnostics and count — never parse, never fatal. The 1 MiB line
+        // bound above stays fatal (memory discipline).
+        this.stdoutViolations += 1;
+        this.diag(`stdout violation (non-JSON, demoted): ${line.slice(0, 120)}`);
         return;
       }
       if (msg.type === 'ready') {

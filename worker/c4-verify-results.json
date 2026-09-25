@@ -1,0 +1,229 @@
+{
+  "verification": "c4-pack-through-real-runtime",
+  "victAbiReference": "radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)",
+  "store": "fresh (proof/.cognee-verify)",
+  "started": "2026-09-25T22:39:34.229Z",
+  "duration_s": 184,
+  "environment": {
+    "freeRamGbStart": 2.62,
+    "freeRamGbEnd": 3.67,
+    "note": "Windows low-memory class: cognee cognify peaks ~2.0 GB; native crashes (0xC0000005) were observed in earlier batteries when free RAM dropped near 1.9 GB (agent observations, C1/C2). None occurred in this run; the supervision poison+respawn policy contains worker deaths as COGNEE_WRITE_UNKNOWN/COGNEE_WORKER_UNAVAILABLE."
+  },
+  "supervisionStats": {
+    "spawns": 1,
+    "respawns": 0,
+    "kills": 0,
+    "lastRssBytes": 343023616,
+    "opsServed": 9,
+    "stderrLines": 165,
+    "stdoutViolations": 0
+  },
+  "results": [
+    {
+      "id": "V0",
+      "name": "manifest validates (vict.capability-pack@1, ^0.1.0)",
+      "outcome": "PASS",
+      "detail": {
+        "capabilities": 6
+      },
+      "ms": 5
+    },
+    {
+      "id": "V1",
+      "name": "installCapabilityPack installs all six capabilities atomically",
+      "outcome": "PASS",
+      "detail": {
+        "installed": [
+          "cognee.add",
+          "cognee.cognify",
+          "cognee.searchChunks",
+          "cognee.searchSummaries",
+          "cognee.datasetsStatus",
+          "cognee.forgetDataset"
+        ]
+      },
+      "ms": 5
+    },
+    {
+      "id": "V2",
+      "name": "test-mode run completes via declared doubles (add+cognify)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "completed",
+        "output": {
+          "datasetName": "qa.verify",
+          "idempotencyKey": "double-no-key",
+          "reconciled": "fresh-execution",
+          "itemsBefore": 1,
+          "itemsAfter": 1,
+          "deduplicated": true
+        },
+        "spawns": 0
+      },
+      "ms": 33
+    },
+    {
+      "id": "V2b",
+      "name": "forget double runs in test mode (no real store touch)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "completed",
+        "output": {
+          "datasetName": "qa.never-existed",
+          "datasetId": "double-dataset-id",
+          "purged": "not-observed",
+          "storeFilesBefore": 0,
+          "storeFilesAfter": 0
+        }
+      },
+      "ms": 4
+    },
+    {
+      "id": "V3",
+      "name": "read in test mode fails closed (no double declared)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "blocked",
+        "spawns": 0,
+        "spawnsBefore": 0
+      },
+      "ms": 4
+    },
+    {
+      "id": "ABI",
+      "name": "durable engine runs real bindings in test/simulate (no doubles)",
+      "outcome": "OBSERVATION",
+      "detail": {
+        "source": "orchestration-driver.ts (~line 700) + canonical.ts declaresControlSemantics",
+        "consequence": "mode isolation only on capability-only graphs; durable graphs always real"
+      }
+    },
+    {
+      "id": "V4",
+      "name": "ungranted write fails pre-handler (permission denied, no cognee)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "failed",
+        "error": {
+          "code": "VICT_RUNTIME_PERMISSION_DENIED",
+          "details": {
+            "capabilityId": "cognee.add",
+            "errorId": "err_f2b89fdadaa5ceb9",
+            "invokedVia": "real",
+            "nodeId": "put"
+          },
+          "message": "Permission 'cognee.write' required by capability 'cognee.add' is not granted in this runtime; the handler was not invoked."
+        }
+      },
+      "ms": 46
+    },
+    {
+      "id": "V5",
+      "name": "normal-mode keyed write graph completes through real worker",
+      "outcome": "PASS",
+      "detail": {
+        "status": "completed",
+        "output": {
+          "datasetName": "qa.verify",
+          "idempotencyKey": "idem_9e9222e29dcd57b2a0ab8413690f7a89",
+          "reconciled": "fresh-execution",
+          "itemsBefore": 1,
+          "itemsAfter": 1,
+          "deduplicated": true
+        },
+        "error": null,
+        "spawns": 1
+      },
+      "ms": 164386
+    },
+    {
+      "id": "V5",
+      "name": "normal-mode scoped search returns in-scope hits",
+      "outcome": "PASS",
+      "detail": {
+        "status": "completed",
+        "total": 1,
+        "first": {
+          "text": "Quellight C3QA marker: settlement windows close at 17:00 local time; ledger reconciliation runs nightly under dual approval; exceptions escalate to the on-call settlement controller before the next business day.",
+          "score": 0.25775325298309326,
+          "datasetName": "qa.verify"
+        }
+      },
+      "ms": 773
+    },
+    {
+      "id": "V5b",
+      "name": "sequential-engine write refused (no CapabilityContext key)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "failed",
+        "error": {
+          "code": "VICT_RUNTIME_CAPABILITY_THREW",
+          "message": "Capability 'cognee.add' threw during invocation; the thrown message is not retained.",
+          "details": {
+            "capabilityId": "cognee.add",
+            "nodeId": "put",
+            "invokedVia": "real",
+            "errorName": "Error",
+            "errorId": "err_871ef2d42ec69279"
+          }
+        }
+      },
+      "ms": 7
+    },
+    {
+      "id": "V6",
+      "name": "same key replays known outcome without re-execution",
+      "outcome": "PASS",
+      "detail": {
+        "first": "fresh-execution",
+        "replay": "replayed-known-outcome"
+      },
+      "ms": 1150
+    },
+    {
+      "id": "V6",
+      "name": "same key + different content rejected (COGNEE_IDEMPOTENCY_MISMATCH)",
+      "outcome": "PASS",
+      "detail": {
+        "got": "COGNEE_IDEMPOTENCY_MISMATCH"
+      },
+      "ms": 5
+    },
+    {
+      "id": "V6",
+      "name": "cognify via binding key (real graph for V7 forget)",
+      "outcome": "PASS",
+      "detail": {
+        "itemsAfter": 1
+      },
+      "ms": 11740
+    },
+    {
+      "id": "V7",
+      "name": "forget denied by default in normal mode (allowIrreversible gate)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "blocked",
+        "error": null
+      },
+      "ms": 12
+    },
+    {
+      "id": "V7",
+      "name": "forget with allowIrreversible runs for real (file-level purge receipt)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "completed",
+        "receipt": {
+          "datasetName": "qa.binding",
+          "datasetId": "0fbc9d47-8f3f-517a-b0bf-1ee53d5e9523",
+          "purged": "file-level",
+          "storeFilesBefore": 2,
+          "storeFilesAfter": 0
+        }
+      },
+      "ms": 1317
+    }
+  ]
+}

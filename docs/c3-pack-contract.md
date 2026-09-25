@@ -48,7 +48,10 @@ Verified against the reference sources at the commit above:
 | Permissions are enforced BEFORE the handler: an ungranted permission fails invocation with a structured error; "the handler was not invoked" | `packages/runtime/src/authority.ts:220` |
 | `irreversible` is denied by default in normal mode (needs explicit `allowIrreversible`); in `simulate`/`test` modes real read/write/irreversible implementations are unreachable — a registered double is required, otherwise the request fails closed | `packages/runtime/src/effect-policy.ts` |
 | `victCompatibility` is checked against the runtime compat version — currently `'0.1.0'` (`VICT_RUNTIME_COMPAT_VERSION`); example packs declare `'^0.1.0'` | `packages/runtime/src/pack-install.ts:38,54`; `pack.ts:424,457` |
-| Contracts are executable parse promises: `{ ok: true, value } \| { ok: false, issues[] }`; contract rejection surfaces as `VICT_KERNEL_CONTRACT_REJECTED` | `packages/contracts/src/define-contract.ts`; `packages/kernel/src/errors.ts` |
+| Contracts are executable parse promises: `{ ok: true, value } \| { ok: false, issues[] }`; contract rejection surfaces as `VICT_KERNEL_CONTRACT_REJECTED`; **every executable capability must declare BOTH an input and an output contract** (CONT-001 — `datasetsStatus` therefore carries an explicitly empty input contract) | `packages/contracts/src/define-contract.ts`; `packages/kernel/src/errors.ts`; pack-install validation | 
+| **Graph-engine selection (C4 implementation finding):** a graph compiles to `vict.activation@2` (durable orchestration engine) when ANY node declares `retry` or `timeoutMs`, any node has a control `kind` (decision/fork/join/wait), or any edge is a non-success kind (route/branch/timeout/error) — `declaresControlSemantics`, `canonical.ts:185-201`. Clean capability-only graphs compile to `vict.activation@1` (sequential engine) | `packages/kernel/src/canonical.ts:185-201`, `compile.ts:1189`, `runtime.ts:869` |
+| **Mode isolation is sequential-engine-only:** the durable orchestration engine ALWAYS invokes the pinned real binding — in `test`/`simulate` its `useDouble` decision is deliberately ignored ("Doubles are a Stage 02 sequential-engine facility", `orchestration-driver.ts` ~700). Durable graphs therefore touch the REAL worker/store in every mode; only the irreversible denial (`decision.allowed`) is enforced there | `packages/runtime/src/orchestration-driver.ts`, `effect-policy.ts` |
+| **Edge contract compatibility is exact-id** (or the special `vict.neutral.json` contract): two adjacent nodes' contracts are statically compatible only when their contract IDs are equal or one side is `vict.neutral.json` — graph authors bridge differing contracts through explicit pure adapter nodes | `packages/runtime/src/registry.ts:580-588`, `kernel/src/compile.ts:980-1005` |
 | Capability context carries `mode`, `attemptNumber?`, `idempotencyKey?`, `deadlineAt` (epoch-ms attempt deadline), `abortSignal`, and SCOPED config/secret readers (undeclared names unavailable) | `packages/sdk/src/capability.ts:37–51` (`CapabilityContext`) |
 | Doubles are declared `{ capabilityId, modes: ['test','simulate'], revision }`; contracts of the original still apply to doubles | `pack.ts`; `capability.ts` (`DoubleInvoke`) |
 | Reference write pattern (ledger pack): `effect:'write'`, `idempotency:'keyed'`, `ambiguity:'keyedRetry'`, permissions, required configuration, secrets, evaluations | `docs/builder-kit/capability-catalog.json` (`vict.example.ledger`) |
@@ -178,8 +181,8 @@ are JSON-serializable; every output repeats `datasetName`.
 // output: { hits: Array<{ text: string; score: number; datasetName?: string }>;
 //   datasets: string[]; total: number; truncated: boolean }
 
-// cognee.datasetsStatus@1 — input
-{}                          // store-scoped (§3/§4); no params
+// cognee.datasetsStatus@1 — input (CONT-001: an explicitly empty contract)
+{}                          // store-scoped (§3/§4); no params; non-object payloads rejected
 // cognee.datasetsStatus@1 — output (scope-filtered)
 { datasets: Array<{ name: string }>;      // only <granted-ns>.<name> entries
   hiddenDatasets: number;                 // count of hidden rows (names NEVER)
@@ -207,6 +210,10 @@ Notes (worker-implementation reality, observed):
   (`cognee.api.v1.exceptions` and `cognee.modules.data.exceptions`) — both, and
   `NoDataError` (items present but graph empty, i.e. an interrupted cognify),
   map to `COGNEE_DATASET_UNKNOWN`.
+- **Graph composition rule (VICT edge-compat):** differing contract ids across
+  an edge are statically incompatible unless bridged by `vict.neutral.json` —
+  callers compose cognee capabilities through explicit pure adapter nodes
+  (verified in the C4 runtime run; see §11).
 
 ## 7. Caller rules (normative)
 
@@ -359,9 +366,14 @@ guarantees must implement them outside this pack.
 ## 9. Worker lifecycle and resource limits
 
 - **Shape:** supervised child process (Python) driven by the binding host (Node);
-  NDJSON over stdin/stdout. **stdout carries protocol messages only** (≤ 1 MiB per
-  line; oversized ⇒ connection aborted); **all diagnostics go to stderr** (worker
-  logs, Cognee logs) and are never parsed by the client.
+  NDJSON over stdin/stdout. **stdout carries protocol messages** (≤ 1 MiB per
+  line; oversized ⇒ connection aborted). **All diagnostics go to stderr** and are
+  never parsed. cognee internals can leak non-protocol lines to stdout
+  (observed: alembic migration prints on a fresh store's first connect); the
+  worker pre-runs the relational migrations at startup with stdout captured
+  (migration warm-up before serving), and the client DEMOTES any residual
+  non-JSON stdout line to stderr with a `stdoutViolations` counter — demote,
+  never parse, never fatal (the 1 MiB bound stays fatal).
 - **One op at a time** per worker; ops run in isolated asyncio tasks (C2 ContextVar
   persistence finding). One worker per store per trust domain (§3).
 - **Startup:** guard (§8) → ready message with versions (cognee, python) and the
@@ -435,6 +447,61 @@ store; journal `worker/c4-journal.jsonl`):
   (c7–c9); clean shutdown (c10).
 
 C3 evidence retained (`worker/c3-results.json`: 26/26 PASS, fresh store):
+
+**C4 runtime verification (pack installed into a REAL VICT runtime).**
+`pack/` implements the manifest (`vict.capability-pack@1`, six capabilities,
+`victCompatibility: '^0.1.0'`), executable input/output contracts (CONT-001 —
+`datasetsStatus` carries an explicitly empty input contract), permission
+declarations (`cognee.write` / `cognee.search` / `cognee.delete`), keyed-write
+bindings with `ambiguity: 'keyedRetry'`, an `irreversible` forget binding, and
+declared test/simulate doubles for add/cognify/forgetDataset. Supervision is
+one instance per pack = one live worker per store (§3/§7.2). VICT is consumed
+READ-ONLY from the local reference clone (imports of the committed
+`packages/*/dist`); installation and invocation run against
+`createRuntime` + `installCapabilityPack` from `@victframework/runtime` with
+in-memory stores and a fresh disposable cognee store (`proof/.cognee-verify`).
+
+Evidence (`worker/c4-verify-results.json`, `worker/c4-verify.log`; 14/14 checks
+PASS + 1 recorded ABI OBSERVATION, 184 s):
+- V0 manifest validates (`validateCapabilityPack`, compat `^0.1.0`); V1 pack
+  installs atomically (all six capabilities);
+- V2/V2b mode `test` on capability-only graphs: add+cognify run via the
+  DECLARED DOUBLES with contract-valid receipts and ZERO worker spawns; the
+  forget double likewise;
+- V3 mode `test`: read (searchChunks, no double declared) FAILS CLOSED
+  (`effect.blocked` → run `blocked`), no store touch;
+- V4 runtime WITHOUT grants: the write invocation fails BEFORE the handler
+  (permission pre-check; no worker spawn, no cognee call);
+- V5 normal mode, REAL worker, durable orchestration driver (decision node +
+  node retry policies + timeouts → `vict.activation@2`, runtime-derived
+  idempotencyKeys): graph decide → add → adapt → cognify completes with item
+  counts (itemsAfter 1), scoped search returns in-scope hits;
+- V5b the SAME write graph without control semantics (sequential engine)
+  invokes the real binding with NO context key → the binding REFUSES
+  (unkeyed writes never run);
+- V6 binding-level keyed semantics: same key replays the known outcome
+  without re-execution; same key + different content →
+  `COGNEE_IDEMPOTENCY_MISMATCH`;
+- V7 `forgetDataset`: denied by default in normal mode; with run policy
+  `allowIrreversible: true` it runs for real and the receipt shows a
+  file-level purge (store files → 0);
+- V8 resource/environment recording (below).
+- **ABI OBSERVATION (recorded, not a check):** the durable orchestration
+  engine runs the pinned REAL binding even in `test`/`simulate` — doubles and
+  read fail-closed isolation hold only on capability-only (sequential-engine)
+  graphs. Durable graphs must therefore be treated as real-effect graphs in
+  every mode.
+
+Resource use (V8, from `c4-verify-results.json`): 1 worker spawn, 0
+kills/respawns, 9 worker ops, worker RSS ~343 MB after the run (startup
+baseline recorded in `c3.log`/`c4.log` histories: ~250–400 MB; cognify peaks
+~2.0 GB process-wide), wall clock 184 s, host free RAM 2.62 GB → 3.67 GB.
+**Windows low-memory class (agent observations, C1/C2):** cognee cognify can
+crash natively (`0xC0000005`) when free RAM drops toward ~1.9 GB; no native
+crash occurred in the C4 runs (free RAM ≥ ~2.5 GB), and the supervision
+poison+respawn policy contains any such death as `COGNEE_WRITE_UNKNOWN` /
+`COGNEE_WORKER_UNAVAILABLE` without store corruption (single-owner journal +
+cognee dedupe).
 
 - stdout reserved for bounded NDJSON; stderr diagnostics (s1); guard verifies
   roots inside the FRESH store boundary specifically (s1);

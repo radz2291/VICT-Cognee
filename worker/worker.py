@@ -526,6 +526,21 @@ def main() -> int:
     for _gline in _guard_out.getvalue().splitlines():
         _dlog(_gline)
 
+    # ---- migration warm-up with stdout captured ----------------------------
+    # cognee 1.6.1's first-connect alembic migrations PRINT to stdout (e.g.
+    # "sync_operations table already exists, skipping creation") — that would
+    # contaminate the protocol channel on a fresh store's first op. Force the
+    # migrations NOW, with stdout redirected to stderr, before serving.
+    async def _warmup() -> None:
+        from cognee.infrastructure.databases.relational.create_db_and_tables import (
+            create_db_and_tables,
+        )
+
+        await create_db_and_tables()
+
+    with contextlib.redirect_stdout(sys.stderr):
+        asyncio.run(_warmup())
+
     import_ms = int((time.perf_counter() - t0) * 1000)
     _emit({"type": "ready", "pid": os.getpid(), "rss_bytes": _rss_bytes(),
            "import_ms": import_ms, "protocol": "vict-cognee-worker/4",
