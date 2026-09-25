@@ -1,0 +1,203 @@
+{
+  "proof": "c3-worker-contract",
+  "started": "2026-09-25T14:28:18.802Z",
+  "duration_s": 174,
+  "results": [
+    {
+      "id": "s1",
+      "name": "startup guard + ready",
+      "outcome": "PASS",
+      "detail": {
+        "protocol": "vict-cognee-worker/2",
+        "import_ms": 22849,
+        "namespaces": [
+          "qa",
+          "zeta"
+        ],
+        "rss_mb": 329
+      },
+      "ms": 23312
+    },
+    {
+      "id": "s2",
+      "name": "scoped write + search returns candidates",
+      "outcome": "PASS",
+      "detail": {
+        "total": 1,
+        "firstScore": 0.22952473163604736
+      },
+      "ms": 32111
+    },
+    {
+      "id": "s3",
+      "name": "cross-namespace add rejected",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_SCOPE_REJECTED",
+        "got": "COGNEE_SCOPE_REJECTED: namespace 'evil' is not granted (allowed: ['qa', 'zeta'])"
+      },
+      "ms": 4
+    },
+    {
+      "id": "s3",
+      "name": "unscoped add rejected",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_SCOPE_REJECTED",
+        "got": "COGNEE_SCOPE_REJECTED: request is unscoped: datasetName is required"
+      },
+      "ms": 3
+    },
+    {
+      "id": "s3",
+      "name": "cross-namespace search rejected",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_SCOPE_REJECTED",
+        "got": "COGNEE_SCOPE_REJECTED: namespace 'evil' is not granted (allowed: ['qa', 'zeta'])"
+      },
+      "ms": 3
+    },
+    {
+      "id": "s3",
+      "name": "worker alive after rejections",
+      "outcome": "PASS",
+      "detail": {}
+    },
+    {
+      "id": "s4",
+      "name": "delayed add -> deadline expiry -> outcome unknown",
+      "outcome": "PASS",
+      "detail": {
+        "retryKey": "k-delay-1"
+      },
+      "ms": 804
+    },
+    {
+      "id": "s4",
+      "name": "reconciliation: post-timeout observation (worker respawned)",
+      "outcome": "PASS",
+      "detail": {
+        "delayedExists": true,
+        "respawns": 1,
+        "datasets": [
+          "c2_alpha",
+          "c2_beta",
+          "c2_does_not_exist",
+          "c2_worker_demo",
+          "qa.alpha",
+          "qa.alpha",
+          "qa.delayed",
+          "residue",
+          "zeta.bravo",
+          "zz.probe"
+        ]
+      },
+      "ms": 24193
+    },
+    {
+      "id": "s4",
+      "name": "keyed re-issue reconciles to one dataset",
+      "outcome": "PASS",
+      "detail": {
+        "qaDelayedCount": 1
+      },
+      "ms": 29783
+    },
+    {
+      "id": "s5",
+      "name": "cognify nonexistent -> typed failure",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_DATASET_UNKNOWN",
+        "got": "COGNEE_DATASET_UNKNOWN: DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'qa__does_not_exist'. Dataset names resolve only among the datasets you ow"
+      },
+      "ms": 49
+    },
+    {
+      "id": "s6",
+      "name": "second-namespace dataset cognified",
+      "outcome": "PASS",
+      "detail": {},
+      "ms": 2038
+    },
+    {
+      "id": "s6",
+      "name": "restart persistence: qa.alpha still searchable",
+      "outcome": "PASS",
+      "detail": {
+        "total": 1
+      },
+      "ms": 675
+    },
+    {
+      "id": "s6",
+      "name": "scoped summaries: namespace isolation",
+      "outcome": "PASS",
+      "detail": {
+        "qa_total": 1,
+        "zeta_total": 0,
+        "qaLeak": false,
+        "zetaLeak": false
+      },
+      "ms": 989
+    },
+    {
+      "id": "s7",
+      "name": "topK above cap rejected",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_PARAMS_REJECTED",
+        "got": "COGNEE_PARAMS_REJECTED: topK must be an integer in 1..25"
+      },
+      "ms": 4
+    },
+    {
+      "id": "s7",
+      "name": "empty datasets list rejected",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_PARAMS_REJECTED",
+        "got": "COGNEE_PARAMS_REJECTED: datasets must be a list of 1..8 names"
+      },
+      "ms": 3
+    },
+    {
+      "id": "s7",
+      "name": "oversized request line refused",
+      "outcome": "PASS",
+      "detail": {}
+    },
+    {
+      "id": "s8",
+      "name": "forgetDataset receipt",
+      "outcome": "PASS",
+      "detail": {
+        "purged": "file-level",
+        "filesBefore": 2,
+        "filesAfter": 0
+      },
+      "ms": 1483
+    },
+    {
+      "id": "s8",
+      "name": "post-forget scoped search typed failure",
+      "outcome": "PASS",
+      "detail": {
+        "expected": "COGNEE_DATASET_UNKNOWN",
+        "got": "COGNEE_DATASET_UNKNOWN: DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'qa__delayed'. Dataset names resolve only among the datasets you own in th"
+      },
+      "ms": 76
+    },
+    {
+      "id": "s9",
+      "name": "clean shutdown",
+      "outcome": "PASS",
+      "detail": {
+        "stderrLines": 164,
+        "respawns": 2
+      },
+      "ms": 512
+    }
+  ]
+}
