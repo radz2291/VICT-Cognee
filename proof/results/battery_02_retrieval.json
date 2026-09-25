@@ -1,0 +1,117 @@
+[
+  {
+    "probe": "cognify both datasets (gliner)",
+    "outcome": "OBSERVED",
+    "detail": "cognify completed on both datasets",
+    "seconds": 39.843
+  },
+  {
+    "probe": "search CHUNKS :: 'weekly report deadline'",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 1,
+      "first_result_preview": "{'dataset_id': UUID('e21a71ce-0536-53b2-97c1-cf955c832ca7'), 'dataset_name': 'quellight_like', 'dataset_tenant_id': None, 'search_result': [{'id': 'af88cc65-f646-5903-8d08-712e84fe23ca', 'created_at': 1790317473963, 'updated_at': 1790317473963, 'ontology_valid': False, 'ontology_uri': None, 'version",
+      "result_types": [
+        "dict"
+      ]
+    },
+    "seconds": 0.479
+  },
+  {
+    "probe": "search CHUNKS :: 'position size rule'",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 1,
+      "first_result_preview": "{'dataset_id': UUID('37e30c20-b2fd-568a-b3c1-d398c359d373'), 'dataset_name': 'trading_like', 'dataset_tenant_id': None, 'search_result': [{'id': 'fe94c33c-30cf-5c39-b862-299b189cdb0c', 'created_at': 1790317486694, 'updated_at': 1790317486694, 'ontology_valid': False, 'ontology_uri': None, 'version':",
+      "result_types": [
+        "dict"
+      ]
+    },
+    "seconds": 0.285
+  },
+  {
+    "probe": "search CHUNKS :: 'Alice preferences'",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 2,
+      "first_result_preview": "{'dataset_id': UUID('e21a71ce-0536-53b2-97c1-cf955c832ca7'), 'dataset_name': 'quellight_like', 'dataset_tenant_id': None, 'search_result': [{'id': 'af88cc65-f646-5903-8d08-712e84fe23ca', 'created_at': 1790317473963, 'updated_at': 1790317473963, 'ontology_valid': False, 'ontology_uri': None, 'version",
+      "result_types": [
+        "dict"
+      ]
+    },
+    "seconds": 0.356
+  },
+  {
+    "probe": "search CHUNKS_LEXICAL :: 'FOMC'",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 1,
+      "first_result_preview": "{'dataset_id': UUID('37e30c20-b2fd-568a-b3c1-d398c359d373'), 'dataset_name': 'trading_like', 'dataset_tenant_id': None, 'search_result': [{'name': '', 'type': 'DocumentChunk', 'created_at': 1790317481024, 'updated_at': 1790317481024, 'ontology_valid': False, 'ontology_uri': None, 'version': 1, 'topo",
+      "result_types": [
+        "dict"
+      ]
+    },
+    "seconds": 0.258
+  },
+  {
+    "probe": "search CHUNKS_LEXICAL :: 'zzz_no_such_term'",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 1,
+      "first_result_preview": "{'dataset_id': UUID('37e30c20-b2fd-568a-b3c1-d398c359d373'), 'dataset_name': 'trading_like', 'dataset_tenant_id': None, 'search_result': [{'name': '', 'type': 'DocumentChunk', 'created_at': 1790317481024, 'updated_at': 1790317481024, 'ontology_valid': False, 'ontology_uri': None, 'version': 1, 'topo",
+      "result_types": [
+        "dict"
+      ]
+    },
+    "seconds": 0.235
+  },
+  {
+    "probe": "search SUMMARIES :: 'risk rules'",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 1,
+      "first_result_preview": "{'dataset_id': UUID('37e30c20-b2fd-568a-b3c1-d398c359d373'), 'dataset_name': 'trading_like', 'dataset_tenant_id': None, 'search_result': [{'id': 'b51f9cbd-68d7-5bdd-9202-22348703f81b', 'created_at': 1790317486694, 'updated_at': 1790317486694, 'ontology_valid': False, 'ontology_uri': None, 'version':",
+      "result_types": [
+        "dict"
+      ]
+    },
+    "seconds": 0.268
+  },
+  {
+    "probe": "graph context (only_context=True)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 1,
+      "preview": "[{'dataset_id': UUID('e21a71ce-0536-53b2-97c1-cf955c832ca7'), 'dataset_name': 'quellight_like', 'dataset_tenant_id': None, 'search_result': 'The question is: `Who confirmed the weekly report proposal?`\\nand here is the context provided with a set of relationships from a knowledge graph separated by \\\\n---\\\\n each represented as node1 -- relation -- node2 triplet: `Nodes:\\nNode: weekly report\\n__no"
+    },
+    "seconds": 0.535
+  },
+  {
+    "probe": "graph completion answer (no LLM key configured)",
+    "outcome": "EXPECTED-FAILURE",
+    "detail": "LLMAPIKeyNotSetError: LLMAPIKeyNotSetError: LLM API key is not set. (Status code: 422) Fix: Set LLM_API_KEY in your .env (copy .env.template to start). Cognee defaults to the OpenAI provider; set LLM_PROVIDER and LLM_MODEL as well to use another provider, and configure EMBEDDING_* too or embeddings fall back to OpenAI.",
+    "seconds": 0.363
+  },
+  {
+    "probe": "recall() routing (no session)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 1,
+      "sources": [
+        "graph"
+      ],
+      "preview": "[ResponseGraphEntry(kind='chunk', search_type='CHUNKS', text='Synthetic Trading-like data (C1 proof) \u2014 evidence-governed trading OS flavor.\\nMirrors the KIND of content Trading OS owns: trade journal entries, rules, risk\\nlimits, instrument evidence. This file is proof input data only; Trading OS do"
+    },
+    "seconds": 0.356
+  },
+  {
+    "probe": "datasets.list_datasets",
+    "outcome": "OBSERVED",
+    "detail": {
+      "datasets": [
+        "<cognee.modules.data.models.Dataset.Dataset object at 0x0000025039876810>",
+        "<cognee.modules.data.models.Dataset.Dataset object at 0x00000250398749B0>"
+      ]
+    }
+  }
+]

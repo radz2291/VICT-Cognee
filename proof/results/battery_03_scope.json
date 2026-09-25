@@ -1,0 +1,46 @@
+[
+  {
+    "probe": "dataset isolation (CHUNKS 'weekly report')",
+    "outcome": "OBSERVED",
+    "detail": {
+      "alice_world_hits": 1,
+      "trader_world_hits": 1,
+      "note": "disjoint counts expected: content only exists in one dataset"
+    },
+    "seconds": 1.217
+  },
+  {
+    "probe": "search without datasets arg (scope default)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "count": 2,
+      "preview": "[{'dataset_id': UUID('db12e2f4-2436-512e-80a1-0b6d46679166'), 'dataset_name': 'alice_world', 'dataset_tenant_id': None, 'search_result': [{'id': '43b89e93-7104-5ed8-a859-aae712502d5e', 'created_at': 1",
+      "note": "does unrestricted search see every dataset for the user?"
+    },
+    "seconds": 0.722
+  },
+  {
+    "probe": "node_set scoping (node_name=['preferences'])",
+    "outcome": "OBSERVED",
+    "detail": {
+      "scoped_hits": 1,
+      "unscoped_hits": 1,
+      "note": "scoped <= unscoped; scoped should exclude the incidents entry"
+    },
+    "seconds": 0.838
+  },
+  {
+    "probe": "create_user (second principal)",
+    "outcome": "OBSERVED",
+    "detail": "create_user raised ValidationError: 1 validation error for UserCreate\nemail\n  value is not a valid email address: The part after the @-sign is a special-use or reserved name that cannot be used with email. [type=value_error, input_value"
+  },
+  {
+    "probe": "user isolation (default user vs user B on userb_private)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "default_user_hits": 1,
+      "user_b_hits": 1,
+      "note": "default user should NOT see user B's dataset"
+    }
+  }
+]

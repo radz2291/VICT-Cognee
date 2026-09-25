@@ -1,0 +1,59 @@
+[
+  {
+    "probe": "conflicting statements (both present at ingestion)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "chunk_hits": 1,
+      "previews": [
+        "{'dataset_id': UUID('2a11a6a9-b216-58c5-9404-340aa90e5d3f'), 'dataset_name': 'conflict', 'dataset_tenant_id': None, 'search_result': [{'id': 'd2d57801"
+      ],
+      "note": "CHUNKS is passage-level: both passages should be visible"
+    }
+  },
+  {
+    "probe": "conflicting statements (graph context)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "preview": "[{'dataset_id': UUID('2a11a6a9-b216-58c5-9404-340aa90e5d3f'), 'dataset_name': 'conflict', 'dataset_tenant_id': None, 'search_result': 'The question is: `when does the backup job run`\\nand here is the context provided with a set of relationships from a knowledge graph separated by \\\\n---\\\\n each represented as node1 -- relation -- node2 triplet: `Nodes:\\nNode: Rule: the backup job runs on Saturday.",
+      "note": "does graph context keep both claims?"
+    }
+  },
+  {
+    "probe": "correction retrieval (CHUNKS)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "hits": 1,
+      "previews": [
+        "{'dataset_id': UUID('aba69599-3505-5672-82fa-d5f9e06deda0'), 'dataset_name': 'corrections', 'dataset_tenant_id': None, 'search_result': [{'id': 'e2e75"
+      ],
+      "note": "both old and new passages expected at chunk level"
+    }
+  },
+  {
+    "probe": "correction retrieval (graph context)",
+    "outcome": "OBSERVED",
+    "detail": {
+      "preview": "[{'dataset_id': UUID('aba69599-3505-5672-82fa-d5f9e06deda0'), 'dataset_name': 'corrections', 'dataset_tenant_id': None, 'search_result': 'The question is: `API rate limit per minute`\\nand here is the context provided with a set of relationships from a knowledge graph separated by \\\\n---\\\\n each represented as node1 -- relation -- node2 triplet: `Nodes:\\nNode: quantity: 100, 250 requests per minute",
+      "note": "did graph merge/replace/keep-both the rate-limit entity?"
+    }
+  },
+  {
+    "probe": "datasets.list_data",
+    "outcome": "OBSERVED",
+    "detail": {
+      "dataset": "<cognee.modules.data.models.Dataset.Dataset object at 0x000001691E2617F0>",
+      "data_count": 2,
+      "first_item": "<cognee.modules.data.models.Data.Data object at 0x000001691E262C90>"
+    }
+  },
+  {
+    "probe": "update() in place",
+    "outcome": "ERROR-UNEXPECTED",
+    "detail": "LLMAPIKeyNotSetError: LLMAPIKeyNotSetError: LLM API key is not set. (Status code: 422) Fix: Set LLM_API_KEY in your .env (copy .env.template to start). Cognee defaults to the OpenAI provider; set LLM_PROVIDER and LLM_MODEL as well to use another provider, and configure EMBEDDING_* too or embeddings fall back to OpenAI."
+  },
+  {
+    "probe": "completion-level conflict adjudication (which answer wins?)",
+    "outcome": "UNTESTED",
+    "detail": "requires an LLM key; keyless route cannot observe answer synthesis"
+  }
+]

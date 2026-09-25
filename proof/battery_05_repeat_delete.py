@@ -44,7 +44,6 @@ async def main() -> None:
         },
     )
 
-    await cognee.datasets.list_data  # (surface exists; count checked below)
     ds_list = await cognee.datasets.list_datasets()
     ds_id = None
     for d in ds_list:
