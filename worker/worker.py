@@ -1,6 +1,6 @@
-"""Disposable cognee worker v3 for the C3 pack-contract proof (NOT a VICT pack).
+"""Disposable cognee worker v4 for the C3/C4 pack-contract proofs (NOT a VICT pack).
 
-Aligned to docs/c3-pack-contract.md (§7/§9/§11):
+Aligned to docs/c3-pack-contract.md (§7/§9/§11) + the C4 corrections:
   - stdout carries bounded NDJSON protocol messages ONLY (<= 1 MiB/line);
     all diagnostics go to stderr and are never parsed by the client.
   - Environment pins are set by the worker itself BEFORE cognee is imported
@@ -12,22 +12,33 @@ Aligned to docs/c3-pack-contract.md (§7/§9/§11):
     enforcement at the interface is a SAFETY RAIL, not per-actor authorization.
     datasetsStatus is scope-filtered: it never lists datasets whose interface
     address is not `<granted-ns>.<name>`.
-  - Durable keyed reconciliation (VICT idempotencyKey): every add/cognify
-    carries an idempotencyKey (VICT derives one per logical invocation and
-    replays keyed writes with the same key). The worker journals begin/commit
-    records (fsync) inside the store:
+  - Durable keyed reconciliation (C4 corrections):
+      * the retry key comes EXCLUSIVELY from the request `ctx`
+        (VICT CapabilityContext.idempotencyKey). A key supplied via op params
+        is rejected (COGNEE_PARAMS_REJECTED) — exclusivity is enforced here;
+      * every journal key is BOUND to (op, dataset, input fingerprint);
+        reusing a key for another op/dataset/content is rejected with
+        COGNEE_IDEMPOTENCY_MISMATCH (journal state unchanged);
       * completed entry  -> replay recorded outcome, NO re-execution;
       * begun w/o commit -> previous attempt did not durably complete;
         outcome unknown -> re-execute (convergent: cognee content-hash dedupe
-        for add; pipeline run status for cognify) and commit fresh counts;
+        for add; pipeline re-run for cognify) and commit fresh counts;
       * no entry         -> fresh execution.
     Every response carries item-level counts (itemsBefore/itemsAfter).
     forget_dataset is NEVER journaled and NEVER auto-retried.
   - Every worker death with a pending mutation is an unknown outcome (client
+    maps ANY in-flight mutation at worker exit to COGNEE_WRITE_UNKNOWN;
     kills + respawns; the journal makes the reissue reconcile).
+  - PROOF-ONLY fault injection (C4 crash-window test): env C4_FAULT may be
+    set to 'add.after-write-before-commit' or 'cognify.after-write-before-'
+    'commit'; the worker then os._exit(2)s AFTER cognee's write returns but
+    BEFORE the journal commit — deterministically creating the exact window
+    between the external mutation and the durable journal record. Default is
+    OFF; the hook is inert unless the env var is set explicitly.
 
 Request:  {"id": "<n>", "op": "add|cognify|search_chunks|search_summaries|
-           datasets_status|forget_dataset|status|ping|shutdown", ...params}
+           datasets_status|forget_dataset|status|ping|shutdown", ...params,
+           "ctx": {"idempotencyKey": "...", "attemptNumber": 1}}
 Response: {"id": "<n>", "ok": true, "result": {...}} or
           {"id": "<n>", "ok": false, "error": {"code": "...", "message": "..."}}
 One unsolicited line at startup: {"type": "ready", ...}
@@ -69,7 +80,7 @@ MAX_DATASETS = 8                  # per search request
 MAX_CONTENT_CHARS = 512_000
 MAX_QUERY_CHARS = 2_000
 NAME_RE = re.compile(r"^[^.\s]+\.[^.\s]+$")
-JOURNAL_NAME = "c3_idempotency_journal.jsonl"
+JOURNAL_NAME = "c4_idempotency_journal.jsonl"
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "proof"))
 
@@ -80,6 +91,20 @@ class ScopeViolation(Exception):
 
 class ParamsViolation(Exception):
     """Request failed interface parameter bounds (no cognee call)."""
+
+
+class IdempotencyMismatch(Exception):
+    """Journal key bound to a different (op, dataset, fingerprint) — the
+    caller re-uses a key for different logical work. Rejected without
+    touching journal state (no cognee call)."""
+
+
+def _fault(point: str) -> None:
+    """PROOF-ONLY fault injection (env C4_FAULT, default OFF)."""
+    hook = os.environ.get("C4_FAULT", "")
+    if hook and hook == point:
+        _dlog(f"FAULT-INJECTION: {point} -> os._exit(2) (forced crash)")
+        os._exit(2)
 
 
 def _rss_bytes() -> int:
@@ -186,7 +211,10 @@ class IdempotencyJournal:
       {"state": "begun", "key", "op", "dataset", "items_before", "started_at"}
       {"state": "completed", "key", "op", "dataset", "items_before",
        "items_after", "started_at", "completed_at", "duration_ms"}
-    The latest record for a key decides reconciliation.
+    The latest record for a key decides reconciliation. Each key is BOUND to
+    (op, dataset, fingerprint — C4): a request whose binding differs from the
+    durable record is a COGNEE_IDEMPOTENCY_MISMATCH; the journal state is
+    never changed by a mismatched request.
     """
 
     def __init__(self, path: str):
@@ -218,17 +246,19 @@ class IdempotencyJournal:
             fh.flush()
             os.fsync(fh.fileno())
 
-    def begin(self, key: str, op: str, dataset: str, items_before: int) -> None:
+    def begin(self, key: str, op: str, dataset: str, fingerprint: str,
+              items_before: int) -> None:
         self._append({"state": "begun", "key": key, "op": op, "dataset": dataset,
-                      "items_before": items_before, "started_at": time.time(),
-                      "pid": os.getpid()})
+                      "fingerprint": fingerprint, "items_before": items_before,
+                      "started_at": time.time(), "pid": os.getpid()})
 
-    def commit(self, key: str, op: str, dataset: str, items_before: int,
-               items_after: int, started_at: float) -> None:
+    def commit(self, key: str, op: str, dataset: str, fingerprint: str,
+               items_before: int, items_after: int, started_at: float) -> None:
         self._append({"state": "completed", "key": key, "op": op,
-                      "dataset": dataset, "items_before": items_before,
-                      "items_after": items_after, "started_at": started_at,
-                      "completed_at": time.time(), "pid": os.getpid()})
+                      "dataset": dataset, "fingerprint": fingerprint,
+                      "items_before": items_before, "items_after": items_after,
+                      "started_at": started_at, "completed_at": time.time(),
+                      "pid": os.getpid()})
 
 
 async def resolve_datasets(names: list[str], strict: bool = True):
@@ -314,7 +344,8 @@ def _bound_search(res, top_k: int, dataset_names: list[str]):
     return {"hits": hits, "total": len(hits), "truncated": truncated}
 
 
-async def dispatch(op: str, p: dict, scope: Scope, journal: IdempotencyJournal):
+async def dispatch(op: str, p: dict, scope: Scope, journal: IdempotencyJournal,
+                   ctx: dict):
     import cognee
     from cognee.modules.search.types import SearchType
 
@@ -328,12 +359,35 @@ async def dispatch(op: str, p: dict, scope: Scope, journal: IdempotencyJournal):
         # ---- interface checks BEFORE any cognee call -----------------------
         scope.check_name(p.get("datasetName") or (p.get("datasets") or [None])[0])
         dataset = p.get("datasetName") or p["datasets"][0]
-        key = p.get("idempotencyKey")
-        # VICT passes a deterministic idempotencyKey for keyed writes; the
-        # kernel BLOCKS replay of unkeyed writes, so the interface requires one.
+        # C4 exclusivity: the retry key comes EXCLUSIVELY from ctx
+        # (VICT CapabilityContext.idempotencyKey). A key smuggled through op
+        # params is rejected before anything else happens.
+        if "idempotencyKey" in p or "retryKey" in p:
+            raise ParamsViolation(
+                f"{op} must not carry an idempotencyKey in params: the retry key "
+                "comes exclusively from CapabilityContext (request ctx)")
+        key = (ctx or {}).get("idempotencyKey")
+        # The durable orchestration driver derives the key only when the graph
+        # node declares a retry policy; a handler without a ctx key is a
+        # non-keyed write — VICT never replays those, so the interface refuses.
         if not isinstance(key, str) or not key:
             raise ParamsViolation(
-                f"{op} requires idempotencyKey (VICT CapabilityContext.idempotencyKey)")
+                f"{op} requires ctx.idempotencyKey (VICT CapabilityContext.idempotencyKey); "
+                "declare a retry policy on the graph node so the runtime derives one")
+        # C4 binding: key -> (op, dataset, input fingerprint).
+        if op == "add":
+            content = p.get("content") or p.get("text")
+            if not isinstance(content, str) or not content:
+                raise ParamsViolation("add requires non-empty content")
+            if len(content) > MAX_CONTENT_CHARS:
+                raise ParamsViolation(f"content exceeds {MAX_CONTENT_CHARS} chars")
+            fingerprint = hashlib.sha256(json.dumps(
+                {"op": op, "dataset": dataset, "content": content},
+                sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+        else:
+            fingerprint = hashlib.sha256(json.dumps(
+                {"op": op, "dataset": dataset}, sort_keys=True,
+                ensure_ascii=False).encode("utf-8")).hexdigest()
 
         cognee_name = to_cognee_name(dataset)
         if op == "cognify":
@@ -343,8 +397,15 @@ async def dispatch(op: str, p: dict, scope: Scope, journal: IdempotencyJournal):
         started_at = time.time()
         t = time.perf_counter()
 
-        # ---- durable reconciliation ----------------------------------------
+        # ---- durable reconciliation (key bound to op/dataset/fingerprint) --
         prior = journal.find(key)
+        if prior:
+            if (prior.get("op") != op or prior.get("dataset") != cognee_name
+                    or prior.get("fingerprint") != fingerprint):
+                raise IdempotencyMismatch(
+                    f"idempotency key {key!r} is durably bound to "
+                    f"({prior.get('op')}, {prior.get('dataset')}) with a different "
+                    "input fingerprint; refusing to reuse it for different logical work")
         if prior and prior.get("state") == "completed":
             return {"datasetName": dataset, "idempotencyKey": key,
                     "reconciled": "replayed-known-outcome",
@@ -362,20 +423,20 @@ async def dispatch(op: str, p: dict, scope: Scope, journal: IdempotencyJournal):
         else:
             reconciled = "fresh-execution"
             items_before, _row = await _items_for_dataset_name(cognee_name)
-            journal.begin(key, op, cognee_name, items_before)
+            journal.begin(key, op, cognee_name, fingerprint, items_before)
 
         if op == "add":
-            content = p.get("content") or p.get("text")
-            if not isinstance(content, str) or not content:
-                raise ParamsViolation("add requires non-empty content")
-            if len(content) > MAX_CONTENT_CHARS:
-                raise ParamsViolation(f"content exceeds {MAX_CONTENT_CHARS} chars")
             await cognee.add(content, dataset_name=cognee_name)
         else:  # cognify (precheck already done above)
             await cognee.cognify(datasets=[cognee_name])
 
+        # C4 crash-window: PROOF-ONLY fault point AFTER cognee's write returns
+        # but BEFORE the journal commit (env C4_FAULT, default OFF).
+        _fault(f"{op}.after-write-before-commit")
+
         items_after, _row = await _items_for_dataset_name(cognee_name)
-        journal.commit(key, op, cognee_name, items_before, items_after, started_at)
+        journal.commit(key, op, cognee_name, fingerprint, items_before,
+                       items_after, started_at)
         return {"datasetName": dataset, "idempotencyKey": key,
                 "reconciled": reconciled, "itemsBefore": items_before,
                 "itemsAfter": items_after,
@@ -467,7 +528,7 @@ def main() -> int:
 
     import_ms = int((time.perf_counter() - t0) * 1000)
     _emit({"type": "ready", "pid": os.getpid(), "rss_bytes": _rss_bytes(),
-           "import_ms": import_ms, "protocol": "vict-cognee-worker/3",
+           "import_ms": import_ms, "protocol": "vict-cognee-worker/4",
            "allowed_namespaces": args.allow_ns,
            "store_root": str(boundary)})
 
@@ -511,9 +572,10 @@ def main() -> int:
         if op == "shutdown":
             ok(req_id, {"bye": True, "rss_bytes": _rss_bytes(), "ops_served": ops_served})
             return 0
-        params = {k: v for k, v in req.items() if k not in ("id", "op")}
+        params = {k: v for k, v in req.items() if k not in ("id", "op", "ctx")}
+        ctx = req.get("ctx") if isinstance(req.get("ctx"), dict) else None
         try:
-            result = asyncio.run(dispatch(op, params, scope, journal))
+            result = asyncio.run(dispatch(op, params, scope, journal, ctx))
             ops_served += 1
             ok(req_id, result)
         except ScopeViolation as exc:
@@ -522,6 +584,10 @@ def main() -> int:
         except ParamsViolation as exc:
             ops_served += 1
             err(req_id, "COGNEE_PARAMS_REJECTED", str(exc))
+        except IdempotencyMismatch as exc:
+            ops_served += 1
+            err(req_id, "COGNEE_IDEMPOTENCY_MISMATCH", str(exc),
+                {"op": op, "idempotencyKey": (ctx or {}).get("idempotencyKey")})
         except typed_map as exc:
             ops_served += 1
             err(req_id, "COGNEE_DATASET_UNKNOWN",

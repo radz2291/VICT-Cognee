@@ -1,5 +1,5 @@
 /**
- * Hardened Node-facing client for the disposable cognee worker (C3 contract).
+ * Hardened Node-facing client for the disposable cognee worker (C3/C4).
  *
  * Implements docs/c3-pack-contract.md §7/§9 at the interface layer:
  *  - bounded NDJSON on the worker's stdout (1 MiB line cap; abort on violation);
@@ -8,7 +8,11 @@
  *    worker poisoned, then killed + respawned before the next request;
  *    the worker never auto-retries;
  *  - reads that time out => CLIENT_DEADLINE;
- *  - unsolicited worker death => COGNEE_WORKER_UNAVAILABLE (respawn next request);
+ *  - ANY worker exit while a MUTATING op is in flight => COGNEE_WRITE_UNKNOWN
+ *    (outcome unknown — crash, kill, fault injection, anything), then poison
+ *    + respawn; worker exit during a read => COGNEE_WORKER_UNAVAILABLE;
+ *  - retry key travels exclusively in `ctx` (VICT CapabilityContext); the
+ *    worker rejects keys smuggled through op params (C4 exclusivity);
  *  - strict request serialization (one op at a time — cognee store-lock discipline).
  */
 
@@ -53,7 +57,7 @@ export class WorkerClient {
     if (this.opts.storeRoot) args.push('--store-root', this.opts.storeRoot);
     this.child = spawn(this.pythonPath, args, {
       cwd: this.opts.cwd,
-      env: { ...process.env, PYTHONUNBUFFERED: '1' },
+      env: { ...process.env, ...(this.opts.env ?? {}), PYTHONUNBUFFERED: '1' },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     const rl = createInterface({ input: this.child.stdout, crlfDelay: Infinity });
@@ -106,8 +110,18 @@ export class WorkerClient {
       }
       for (const [, p] of this.pending) {
         clearTimeout(p.timer);
-        p.reject(new WorkerError('COGNEE_WORKER_UNAVAILABLE',
-          `worker exited (code=${code} signal=${signal}) while op was pending`));
+        if (p.mutating) {
+          // §7.2 (C4): ANY worker exit with a pending mutation is an unknown
+          // outcome — regardless of cause (crash, kill, fault injection).
+          this.poisoned = true; // kill + respawn before the next request
+          p.reject(new WorkerError('COGNEE_WRITE_UNKNOWN',
+            `worker exited (code=${code} signal=${signal}) while mutating op '${p.op}' was in flight; outcome unknown`,
+            { op: p.op, idempotencyKey: p.idempotencyKey,
+              datasetName: p.datasetName, workerExit: { code, signal } }));
+        } else {
+          p.reject(new WorkerError('COGNEE_WORKER_UNAVAILABLE',
+            `worker exited (code=${code} signal=${signal}) while op '${p.op}' was pending`));
+        }
       }
       this.pending.clear();
     });
@@ -144,12 +158,14 @@ export class WorkerClient {
                                           () => this._lifecycle()));
   }
 
-  /** One serialized op with deadline; mutating timeout => unknown outcome. */
-  request(op, params = {}, { deadlineMs = 120_000, mutating = false,
-    idempotencyKey = null } = {}) {
+  /** One serialized op with deadline; mutating timeout => unknown outcome.
+   *  `ctx` carries {idempotencyKey, attemptNumber?} — the retry key travels
+   *  EXCLUSIVELY here, mirroring VICT CapabilityContext. */
+  request(op, params = {}, { deadlineMs = 120_000, mutating = false, ctx = null } = {}) {
     const run = async () => {
       await this._lifecycle();
       const id = String(this.nextId++);
+      const message = { id, op, ...params, ...(ctx ? { ctx } : {}) };
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
           this.pending.delete(id);
@@ -157,16 +173,18 @@ export class WorkerClient {
             this.poisoned = true; // §7.2: kill + respawn before next request
             reject(new WorkerError('COGNEE_WRITE_UNKNOWN',
               `mutating op '${op}' exceeded ${deadlineMs}ms deadline; outcome unknown`,
-              { op, idempotencyKey: idempotencyKey ?? params.idempotencyKey ?? null,
+              { op, idempotencyKey: ctx?.idempotencyKey ?? null,
                 datasetName: params.datasetName }));
           } else {
             reject(new WorkerError('CLIENT_DEADLINE',
               `op '${op}' exceeded ${deadlineMs}ms deadline`));
           }
         }, deadlineMs);
-        this.pending.set(id, { resolve, reject, timer });
-        this.diag(`send op=${op} id=${id} bytes=${JSON.stringify({ id, op, ...params }).length}`);
-        this.child.stdin.write(JSON.stringify({ id, op, ...params }) + '\n');
+        this.pending.set(id, { resolve, reject, timer, mutating, op,
+          idempotencyKey: ctx?.idempotencyKey ?? null,
+          datasetName: params.datasetName ?? null });
+        this.diag(`send op=${op} id=${id} bytes=${JSON.stringify(message).length}`);
+        this.child.stdin.write(JSON.stringify(message) + '\n');
       });
     };
     return (this.queue = this.queue.then(run, run));

@@ -13,6 +13,20 @@ with a durable proof implementation and item-level counts (§7.3);
 out-of-domain datasets (§4, §11); declared output fields were verified against
 what the worker actually produces (§6, §11).
 
+**C4 corrections (current revision):** the retry key comes **exclusively from
+`CapabilityContext.idempotencyKey`** — the durable driver derives it only when
+the graph node declares a retry policy, and the sequential engine never
+supplies one, so an unkeyed write invocation is refused by the binding (§1,
+§7.3); every journal key is **bound to (operation, dataset, input
+fingerprint)** and mismatched reuse is rejected `COGNEE_IDEMPOTENCY_MISMATCH`
+(§7.3); **any worker exit during a pending mutation** (crash, kill, fault,
+anything) is mapped to `COGNEE_WRITE_UNKNOWN` by the client (§7.2); the
+**crash window** between Cognee's write and the journal commit is tested with
+a forced crash for both add and cognify, proving item-level convergence (no
+duplicate) and graph-level convergence (dataset searchable after reissue)
+(§7.3, §11); VICT's key-uniqueness assumptions are verified and recorded
+(§7.3).
+
 This document defines the contract for a future `vict.cognee.memory` capability
 pack **as a design deliverable only**. No package is published, no VICT code is
 modified, and no consumer adoption is claimed. The disposable proof in `worker/`
@@ -29,7 +43,7 @@ Verified against the reference sources at the commit above:
 | Manifest schema `vict.capability-pack@1`; fields `id`, `version` (semver), `victCompatibility`, `capabilities[]`, `contracts[]`, `permissions[]`, `configuration[]`, `secrets[]`, `doubles[]`, `evaluations[]`, `documentation`, `provenance` | `packages/sdk/src/pack.ts` (manifest interfaces; `PACK_INVALID_*` diagnostics) |
 | Effect vocabulary is closed: `pure \| read \| write \| irreversible` | `pack.ts:288` (`EFFECT_CLASSES`), `packages/sdk/src/capability.ts` (`EffectClass`) |
 | **Corrected write rule:** a `write` capability MUST declare **`idempotency: 'keyed'`** **or** `ambiguity: 'block'` — a write with neither is rejected (`PACK_AMBIGUITY_NOT_DECLARED`). The ambiguity vocabulary is exactly `'block' \| 'keyedRetry'` (`PackAmbiguityPolicy`). `keyedRetry` is the natural declaration for keyed writes; `block` means the capability is never replayed | `pack.ts:31` (`PackAmbiguityPolicy`), `pack.ts:731–735` |
-| **The runtime derives a deterministic idempotencyKey** per logical invocation: `idem_<sha256(canonical{runId, activationVersion, lineage, nodeId, invocationId, schema:'vict.idempotency-key@1'}).slice(0,32)>`; `invocationId` is invariant across retries and restarts, so retries and post-restart replays re-invoke the handler with the **same key** | `packages/runtime/src/orchestration-activation.ts:226–242` (`deriveIdempotencyKey`), `runtime.ts:624` |
+| **The runtime derives a deterministic idempotencyKey** per logical invocation: `idem_<sha256(canonical{runId, activationVersion, lineage, nodeId, invocationId, schema:'vict.idempotency-key@1'}).slice(0,32)>`; `invocationId` is invariant across retries and restarts, so retries and post-restart replays re-invoke the handler with the **same key**. **C4 verification: the key is derived ONLY when the graph node declares a retry policy** (`node?.retry !== undefined`; `orchestration-driver.ts:403–412`) — a write node without a retry policy gets `idempotencyKey: null` and is never replayed; and the **sequential engine (capability-only graphs) never supplies a key at all** (`kernel/src/execute.ts:323–336` builds the invocation context without `DurableInvocationContext`) | `packages/runtime/src/orchestration-activation.ts:226–242` (`deriveIdempotencyKey`), `runtime.ts:624`, `orchestration-driver.ts:403–412`, `kernel/src/execute.ts:323–336` |
 | **The kernel blocks replay of unkeyed writes**: a write attempt whose `idempotencyKey` is `null` returns `action: 'block'` — "A write capability without keyed idempotency has an unknown outcome after process loss; it is never replayed" | `packages/runtime/src/runtime.ts:392–400` |
 | Permissions are enforced BEFORE the handler: an ungranted permission fails invocation with a structured error; "the handler was not invoked" | `packages/runtime/src/authority.ts:220` |
 | `irreversible` is denied by default in normal mode (needs explicit `allowIrreversible`); in `simulate`/`test` modes real read/write/irreversible implementations are unreachable — a registered double is required, otherwise the request fails closed | `packages/runtime/src/effect-policy.ts` |
@@ -41,9 +55,12 @@ Verified against the reference sources at the commit above:
 
 **Consequences for this pack:** every mutating capability declares
 `idempotency: 'keyed'` **and** `ambiguity: 'keyedRetry'` with the reconciliation
-semantics of §7.3; scope and authorization rails are enforced by the pack BEFORE
-any Cognee call (mirroring VICT's pre-handler enforcement);
-`victCompatibility: '^0.1.0'`.
+semantics of §7.3; **graph nodes that invoke cognee write capabilities MUST
+declare a retry policy** (otherwise the runtime derives no key and the binding
+refuses the write — §7.3); invoking cognee writes through the sequential
+engine (capability-only graphs) is refused for the same reason; scope and
+authorization rails are enforced by the pack BEFORE any Cognee call (mirroring
+VICT's pre-handler enforcement); `victCompatibility: '^0.1.0'`.
 
 ## 2. Pack identity
 
@@ -130,10 +147,10 @@ worker output** (§11, `c3-results.json` hitFields/details). All inputs/outputs
 are JSON-serializable; every output repeats `datasetName`.
 
 ```ts
-// cognee.add@1 — input
+// cognee.add@1 — input (NO idempotencyKey here: the retry key comes
+// exclusively from CapabilityContext.idempotencyKey via the invocation ctx)
 { datasetName: string;      // ^<ns>\.[^.\s]+$ , ns ∈ allowedNamespaces
-  content: string;          // UTF-8 text, 1..512_000 chars
-  idempotencyKey: string }  // CapabilityContext.idempotencyKey (VICT-derived)
+  content: string }         // UTF-8 text, 1..512_000 chars
 // cognee.add@1 — output (durable reconciliation receipt, §7.3)
 { datasetName: string; idempotencyKey: string;
   reconciled: 'fresh-execution' | 'replayed-known-outcome' |
@@ -201,19 +218,28 @@ Callers MUST treat hits as retrieval candidates for downstream judgment; the pac
 adopts **no score threshold** (none was validated) and performs no post-hoc
 filtering.
 
-### 7.2 Write timeouts with unknown outcomes
+### 7.2 Write timeouts and worker exits with unknown outcomes
 - The Node-facing client enforces the attempt deadline (`CapabilityContext.deadlineAt`
   at the pack layer; a client-side deadline at the proof layer). If a **mutating** op
   (`add`, `cognify`, `forgetDataset`) does not complete by the deadline, the client
   reports **`COGNEE_WRITE_UNKNOWN`** carrying `{ datasetName, idempotencyKey }` — the
   operation's **outcome is unknown** (it may have landed, may be mid-flight, or may
   not have started).
-- **Every worker death with a pending mutation is an unknown outcome** —
-  regardless of cause (kill, crash, segfault, host loss). There is no window in
-  which the client may assume the mutation did not happen.
-- The worker **never internally retries** a mutating op. On a mutating timeout the
-  client considers the worker **poisoned** and kills + respawns it before serving
-  the next request (single-owner store discipline; C2 fork/lock findings).
+- **Every worker exit while a mutation is pending is an unknown outcome** —
+  regardless of cause: crash, kill, segfault, host loss, graceful-shutdown race,
+  forced fault injection. The client maps **any** in-flight mutation at worker
+  exit to `COGNEE_WRITE_UNKNOWN` (proven with a forced `os._exit(2)` after the
+  Cognee write, §11). There is no window in which the client may assume the
+  mutation did not happen.
+- The worker **never internally retries** a mutating op. On a mutating timeout
+  or mutating-op worker exit the client considers the worker **poisoned** and
+  kills + respawns it before serving the next request (single-owner store
+  discipline; C2 fork/lock findings).
+- **One live worker per store at all times** (§3): a second concurrent worker
+  cannot open the graph store while the first holds the ladybug lock (C4
+  observed `Could not set lock on file` when a second worker ran a cognify
+  alongside a live first worker). Supervision MUST park or kill the incumbent
+  before another worker touches the store.
 - `forgetDataset` has **no unknown-outcome retry path** and is **never journaled**:
   an interrupted forget MUST be reported `COGNEE_WRITE_UNKNOWN` and reconciled by
   observation only (`datasetsStatus` + scoped search); callers must NOT blindly
@@ -224,48 +250,80 @@ filtering.
 VICT derives `idempotencyKey` deterministically per **logical invocation** and
 re-invokes the handler with the **same key** after retries and process loss
 (§1). The pack therefore implements durable keyed reconciliation **on that
-key**:
+key**, under the following rules (C4):
 
-- **Durable journal.** For every `add`/`cognify` the pack appends a `begun`
-  record `{key, op, dataset, items_before, started_at}` and, after completion, a
-  `completed` record `{..., items_after, duration_ms}` to a journal inside the
-  guarded system root (fsync per record). The journal is the pack-side twin of
-  VICT's keyed replay: it survives worker death by construction.
-- **Reissue rules** (same key):
+- **Key source — exclusively `CapabilityContext.idempotencyKey`.** The handler
+  reads the key ONLY from the invocation context. A key supplied through input
+  params is rejected `COGNEE_PARAMS_REJECTED` (proven). A mutating invocation
+  whose context carries no key (sequential engine; write node without a retry
+  policy) is rejected `COGNEE_PARAMS_REJECTED` — it can never be safely
+  replayed, so it must not run.
+- **Key-uniqueness assumptions (verified against VICT source).** The key is
+  `sha256{runId, activationVersion, lineage, nodeId, invocationId}` (truncated,
+  schema-tagged). Two distinct logical invocations collide only if runId,
+  activationVersion, token lineage, nodeId, and invocationId ALL match — i.e.
+  the same node, same token lineage, same run. Uniqueness therefore rests on
+  (a) run-id uniqueness (runtime-injected id generator; a harness with
+  deterministic ids can deliberately reproduce keys — VICT's own proofs do),
+  and (b) lineage uniqueness within a run (kernel token state machine). The
+  pack additionally binds keys to logical work (below), so a colliding reuse
+  of a key for DIFFERENT work fails closed rather than silently replaying.
+- **Durable journal with binding.** For every `add`/`cognify` the pack appends
+  a `begun` record `{key, op, dataset, fingerprint, items_before, started_at}`
+  and, after completion, a `completed` record `{..., items_after, ...}` to a
+  journal inside the guarded system root (fsync per record). `fingerprint` is
+  `sha256(canonical{op, dataset, content})` for add and
+  `sha256(canonical{op, dataset})` for cognify. **Each key is durably bound to
+  (operation, dataset, fingerprint)**: a request reusing a key with a different
+  binding is rejected **`COGNEE_IDEMPOTENCY_MISMATCH`** before any Cognee call
+  and without touching journal state (proven for all three mismatch axes:
+  content, dataset, operation).
+- **Reissue rules** (same key, matching binding):
   1. `completed` record exists → the logical write durably completed:
      **replay the recorded outcome without re-execution**
      (`reconciled: 'replayed-known-outcome'`).
   2. `begun` without `completed` → the previous attempt did **not** durably
      complete; outcome unknown. The pack **re-executes the operation**
-     (`reconciled: 'reissued-after-interruption'`) — convergent by construction:
-     `add` converges via Cognee content-hash dedupe; `cognify` converges via
-     pipeline re-run (both proven in §11 with item-level counts).
+     (`reconciled: 'reissued-after-interruption'`) — convergent by construction
+     and proven under the exact crash window below.
   3. No record → fresh execution (`reconciled: 'fresh-execution'`).
+- **Crash-window proof (item-level and graph-level convergence).** A PROOF-ONLY,
+  env-gated fault hook (`C4_FAULT`, default OFF) forces `os._exit(2)` **after
+  Cognee's write returns but BEFORE the journal commit** — the worst-case
+  window: the external mutation has landed, the journal says only `begun`.
+  Verified for both writes: the client reports `COGNEE_WRITE_UNKNOWN` (worker
+  exit code 2 during a pending mutation), the journal shows
+  begun-without-commit, the keyed reissue re-executes and **converges** —
+  add: `itemsAfter === 1` with **no duplicate item** (the landed write +
+  re-execution dedupe to exactly one data item), then replays; cognify: the
+  dataset's **graph is searchable after the reissue** (scoped search returns
+  hits) with stable item counts, then replays.
 - **Item-level counts.** Every mutating receipt carries `itemsBefore` /
-  `itemsAfter` from the Cognee registry. The proof demonstrates: fresh add
-  0→1; interrupted add reissue 0→1 with **no duplicate item** (count stays 1);
-  interrupted cognify reissue converges (count unchanged 1→1, graph searchable
-  afterwards — 3 scoped hits). Callers reconcile interrupted writes by re-issue
-  with the SAME key and read the counts from the receipt.
-- **`add` idempotency detail:** the interrupted attempt may have landed
-  partially or fully; the re-executed add deduplicates by content hash, so the
-  item count never grows beyond the logical dataset content (proven).
+  `itemsAfter` from the Cognee registry. `itemsBefore` on a reissue is the
+  durable pre-attempt count from the journal (0 for a crash-before-first-write,
+  1 when the interrupted write had already landed); convergence is read from
+  `itemsAfter` (exactly 1 for the proof corpora). Callers reconcile interrupted
+  writes by re-issue with the SAME key and read the counts from the receipt.
 - **No automatic replay outside §7.3.** The worker never retries mutations on
   its own; only the caller's keyed re-issue triggers reconciliation, and
   `forgetDataset` (§7.2) has no re-issue path at all.
 - **Proof-layer honesty.** The reconciliation journal is implemented and
   exercised in the disposable worker proof (fsynced records verified on disk,
-  including a `begun`-without-`completed` record for each interrupted attempt).
-  The production pack MUST carry an equivalent durable journal; a pack build
-  that cannot demonstrate it must instead declare `ambiguity: 'block'` and
-  prohibit replay entirely.
+  including a `begun`-without-`completed` record for each crash-window
+  attempt). It is NOT production code merely because its battery passes: the
+  production pack must re-implement the journal for its own deployment (or
+  declare `ambiguity: 'block'`), and the fault-injection hook is proof-only —
+  it must be stripped or hard-gated in any shipped worker.
 
 ### 7.4 Missing datasets
 Unknown or out-of-domain dataset names fail typed: `COGNEE_SCOPE_REJECTED`
 (interface, before any Cognee call) or `COGNEE_DATASET_UNKNOWN`
 (worker-resolved, pre-call) for mutating ops; the same code maps Cognee's strict
-`DatasetNotFoundError`/`NoDataError` on read paths. **No silent no-ops cross the
-interface** (the Cognee `cognify` silent-no-op is neutralized by the precheck).
+`DatasetNotFoundError`/`NoDataError` on read paths. Reusing an idempotency key
+for different logical work fails `COGNEE_IDEMPOTENCY_MISMATCH` (§7.3). **No
+silent no-ops cross the interface** (the Cognee `cognify` silent-no-op is
+neutralized by the precheck; an unkeyed mutating invocation is refused rather
+than run unkeyed).
 
 ### 7.5 Dataset deletion's verified limits
 `forgetDataset` receipts state exactly what was verified: **file-level physical
@@ -346,11 +404,37 @@ transport; shared system roots; publishing a package; claiming consumer adoption
 
 ## 11. Proof alignment (hardened disposable worker, fresh store)
 
-`worker/worker.py` (v3) + `worker/client.mjs` + `worker/proof_c3.mjs` +
-`proof/c3_seed_foreign.py` implement the Node-facing rules of this contract.
-**Every proof run builds a FRESH disposable store** (`proof/.cognee-c3`, own
-`.env`, own journal, guard boundary = that store) — one worker, one store, one
-trust domain per run (§3). Demonstrated (26/26 PASS, 300 s, fresh store):
+`worker/worker.py` (v4) + `worker/client.mjs` + `worker/proof_c4.mjs` +
+`worker/proof_c3.mjs` + `proof/c3_seed_foreign.py` implement the Node-facing
+rules of this contract. **Every proof run builds a FRESH disposable store**
+(`proof/.cognee-c3` / `proof/.cognee-c4`, own `.env`, own journal, guard
+boundary = that store) — one worker, one store, one trust domain per run (§3).
+
+C4 correction evidence (`worker/c4-results.json`: **32/32 PASS**, 231 s, fresh
+store; journal `worker/c4-journal.jsonl`):
+- retry-key exclusivity: a key in op params is rejected; a mutating op with no
+  ctx key is rejected; a cognify without a ctx key is refused before the silent
+  no-op path (c2);
+- fresh execution → replay (≈10 ms, no re-exec) with item counts (c3);
+- journal binding: same key + different content / different dataset / different
+  op all rejected `COGNEE_IDEMPOTENCY_MISMATCH` with journal state intact
+  (afterwards the original key still replays its original outcome) (c4);
+- **forced crash after the add write, before the journal commit**
+  (`C4_FAULT=add.after-write-before-commit`): worker exit 2 during the pending
+  mutation → `COGNEE_WRITE_UNKNOWN`; journal shows exactly one `begun` without
+  `completed`; keyed reissue re-executes and converges — itemsBefore 0 (durable
+  pre-attempt count) → itemsAfter 1, **no duplicate**; then replays (c5);
+- **forced crash after the cognify write, before the journal commit**
+  (`C4_FAULT=cognify.after-write-before-commit`): same unknown-outcome
+  behavior; keyed reissue re-executes and the **graph is searchable after the
+  interruption** (scoped search hits, stable item counts) (c6);
+- regressions re-run green in the same battery: scope rails, scoped
+  datasetsStatus (seeded pre-existing foreign datasets hidden), bounds,
+  both-sides summary isolation, restart persistence, forget receipt (files
+  2→0) + typed post-delete failure + no journal record for forget
+  (c7–c9); clean shutdown (c10).
+
+C3 evidence retained (`worker/c3-results.json`: 26/26 PASS, fresh store):
 
 - stdout reserved for bounded NDJSON; stderr diagnostics (s1); guard verifies
   roots inside the FRESH store boundary specifically (s1);
@@ -383,27 +467,33 @@ trust domain per run (§3). Demonstrated (26/26 PASS, 300 s, fresh store):
 - `forgetDataset` receipt (purged `file-level`, store files 2→0) + post-delete
   typed failure (s8); clean shutdown (s9).
 
-Evidence: `worker/c3-results.json` (26/26 PASS, fresh store), `worker/c3.log`,
-journal on disk at `proof/.cognee-c3/system/c3_idempotency_journal.jsonl`. The
+Evidence: `worker/c3-results.json` (26/26), `worker/c4-results.json` (32/32),
+`worker/c3.log`, `worker/c4.log`, journals on disk (`proof/.cognee-*/system/`)
+and committed as `worker/c3-journal.jsonl` / `worker/c4-journal.jsonl`. The
 worker remains disposable proof code — it is not the pack implementation.
 
 **Remaining limits (plainly):**
 - The keyed-reconciliation journal is proven at the proof layer only; the
   production pack must re-implement it (a pack without it MUST declare
-  `ambiguity: 'block'`, §7.3).
+  `ambiguity: 'block'`, §7.3). Passing 32/32 does not make the proof worker
+  production code.
+- The crash-window fault hook (`C4_FAULT`) is PROOF-ONLY, env-gated, default
+  OFF; a shipped worker must strip or hard-gate it.
 - Cognify reissue convergence is proven observably (dataset searchable, item
   counts stable), not at graph-diff granularity: partial graph states from an
   interrupted cognify are not inspected directly.
-- `add` convergence relies on Cognee's content-hash dedupe; dedupe behavior
-  across *different* content that maps to the same logical dataset is not
-  exhausted (re-issue of *changed* content with the same key is a caller error
-  and is not detected — the key is the logical-write identity).
+- `add` convergence relies on Cognee's content-hash dedupe; re-issue of
+  *changed* content with the same key is a caller error and is rejected by the
+  fingerprint binding (§7.3), not silently converged.
 - `replayed-known-outcome` replays trust the journal's record; the journal is
   fsynced but OS-crash durability of the underlying filesystem (beyond
   `fsync`) is unverified.
 - Worker crashes (`0xC0000005`) under low free RAM remain an environment class
-  (C1); the driver records them as AGENT-OBSERVATIONs and they did not occur in
-  the final fresh-store run.
+  (C1); the C4 batteries recorded no native crashes (free RAM ≥ ~2.5 GB), and
+  one Cognee-internal `CognifyFailedError` (ladybug lock contention from a
+  concurrently-live second worker — since made impossible by the §7.2
+  one-worker rule) was reproduced as an agent observation and folded into the
+  retry design of the c6 scenario.
 - Deletion limits stand as in §7.5 (no OS-recovery / concurrent-reader / backup
   verification).
 
