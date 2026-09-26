@@ -50,7 +50,7 @@ tightened by this pass)
 | Real-runtime suite (V0–V11, incl. V10d–f stub) | `260831-VCT-02/node_modules/.bin/tsx pack/verify/verify.ts` | **26/27 PASS** — the 27th record is the ABI OBSERVATION (`worker/c4-verify-results.json`) | 67 s |
 | Ownership suite (incl. O2b/O6/O7/O8/O9; run twice for determinism) | `tsx pack/verify/ownership-verify.ts` | **14/14 PASS** both runs (`worker/c4-ownership-results.json`) | 27 s / 29 s |
 | Cognify graph equivalence (multiset + negative controls) | `node worker/graph_equiv_c4.mjs` | **8/8 PASS** (`worker/c4-graph-equiv-results.json`; dumps `worker/c4-equiv-graph-{a,b}.json`) | 221 s |
-| Worker-boundary regression (pack TS untouched by this pass; unchanged from pass 1) | `node worker/proof_c4.mjs` | **32/32 PASS** (`worker/c4-results.json`, from pass 1 — the worker protocol and `client.mjs` are unchanged in this pass) | 421 s |
+| Worker-boundary regression (fresh re-run on the correction-pass-2 HEAD) | `node worker/proof_c4.mjs` | **32/32 PASS** (`worker/c4-results.json`) | 289 s |
 
 Store isolation and resource limits: every suite builds its own disposable
 store under `proof/` (own `.env`, own journal, guard boundary = that store;
@@ -60,7 +60,7 @@ workers run SEQUENTIALLY on two separate stores. The V10d–f and O9c stub-
 worker tests use a deterministic protocol stub (`pack/verify/stub_worker.py`)
 on isolated stores — supervision-level timing tests; the real-runtime V10a–c
 and V5–V7 cover the pack path end-to-end. No expensive model batteries were
-re-run beyond the three focused suites above; no unresolved failure required
+re-run beyond the four focused suites above; no unresolved failure required
 them.
 
 ## 3. Commit
