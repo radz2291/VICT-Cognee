@@ -1,9 +1,9 @@
-# @victframework/cognee — C5 package candidate (UNPUBLISHED)
+# @victframework/cognee — private package candidate (C7)
 
 Keyless Cognee memory capability pack for VICT: six capabilities (add,
 cognify, searchChunks, searchSummaries, datasetsStatus, forgetDataset) with
 keyed durable writes, a scope safety rail, exclusive store ownership, and a
-fail-closed worker boundary. **Private proof artifact — `private: true`; npm
+fail-closed worker boundary. **Private install artifact — `private: true`; npm
 refuses to publish it. No consumer adoption is claimed.**
 
 ## Install (local tarball only — there is no registry)
@@ -16,8 +16,8 @@ Supported VICT packages (same versions this candidate was smoke-tested
 against): `@victframework/sdk@0.3.1`, `@victframework/runtime@0.3.1` and
 their local dependencies (`@victframework/contracts`, `@victframework/kernel`)
 — installed from their build directories via `file:` paths. The npm peer
-ranges declared by this package (`^0.3.1`) describe exactly these tested npm
-packages and nothing broader. They are conceptually SEPARATE from the
+ranges declared by this package (`^0.3.1`) admit the VICT 0.3.x line;
+only 0.3.1 has been exercised by these package checks. They are conceptually SEPARATE from the
 manifest's `victCompatibility: ^0.1.0`, which is the capability-pack ABI
 contract version (manifest schema generation), not an npm package version.
 
@@ -35,7 +35,7 @@ contract version (manifest schema generation), not an npm package version.
 ## Python / model provisioning
 
 1. Create a Python 3.12 venv and install the pinned cognee:
-   `py -3.12 -m venv venv && venv\Scripts\pip install cognee==1.6.1`
+   `py -3.12 -m venv venv && venv\Scripts\pip install 'cognee[gliner]==1.6.1'`
    (the pack passes `pythonPath` — the venv's `python.exe` — to
    `createCogneePack`; nothing else is imported from it).
 2. The worker's **store `.env`** pins the local, keyless models:
@@ -107,6 +107,24 @@ node ../260831-VCT-02/node_modules/tsx/dist/cli.mjs pack/verify/verify.ts
 node worker/proof_c4.mjs
 node worker/graph_equiv_c4.mjs
 ```
+
+## C7 deployment notes
+
+This is a bounded private integration candidate, not a production-ready
+service or a published npm package. The tested installation route is a local
+`npm pack` tarball with VICT 0.3.1. Keep each trust domain's store on a
+persistent, disjoint absolute path and reserve memory for the model: the C6
+pilot observed a second concurrent worker failing to load GLiNER when free
+RAM was under ~1 GB. Do not infer a general concurrency capacity from the
+single-worker peak. Pre-warm the models and measure on the intended host.
+
+Search scores are raw candidate signals; off-corpus queries produced hits.
+The caller decides relevance. VICT 0.3.1 can return a durable cognify run
+in `running` on its retry timer without automatic resume in the C6 pilot.
+Treat it as incomplete, inspect the durable run, and design recovery at the
+app/runtime layer before unattended operation. Namespace filtering protects
+the store boundary, not individual users. See
+[`docs/c7-private-readiness.md`](../docs/c7-private-readiness.md).
 
 ## Ownership limits (accurate as of the C5 closure pass)
 

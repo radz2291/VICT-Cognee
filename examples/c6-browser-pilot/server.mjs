@@ -54,12 +54,10 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = Number(process.env.PILOT_PORT ?? 4173);
 /** Python env with cognee 1.6.1 (see README: proof venv or your own). */
-const PY = process.env.PILOT_PYTHON ??
-  'C:/Users/RZ1/Desktop/RZ/260925-VCT-Cognee/proof/.venv/Scripts/python.exe';
-if (!existsSync(PY)) {
-  console.error(`[pilot] PILOT_PYTHON not found: ${PY}
-Set PILOT_PYTHON to a Python env that has cognee 1.6.1 installed (see README §Setup).`);
-  process.exit(1);
+const PY = process.env.PILOT_PYTHON;
+if (!PY || !path.isAbsolute(PY) || !existsSync(PY)) {
+  console.error('[pilot] Set PILOT_PYTHON to an absolute path to Python 3.12 with cognee[gliner]==1.6.1 installed (see README §Setup).');
+  process.exit(2);
 }
 
 /** Disposable demo stores live INSIDE this workspace and are regenerated. */

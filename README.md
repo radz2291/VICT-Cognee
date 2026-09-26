@@ -1,47 +1,58 @@
-# VICT-Cognee — C0/C1 discovery workspace
+# VICT-Cognee
 
-Disposable workspace for the **C0 capability inventory** and **C1 pinned-release
-proof** of a proposed standalone `@victframework/cognee` capability pack.
+Private, unpublished VICT capability pack for keyless local Cognee memory. The
+package is `@victframework/cognee` in `pack/`; the separate Python worker is
+bundled into its installable tarball. Cognee itself remains an upstream dependency.
 
-Status: **discovery only — no pack design, no pack implementation.** Stop for review.
+**Current stage: C7 private release readiness.** The C5 package candidate was
+independently reviewed, and the C6 browser pilot was exercised by the owner.
+This is a candidate for a bounded, private real-app trial; no registry package,
+production deployment, or Quellight/Trading OS adoption is claimed.
 
-## Layout
+## Start here
 
 | Path | Purpose |
 | --- | --- |
-| `upstream/cognee/` | Read-only clone of https://github.com/topoteretes/cognee (pinned tag; never edited; gitignored) |
-| `proof/` | Pinned-release proof scripts, committed synthetic fixtures (`proof/data/`), observed-run records |
-| `ts-sdk/` | `@cognee/cognee-ts` checkout used for the TypeScript SDK comparison (runtime state gitignored) |
-| `docs/` | Deliverables: capability map, proof report, integration-route recommendation |
+| [`pack/`](pack/README.md) | Six-capability pack, build, private tarball, provisioning |
+| [`examples/c6-browser-pilot/`](examples/c6-browser-pilot/README.md) | Disposable installed-consumer browser example and checks |
+| [`docs/c7-private-readiness.md`](docs/c7-private-readiness.md) | C7 decision, deployment steps, known limits, handoff to a future app |
+| [`docs/c3-pack-contract.md`](docs/c3-pack-contract.md) | Normative scope, effect, retry, storage and worker contract |
+| [`docs/c5-readiness-report.md`](docs/c5-readiness-report.md) | Packaging and runtime evidence |
+| [`proof/`](proof/) and [`worker/`](worker/) | Historical pinned proof, fault and equivalence batteries |
+| [`ts-sdk/`](ts-sdk/) | Historical upstream TypeScript SDK comparison, not this pack |
 
-## Running the proof from a fresh clone (tested on Windows 11, Git for Windows/MINGW64, Python 3.12)
+The six supported capabilities are `add`, `cognify`, `searchChunks`,
+`searchSummaries`, `datasetsStatus`, and `forgetDataset`. Retrieval produces
+**candidates**, not answers or a universal relevance threshold. One VICT runtime,
+one worker and one physical Cognee store form one trust domain; namespace grants
+are a store safety rail, not end-user authorization. Deletion is irreversible
+and denied by default.
+
+## Private artifact and demo
+
+From a fresh checkout with Node 22 or newer:
 
 ```bash
-git clone https://github.com/radz2291/VICT-Cognee.git
-cd VICT-Cognee/proof
-bash run_proof.sh              # creates .venv, installs cognee[gliner]==1.6.1, runs all batteries
+cd pack
+npm install
+npm pack
 ```
 
-`run_proof.sh` generates `proof/.env` from the committed, credential-free
-`proof/.env.example` (absolute paths substituted automatically), runs every battery
-**sequentially**, and leaves JSON records in `proof/results/`. No LLM API key is
-required (keyless local route: fastembed + GLiNER). First run downloads ~817 MB of
-models into user caches outside the repo. Reuse an existing venv with
-`bash run_proof.sh --skip-install`.
+The resulting `victframework-cognee-0.1.0.tgz` can be installed locally with
+VICT 0.3.1 packages. Python 3.12 with `cognee[gliner]==1.6.1`, downloaded
+models and an absolute, pack-owned store root are separate runtime requirements.
+Use the [pack guide](pack/README.md) for provisioning and the
+[browser pilot](examples/c6-browser-pilot/README.md) for an interactive trial.
+The package is marked `private: true` and is not on npm.
 
-## Provenance
+## Development record
 
-- VICT reference truth read: `docs/VICT-SYSTEM-REFERENCE.md` v0.4.32
-  (SHA-256 `dc43c1672c3f75da886325f236945a40fe0b6c79a373b8da6a0763612c4baa42`)
-  from radz2291/vict-02 @ `a746c34173838eb583d85a909207b6a0a7c7c832` (read-only).
-- Consumer examples inspected read-only: Quellight @ `5f709a536ab1f4d5fea0407db1b9537e0aa7c0f6`,
-  Trading OS @ `38f654e2ceffa0455fd5e7c2f1b4da24d73aea25`. These inspections are
-  observations of how the products integrate @victframework today; **they are not pack
-  adoption commitments** by either product.
-- Cognee upstream pinned: tag `v1.6.1` @ `eb90d03740755f5252b8b12cce91fd09970f2d81`.
+C0–C2 established the upstream capability and behavior evidence; C3 specified
+the contract; C4 implemented the pack; C5 closed the independent audit and
+built an installable artifact; C6 exercised that artifact in a browser
+consumer. Earlier reports in `docs/` are dated evidence, not the current
+setup guide. C7 records the private readiness decision and operating limits.
+The first real-app integration (C8) is intentionally separate.
 
-## Constraints honored
-
-- VICT, Quellight, and Trading OS repositories are read-only here.
-- Stage 8 (ecosystem gate) and Stage 9 are separate tracks; this is not that work.
-- No final pack API design and no pack implementation in this task.
+VICT, Quellight and Trading OS were read-only references throughout this pack
+work. See the dated reports for the exact repository and upstream pins.

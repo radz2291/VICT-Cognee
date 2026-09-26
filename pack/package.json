@@ -2,7 +2,7 @@
   "name": "@victframework/cognee",
   "version": "0.1.0",
   "private": true,
-  "description": "Keyless Cognee memory capability pack for VICT — one runtime per trust domain; keyed durable writes with a scope safety rail. UNPUBLISHED C5 candidate (proof artifact; npm refuses to publish a private package).",
+  "description": "Keyless Cognee memory capability pack for VICT — one runtime per trust domain; keyed durable writes with a scope safety rail. Unpublished private candidate; npm refuses to publish a private package.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

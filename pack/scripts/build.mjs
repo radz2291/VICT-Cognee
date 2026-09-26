@@ -13,8 +13,9 @@
  * resolves pack/src/worker/ in the repo and dist/worker/ in the installed
  * package — no repo-relative path, no tsx, no build tooling at runtime.
  *
- * TypeScript is NOT a runtime dependency of the package: this script locates
- * the compiler from the local VICT reference clone (read-only) or $C5_TSC.
+ * TypeScript is a declared build-only devDependency, never a runtime dependency.
+ * The compiler resolves from pack/node_modules by default; optional C5_TSC
+ * and C5_VICT_HOME overrides support development environments.
  *
  * Run (from repo root):  node pack/scripts/build.mjs
  */

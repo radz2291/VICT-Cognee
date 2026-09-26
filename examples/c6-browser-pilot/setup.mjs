@@ -5,22 +5,28 @@
  * links). Every package lands as a REAL tarball copy in this workspace, so
  * nothing can resolve back into a VICT source tree.
  *
- * Sources (defaults fit this machine; override via env):
+ * Required sources (set via env; no machine-specific defaults):
  *   PILOT_COGNEE_TGZ   packed @victframework/cognee tarball (from pack/ npm pack)
  *   PILOT_VICT_ROOT    VICT clone root (packages/{contracts,kernel,sdk,runtime})
- *   PILOT_PYTHON       Python executable with cognee 1.6.1 installed (proof venv)
+ *   PILOT_PYTHON       Python executable with cognee[gliner] 1.6.1 (used by server)
  *
  * Run:  npm run setup   then   npm install --no-audit --no-fund   then  npm start
  */
 
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-const VICT_ROOT = process.env.PILOT_VICT_ROOT ??
-  'C:/Users/RZ1/Desktop/RZ/260831-VCT-02';
-const COGNEE_TGZ = process.env.PILOT_COGNEE_TGZ ??
-  'C:/Users/RZ1/Desktop/RZ/260925-VCT-Cognee/pack/victframework-cognee-0.1.0.tgz';
+const VICT_ROOT = process.env.PILOT_VICT_ROOT;
+const COGNEE_TGZ = process.env.PILOT_COGNEE_TGZ;
+if (!VICT_ROOT || !COGNEE_TGZ) {
+  console.error('[setup] Set PILOT_VICT_ROOT and PILOT_COGNEE_TGZ; see README §Setup.');
+  process.exit(2);
+}
+if (!existsSync(COGNEE_TGZ)) {
+  console.error(`[setup] Cognee tarball not found: ${COGNEE_TGZ}`);
+  process.exit(2);
+}
 
 const vendor = path.resolve('vendor');
 mkdirSync(vendor, { recursive: true });

@@ -25,33 +25,43 @@ App code inventory (everything else is pack/runtime machinery):
 run (`runtime.activate/run`), and search hits are displayed **verbatim as candidates** —
 no threshold, no answer composition, anywhere in the app.
 
-## Setup (exact commands)
+## Setup (Windows PowerShell; clean consumer workspace)
 
-Prereqs: Node v22, npm 10; a Python env with `cognee 1.6.1` installed (the repo's proof
-venv works: `proof/.venv`), and the VICT clone with `packages/{contracts,kernel,sdk,runtime}`
-at **0.3.1** (tarballs are packed straight into `vendor/`; the VICT tree is never modified).
+Prereqs: Node 22/npm 10, Python 3.12 with `cognee[gliner]==1.6.1` in a
+venv (the proof venv is an option), and a VICT checkout containing built
+`contracts`, `kernel`, `sdk`, and `runtime` 0.3.1 packages. Paths below
+are examples to replace with your own absolute paths.
 
-```bat
-:: from a CLEAN directory (never inside the pack checkout)
-xcopy /E /I <repo>\examples\c6-browser-pilot c6-pilot && cd c6-pilot
+First build the private pack tarball in the VICT-Cognee checkout:
 
-set PILOT_VICT_ROOT=C:\Users\RZ1\Desktop\RZ\260831-VCT-02
-set PILOT_COGNEE_TGZ=C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\pack\victframework-cognee-0.1.0.tgz
-set PILOT_PYTHON=C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Scripts\python.exe
-
-npm run setup                       :: packs/copies 5 tarballs into vendor\ (VICT stays clean)
-npm install --no-audit --no-fund    :: ordinary consumer install (no flags, no overrides)
-npm start                           :: http://localhost:4173
+```powershell
+Set-Location C:\path\to\VICT-Cognee\pack
+npm install
+npm pack
 ```
 
-For the walkthrough you can also arm irreversible delete (server-side switch; deletion is
-demonstrated only on the disposable demo stores):
+Copy the pilot to a **different**, clean directory and set all three paths.
+The setup script has no personal-machine defaults:
 
-```bat
-set PILOT_ALLOW_IRREVERSIBLE=1 && npm start
+```powershell
+Set-Location C:\path\to\clean-workspace
+Copy-Item -Recurse C:\path\to\VICT-Cognee\examples\c6-browser-pilot .\c6-pilot
+Set-Location .\c6-pilot
+
+$env:PILOT_VICT_ROOT = 'C:\path\to\vict-02'
+$env:PILOT_COGNEE_TGZ = 'C:\path\to\VICT-Cognee\pack\victframework-cognee-0.1.0.tgz'
+$env:PILOT_PYTHON = 'C:\path\to\python-venv\Scripts\python.exe'
+
+npm run setup
+npm install --no-audit --no-fund
+npm start   # http://localhost:4173
 ```
 
-Reset everything at any time: stop the server (Ctrl+C) and delete `.pilot-stores\`.
+`setup` packs/copies five tarballs into `vendor/`; it does not edit VICT.
+For the disposable delete demo only, stop the server and restart it with
+`$env:PILOT_ALLOW_IRREVERSIBLE = '1'; npm start`. The server still requires
+a typed dataset-name confirmation. Stop the server before deleting
+`.pilot-stores/` to reset the demo.
 
 ## Walkthrough (owner-facing flow)
 
@@ -98,7 +108,7 @@ real per-actor authorization is an application/runtime concern outside this pack
 ## Focused checks (not the C0–C5 batteries)
 
 ```bat
-npm run checks     :: spawns the server twice; ~13 focused assertions (C1–C6)
+npm run checks     :: spawns the server twice; 17 focused assertions (C1–C6)
 ```
 
 C1 owner flow (add→cognify→scoped search) · C2 verbatim candidates + summaries search ·
@@ -118,6 +128,15 @@ is the builder-bootstrapping protocol layer (context/task packs, `init-app` prov
 freshness gate) and is explicitly **not a release-set member** — using `init-app` here
 would add ceremony without changing the consumer surface; noted as the natural next step
 if this pilot graduates to a real product.
+
+## Retry state observed in the pilot
+
+On a failed cognify attempt, VICT 0.3.1 may return a durable run in
+`running` with a retry timer. The pilot has no automatic resume path and
+shows that state to the user. Do not display it as a completed write, and do
+not issue an automatic fresh run without inspecting the previous outcome.
+The real-app stage must decide how to resume or recover such runs. See
+[`docs/c7-private-readiness.md`](../../docs/c7-private-readiness.md).
 
 ## Resource observations
 
