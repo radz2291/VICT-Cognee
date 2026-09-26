@@ -857,14 +857,21 @@ proof drivers and crash harness remain proof code; the SHIPPED worker is
 - `replayed-known-outcome` replays trust the journal's record; the journal is
   fsynced but OS-crash durability of the underlying filesystem (beyond
   `fsync`) is unverified.
-- **Release metadata (remaining, deliberately NOT done here):** the package
-  is not published and this was not a packaging pass — `pack/package.json`
-  still declares `main: src/index.ts` (TypeScript source, no build artifact,
-  no `files` allowlist, no bundled-worker packaging config, `private: true`).
-  A distribution pass must add: a build step (tsc/tsup), a `files` allowlist
-  including `src/worker/cognee_worker.py` + `src/worker/guard_store_roots.py`,
-  resolved peer/engine metadata, and a packaging test that installs the packed
-  tarball into a clean consumer. Publication itself remains excluded.
+- **Release metadata (C5 packaging pass — build + smoke DONE; publication
+  still excluded):** `pack/package.json` (private, unpublished) now declares
+  the built artifact: `main`/`exports` → `./dist/index.js`, `files:
+  ["dist", "README.md"]` — `dist/` contains the tsc-compiled JavaScript
+  (NodeNext, declarations, maps) AND the bundled worker + guard
+  (`dist/worker/cognee_worker.py`, `dist/worker/guard_store_roots.py`,
+  copied by `pack/scripts/build.mjs`). `engines: node >=22`. No registry
+  dependency: the runtime needs only Node + the provisioned Python venv.
+  The packaging smoke (`docs/c5-evidence/smoke.mjs`) packs the tarball,
+  installs it into a clean throwaway project together with the supported
+  VICT packages (`@victframework/sdk@0.3.1`, `@victframework/runtime@0.3.1`
+  + contracts/kernel via `file:`), and runs a disposable-store add + cognify
+  + scoped search through the REAL VICT runtime with plain `node` — no tsx,
+  no repo-relative path, no test fault hook in the shipped code. Publication
+  itself remains excluded (§12).
 - Store-ownership residual risk (updated by correction pass 2): a foreign-host
   owner is protected by its heartbeat, which is refreshed per op AND during
   in-flight operations, so long ops no longer erode the budget; a crashed
@@ -910,9 +917,11 @@ the worker boundary; the interface never exposes the storage name.
      guards its own boundary meanwhile.
    - UV-2: `deriveIdempotencyKey` should hash `invocationId`
      (`vict.idempotency-key@2`) or drop it from the signature.
-10. **Release/packaging metadata** (§11 remaining limits): build artifact,
-   `files` allowlist incl. the bundled worker + guard, packaging smoke test.
-   Publication itself remains excluded from this task.
+10. **Publication / consumer adoption** — the C5 packaging pass delivered the
+   build artifact, `files` allowlist (incl. bundled worker + guard), the
+   private/unpublished gate, and the clean-install smoke test (§11); actual
+   `npm publish` is impossible by design (`private: true`) and consumer
+   adoption remains excluded from this task.
 11. Read-capability test/simulate doubles, if read isolation via doubles is
     ever wanted on capability-only graphs (currently they fail closed, which
     is safe).

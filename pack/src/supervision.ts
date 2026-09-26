@@ -68,7 +68,8 @@ const LOCK_FILE_NAME = 'cognee-store-owner.lock';
 
 /** Default path of the PACK-BUNDLED worker, resolved against this module. */
 function bundledWorkerPath(): string {
-  // supervision.js lives in pack/src; the bundled worker is pack/src/worker/.
+  // Resolved against THIS compiled module: pack/src/worker/ in the repo,
+  // dist/worker/ in the built package — never a repo-relative constant.
   return path.join(path.dirname(fileURLToPath(import.meta.url)), 'worker', 'cognee_worker.py');
 }
 

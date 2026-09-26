@@ -2,14 +2,22 @@
   "name": "@victframework/cognee",
   "version": "0.1.0",
   "private": true,
-  "description": "PROPOSED (unpublished, no adoption claims) Cognee memory capability pack for VICT runtimes: six capabilities over a supervised local cognee worker, one runtime/worker/store per trust domain. Proof artifact of radz2291/VICT-Cognee C4 against VICT ABI @ vict-02 5ea0afe2 (read-only reference).",
+  "description": "Keyless Cognee memory capability pack for VICT — one runtime per trust domain; keyed durable writes with a scope safety rail. UNPUBLISHED C5 candidate (proof artifact; npm refuses to publish a private package).",
   "type": "module",
-  "main": "src/index.ts",
-  "scripts": {
-    "verify": "tsx verify/verify.ts",
-    "verify:ownership": "tsx verify/ownership-verify.ts",
-    "proof:c4": "node ../../worker/proof_c4.mjs",
-    "proof:equiv": "node ../../worker/graph_equiv_c4.mjs"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
   },
   "peerDependencies": {
     "@victframework/sdk": "^0.1.0",
@@ -19,5 +27,13 @@
     "@victframework/sdk": { "optional": true },
     "@victframework/runtime": { "optional": true }
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "pack:check": "npm pack",
+    "verify": "tsx verify/verify.ts",
+    "verify:ownership": "tsx verify/ownership-verify.ts",
+    "proof:c4": "node ../../worker/proof_c4.mjs",
+    "proof:equiv": "node ../../worker/graph_equiv_c4.mjs"
+  }
 }

@@ -1,0 +1,258 @@
+[smoke-sup] store ownership acquired: pid=14296 host=MyTingkap instance=56330d90 -> C:\Users\RZ1\AppData\Local\Temp\c5-smoke\.smoke-store\cognee-store-o
+[smoke] S1 PASS installed pack manifest validates against @victframework/sdk
+[smoke] S2 PASS bundled worker + guard resolve inside node_modules/@victframework/cognee/dist (no repo-relative path)
+[smoke-sup] [worker] 
+[2m2026-09-26T06:31:31.700076[0m [[32m[1minfo     [0m] [1mLog file created at: C:\Users\RZ1\AppData\Local\Temp\c5-smoke\.sm
+[smoke-sup] [worker] 
+[2m2026-09-26T06:31:31.700076[0m [[33m[1mwarning  [0m] [1mCognee 1.0 changes: New API � remember/recall/forget/improve (V1 
+[smoke-sup] [worker] 
+[2m2026-09-26T06:31:31.700076[0m [[32m[1minfo     [0m] [1mLogging initialized           [0m [[0m[1m[34mcognee.shared.lo
+[smoke-sup] [worker] 
+[2m2026-09-26T06:31:42.837504[0m [[32m[1minfo     [0m] [1mauth posture: authentication=required, multi_tenant=enabled (defa
+[smoke-sup] [worker] [worker] [store-guard:worker startup] OK � all destructive roots inside C:\Users\RZ1\AppData\Local\Temp\c5-smoke\.smoke-store
+[wor
+[smoke-sup] [worker] 
+[worker] [store-guard:worker startup]   cache_root -> C:\Users\RZ1\AppData\Local\Temp\c5-smoke\.smoke-store\cache
+[worker] [stor
+[smoke-sup] [worker] 
+[1msetup plugin alembic.autogenerate.schemas[0m
+[smoke-sup] [worker] 
+[1msetup plugin alembic.autogenerate.tables[0m
+
+[1msetup plugin alembic.autogenerate.types[0m
+[smoke-sup] [worker] 
+[1msetup plugin alembic.autogenerate.constraints[0m
+
+[1msetup plugin alembic.autogenerate.defaults[0m
+[smoke-sup] [worker] 
+[1msetup plugin alembic.autogenerate.comments[0m
+
+[1msetup plugin alembic.ext.checkconstraint_byname[0m
+[smoke-sup] [worker] 
+[1mUsing database: sqlite+aiosqlite:///C:\Users\RZ1\AppData\Local\Temp\c5-smoke\.smoke-store\system\databases/cognee_db[0m
+[smoke-sup] [worker] 
+[1mContext impl SQLiteImpl.      [0m
+[smoke-sup] [worker] 
+[1mWill assume non-transactional DDL.[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade  -> 8057ae7329c2, Initial migration[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 8057ae7329c2 -> 482cd6517ce4, Add default user[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 482cd6517ce4 -> 1d0bb7fede17, Add pipeline run status[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 1d0bb7fede17 -> ab7e313804ae, permission_system_rework[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade ab7e313804ae -> e4ebee1091e7, Expand data model info[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade e4ebee1091e7 -> b9274c27a25a, kuzu-11-migration[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade b9274c27a25a -> 1daae0df1866, incremental_loading[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 1daae0df1866 -> 9e7a3cb85175, loader_separation[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 9e7a3cb85175 -> 45957f0a9849, Add notebook table[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 45957f0a9849 -> 211ab850ef3d, Add sync_operations table[0m
+[smoke-sup] [worker] sync_operations table already exists, skipping creation
+[smoke-sup] [worker] 
+[smoke-sup] [worker] 
+[1mRunning upgrade 211ab850ef3d -> c946955da633, Multi Tenant Support[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade c946955da633 -> 76625596c5c3, Expand dataset database for multi user[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 76625596c5c3 -> 46a6ce2bd2b2, Expand dataset database with json connection field[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 46a6ce2bd2b2 -> a1b2c3d4e5f6, Add label column to data table[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade a1b2c3d4e5f6 -> e1ec1dcb50b6, add_last_accessed_to_data[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade e1ec1dcb50b6 -> 1a58b986e6e1, Enable delete for old tutorial notebooks[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 1a58b986e6e1 -> 84e5d08260d6, Replace graph ledger table with nodes and edges tables[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 84e5d08260d6 -> 18f01b0a0b4c, create principal configuration table[0m
+[smoke-sup] [worker] principal_configuration table already exists, skipping creation
+[smoke-sup] [worker] 
+[1mRunning upgrade 18f01b0a0b4c -> b1c2d3e4f5a6, add_user_api_key_table[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade b1c2d3e4f5a6 -> f1a2b3c4d5e6, add_importance_weight_to_data[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade f1a2b3c4d5e6 -> d4e5f6a7b8c9, add dataset_configuration table[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade d4e5f6a7b8c9 -> 6ee94db7381f, remove unique constraint tenant name[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 6ee94db7381f -> b2c3d4e5f6a7, add created_at index to queries and results tables[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade b2c3d4e5f6a7 -> 7c5d4e2f8a91, Add parent_user_id to users[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 7c5d4e2f8a91 -> 24f5d4f64d0d, Add session lifecycle tables.[0m
+[smoke-sup] [worker] session_records table already exists, skipping creation
+session_model_usage table already exists, skipping creation
+[smoke-sup] [worker] 
+[1mRunning upgrade 24f5d4f64d0d -> 760ef4f08ef0, change node label and type to text[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 760ef4f08ef0 -> c1a2b3d4e5f9, Add Cognee version and migration revision tracking to dataset_database[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade c1a2b3d4e5f9 -> d8f4a1b2c3e9, Add the single-row global_database_version table[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade d8f4a1b2c3e9 -> aa753a730673, add pipeline run id to nodes and edges[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade aa753a730673 -> b2c4d6e8f0a1, add_integration_credentials_table[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade b2c4d6e8f0a1 -> c3d5e7f9a1b2, dedupe cache_session_context and add unique entry index[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade c3d5e7f9a1b2 -> d4e6f8a0b2c3, add_integration_credentials_workspace_id[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade d4e6f8a0b2c3 -> e5a7b9c1d3f4, add_dataset_id_to_queries_and_results[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade e5a7b9c1d3f4 -> c5d7e9f1a3b5, add_dataset_id_to_data[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade c5d7e9f1a3b5 -> d6e8f0a2b4c6, backfill_dataset_scoped_data_drop_dataset_data[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade d6e8f0a2b4c6 -> f2b4c6d8e0a1, add_system_metadata_to_data[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade f2b4c6d8e0a1 -> b8c1d3e5f7a9, Add provenance_entries table[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade b8c1d3e5f7a9 -> a7f3c9e1b5d2, Extend pipeline_runs into the operation record (SDK-399)[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade a7f3c9e1b5d2 -> c7e2a9b4d1f3, add_created_and_last_used_to_user_api_key[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade c7e2a9b4d1f3 -> c4e8a1f6b3d7, Index pipeline_runs on (created_at, id)[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade c4e8a1f6b3d7 -> b3d5f7a9c1e2, add_graph_metrics_has_full_metrics[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade b3d5f7a9c1e2 -> d1e2f3a4b5c6, Add composite index on pipeline_runs for the /status latest-run lookup[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade d1e2f3a4b5c6 -> f3a7b9c1d2e4, Add the compact graph edge evidence sidecar.[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade f3a7b9c1d2e4 -> 1c22e6cb5aec, Reconcile every database to the chain's frozen truth[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade 1c22e6cb5aec -> a7c2e9f4b8d1, Add agent_id to session_records for agent-to-search attribution[0m
+[smoke-sup] [worker] 
+[1mRunning upgrade a7c2e9f4b8d1 -> e7f9a1c3d5b8, Add composite index on data for the dataset listing[0m
+[smoke-sup] [worker] 
+[1mRelational migrations applied (target head).[0m
+[smoke-sup] send op=add id=1 remainingMs=163290 bytes=260
+[smoke-sup] [worker] [worker] journal at C:\Users\RZ1\AppData\Local\Temp\c5-smoke\.smoke-store\system\cognee_idempotency_journal.jsonl
+[worker] recv li
+[smoke-sup] [worker] 
+[1mUsing database: sqlite+aiosqlite:///C:\Users\RZ1\AppData\Local\Temp\c5-smoke\.smoke-store\system\databases/cognee_db[0m
+[smoke-sup] [worker] 
+[1mContext impl SQLiteImpl.      [0m
+[smoke-sup] [worker] 
+[1mWill assume non-transactional DDL.[0m
+[smoke-sup] [worker] 
+[1mRelational migrations applied (target head).[0m
+[smoke-sup] [worker] 
+[2m2026-09-26T06:31:47.924856[0m [[32m[1minfo     [0m] [1mSkipping LLM connection test: this pipeline has no LLM task.[0m 
+[smoke-sup] [worker] 
+[2m2026-09-26T06:31:47.925437[0m [[32m[1minfo     [0m] [1mTesting connection to Embedding endpoint...[0m [[0m[1m[34mcog
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:00.670219[0m [[32m[1minfo     [0m] [1mLoading local model BAAI/bge-small-en-v1.5 from C:\Users\RZ1\AppD
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.536779[0m [[32m[1minfo     [0m] [1mPipeline run started: `cbb7e428-d377-54cc-9315-37eb02f59d4d`[0m 
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.537781[0m [[32m[1minfo     [0m] [1mCoroutine task started: `resolve_data_directories`[0m [[0m[1m
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.540780[0m [[32m[1minfo     [0m] [1mCoroutine task started: `ingest_data`[0m [[0m[1m[34mrun_tasks
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.541781[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset starting[0m [[0m[1m[34mcognee.ta
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.541781[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] starting: save files and 
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.541781[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] finished in 0.000 seconds
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.542780[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] starting: resolve data ID
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.558815[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] finished in 0.015 seconds
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.558815[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] starting: process files a
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.559822[0m [[32m[1minfo     [0m] [1mRegistered loader: pypdf_loader[0m [[0m[1m[34mcognee.infrastr
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.559822[0m [[32m[1minfo     [0m] [1mRegistered loader: text_loader[0m [[0m[1m[34mcognee.infrastru
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.559822[0m [[32m[1minfo     [0m] [1mRegistered loader: code_loader[0m [[0m[1m[34mcognee.infrastru
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.560820[0m [[32m[1minfo     [0m] [1mRegistered loader: image_loader[0m [[0m[1m[34mcognee.infrastr
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.560820[0m [[32m[1minfo     [0m] [1mRegistered loader: audio_loader[0m [[0m[1m[34mcognee.infrastr
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.560820[0m [[32m[1minfo     [0m] [1mRegistered loader: video_loader[0m [[0m[1m[34mcognee.infrastr
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.561819[0m [[32m[1minfo     [0m] [1mRegistered loader: csv_loader [0m [[0m[1m[34mcognee.infrastru
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.561819[0m [[32m[1minfo     [0m] [1mRegistered loader: advanced_pdf_loader[0m [[0m[1m[34mcognee.i
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.562819[0m [[32m[1minfo     [0m] [1mRegistered loader: docling_loader[0m [[0m[1m[34mcognee.infras
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.563824[0m [[32m[1minfo     [0m] [1mRegistered loader: dlt_csv_loader[0m [[0m[1m[34mcognee.infras
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.567821[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] finished in 0.016 seconds
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.568818[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] starting: DB commit (1 ne
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.590188[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] finished in 0.016 seconds
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.590188[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset finished in 0.047 seconds[0m [[0m
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.590188[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `ingest_data`[0m [[0m[1m[34mrun_tas
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.591230[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `resolve_data_directories`[0m [[0m[1
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.591230[0m [[32m[1minfo     [0m] [1mPipeline run completed: `cbb7e428-d377-54cc-9315-37eb02f59d4d`[0
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.674913[0m [[32m[1minfo     [0m] [1mLoaded JSON extension         [0m [[0m[1m[34mcognee.shared.lo
+[smoke-sup] send op=cognify id=2 remainingMs=299994 bytes=133
+[smoke-sup] [worker] [worker] recv line bytes=133
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:05.970838[0m [[33m[1mwarning  [0m] [1mExtracting the knowledge graph with the GLiNER demo extractor: co
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:06.391323[0m [[32m[1minfo     [0m] [1mPipeline run started: `4c9057fc-0535-5927-a815-ce54b6b9abc4`[0m 
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:06.392362[0m [[32m[1minfo     [0m] [1mCoroutine task started: `classify_documents`[0m [[0m[1m[34mru
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:06.393324[0m [[32m[1minfo     [0m] [1mCoroutine task started: `prepare_gliner_schema`[0m [[0m[1m[34
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:06.397363[0m [[32m[1minfo     [0m] [1mLoading local model fastino/gliner2.5-base-v1 from C:\Users\RZ1\.
+[smoke-sup] [worker] C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\gliner2\models\boundary\model.py:2101: UserWarning: Checkpo
+[smoke-sup] [worker] C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script
+[smoke-sup] [worker] C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee\proof\.venv\Lib\site-packages\gliner2\models\boundary\model.py:1147: RuntimeWarning: Enco
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:19.147300[0m [[32m[1minfo     [0m] [1mGLiNER model fastino/gliner2.5-base-v1 ready in 12.7s[0m [[0m[
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:26.802173[0m [[32m[1minfo     [0m] [1mGLiNER schema for text_c45f9653db28ba8010f75eb20a2b7b8d resolved 
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:26.802173[0m [[32m[1minfo     [0m] [1mAsync Generator task started: `extract_chunks_from_documents`[0m
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:26.848686[0m [[32m[1minfo     [0m] [1mCoroutine task started: `extract_graph_and_summarize_with_gliner`
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:27.611820[0m [[32m[1minfo     [0m] [1mCoroutine task started: `add_data_points`[0m [[0m[1m[34mrun_t
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:29.400707[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `add_data_points`[0m [[0m[1m[34mrun
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:29.401708[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `extract_graph_and_summarize_with_gline
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:29.401708[0m [[32m[1minfo     [0m] [1mAsync Generator task completed: `extract_chunks_from_documents`[
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:29.402708[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `prepare_gliner_schema`[0m [[0m[1m[
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:29.402708[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `classify_documents`[0m [[0m[1m[34m
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:29.402708[0m [[32m[1minfo     [0m] [1mPipeline run completed: `4c9057fc-0535-5927-a815-ce54b6b9abc4`[0
+[smoke] S3 PASS keyed write graph (add + cognify) completes through the real worker (contract-conform receipts)
+[smoke-sup] send op=search_chunks id=3 remainingMs=119992 bytes=84
+[smoke-sup] [worker] [worker] recv line bytes=84
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:29.991955[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'settlement windows'[0m [[0
+[smoke-sup] [worker] 
+[2m2026-09-26T06:32:30.123244[0m [[32m[1minfo     [0m] [1mFound 1 chunks from vector search[0m [[0m[1m[34mChunksRetriev
+[smoke] S4 PASS scoped search through the runtime returns the marker (in-scope)
+[smoke] S5 PASS second instance on the same store refuses (COGNEE_STORE_OWNED, pre-spawn)
+[smoke-sup] send op=shutdown id=4 remainingMs=24998 bytes=26
+[smoke-sup] [worker] [worker] recv line bytes=26
+[smoke-sup] store ownership released: pid=14296 instance=56330d90
+[smoke] S5 PASS orderly shutdown releases ownership (lock gone)
+[smoke] S6 PASS shipped worker + guard contain no test fault hook (C4_PROOF_FAULT absent)
+[smoke] COMPLETE — 7/7 PASS

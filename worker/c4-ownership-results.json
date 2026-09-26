@@ -2,18 +2,18 @@
   "verification": "c5-store-ownership-fail-closed",
   "victAbiReference": "radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)",
   "store": "fresh (proof/.cognee-ownership + race/heartbeat sub-stores)",
-  "started": "2026-09-26T05:54:17.964Z",
-  "duration_s": 31,
+  "started": "2026-09-26T06:30:23.736Z",
+  "duration_s": 29,
   "results": [
     {
       "id": "O1",
       "name": "first instance claims exclusive store ownership (lock held, pid recorded)",
       "outcome": "PASS",
       "detail": {
-        "lockPid": 23584,
+        "lockPid": 16252,
         "held": true
       },
-      "ms": 31
+      "ms": 16
     },
     {
       "id": "O2",
@@ -24,7 +24,7 @@
         "spawns": 0,
         "guidance": true
       },
-      "ms": 9
+      "ms": 4
     },
     {
       "id": "O3a",
@@ -34,7 +34,7 @@
         "spawns": 1,
         "held": true
       },
-      "ms": 17521
+      "ms": 15762
     },
     {
       "id": "O3b",
@@ -43,14 +43,14 @@
       "detail": {
         "held": false
       },
-      "ms": 519
+      "ms": 523
     },
     {
       "id": "O3c",
       "name": "restart: a new instance acquires ownership after orderly release",
       "outcome": "PASS",
       "detail": {},
-      "ms": 3
+      "ms": 2
     },
     {
       "id": "O4",
@@ -62,7 +62,7 @@
         "guidanceInMessage": true,
         "recovered": true
       },
-      "ms": 68
+      "ms": 71
     },
     {
       "id": "O2b",
@@ -76,7 +76,7 @@
         "opsServed": 0,
         "sticky": "COGNEE_STORE_OWNED"
       },
-      "ms": 321
+      "ms": 328
     },
     {
       "id": "O6",
@@ -88,7 +88,7 @@
         "spawns": 0,
         "opsServed": 0
       },
-      "ms": 5
+      "ms": 6
     },
     {
       "id": "O7a",
@@ -100,18 +100,18 @@
             "event": "done",
             "acquired": false,
             "code": "COGNEE_STORE_OWNED",
-            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=race-sta pid=65"
+            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=race-sta pid=68"
           },
           {
             "event": "done",
             "acquired": false,
             "code": "COGNEE_STORE_OWNED",
-            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=race-sta pid=65"
+            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=race-sta pid=68"
           }
         ],
         "lockUntouched": true
       },
-      "ms": 766
+      "ms": 743
     },
     {
       "id": "O7b",
@@ -122,27 +122,27 @@
           {
             "event": "done",
             "acquired": true,
-            "instanceId": "4f654ba6-dff1-48e3-9458-b511fbdad9af",
-            "pid": 23332
+            "instanceId": "4d0cdd26-0625-4e61-ba04-94ea02fde1d4",
+            "pid": 10564
           },
           {
             "event": "done",
             "acquired": false,
             "code": "COGNEE_STORE_OWNED",
-            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=4f654ba6 pid=23"
+            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=4d0cdd26 pid=10"
           }
         ],
         "winnerLock": {
           "schema": "vict.cognee.store-ownership@1",
-          "instanceId": "4f654ba6-dff1-48e3-9458-b511fbdad9af",
-          "pid": 23332,
+          "instanceId": "4d0cdd26-0625-4e61-ba04-94ea02fde1d4",
+          "pid": 10564,
           "host": "MyTingkap",
           "user": "RZ1",
-          "startedAt": "2026-09-26T05:54:37.907Z",
-          "heartbeatAt": "2026-09-26T05:54:37.908Z"
+          "startedAt": "2026-09-26T06:30:41.815Z",
+          "heartbeatAt": "2026-09-26T06:30:41.815Z"
         }
       },
-      "ms": 767
+      "ms": 627
     },
     {
       "id": "O8",
@@ -152,18 +152,18 @@
         "freshOwner": {
           "event": "done",
           "acquired": true,
-          "instanceId": "ea0f6935-8b4a-4d39-ba32-3974fc4f3e64",
-          "pid": 23836
+          "instanceId": "fb4b926b-149d-4e72-a1df-e438ad25a8b5",
+          "pid": 9808
         },
         "contender": {
           "event": "done",
           "acquired": false,
           "code": "COGNEE_STORE_OWNED",
-          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=ea0f6935 pid=23"
+          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=fb4b926b pid=98"
         },
         "lockUnchanged": true
       },
-      "ms": 1248
+      "ms": 1031
     },
     {
       "id": "O9a",
@@ -173,7 +173,7 @@
         "code": "COGNEE_STORE_OWNED",
         "unchanged": true
       },
-      "ms": 6
+      "ms": 4
     },
     {
       "id": "O9b",
@@ -184,16 +184,16 @@
         "unchanged": true,
         "guidanceInMessage": true
       },
-      "ms": 8
+      "ms": 3
     },
     {
       "id": "O9c",
       "name": "long op: heartbeat refreshed DURING the op (budget never erodes) and a second instance is refused mid-op; op completes",
       "outcome": "PASS",
       "detail": {
-        "hb1": "2026-09-26T05:54:39.556Z",
-        "hb2": "2026-09-26T05:54:39.563Z",
-        "advancedMs": 7,
+        "hb1": "2026-09-26T06:30:43.187Z",
+        "hb2": "2026-09-26T06:30:43.190Z",
+        "advancedMs": 3,
         "midOp": "COGNEE_STORE_OWNED",
         "receipt": {
           "op": "add",
@@ -202,7 +202,7 @@
           "servedOps": 1
         }
       },
-      "ms": 4161
+      "ms": 4090
     },
     {
       "id": "O10",
@@ -213,13 +213,13 @@
           "event": "done",
           "acquired": false,
           "code": "COGNEE_STORE_OWNED",
-          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=5de464a5 pid=23"
+          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=40655e8a pid=16"
         },
         "c": {
           "event": "done",
           "acquired": false,
           "code": "COGNEE_STORE_OWNED",
-          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=5de464a5 pid=23"
+          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=40655e8a pid=16"
         },
         "aServed": 1,
         "aSpawns": 1,
@@ -227,7 +227,7 @@
         "renameSyncCount": 1,
         "sourceClean": true
       },
-      "ms": 4143
+      "ms": 4073
     },
     {
       "id": "O5",
@@ -237,11 +237,11 @@
         "spawns": 1,
         "respawns": 0,
         "kills": 0,
-        "lastRssBytes": 343171072,
+        "lastRssBytes": 344064000,
         "opsServed": 2,
-        "stderrLines": 70,
+        "stderrLines": 69,
         "stdoutViolations": 0,
-        "duration_s": 31
+        "duration_s": 29
       }
     }
   ]
