@@ -390,14 +390,18 @@ export class CogneeWorkerSupervision {
     renameSync(tmp, this.ownershipLockPath);
   }
 
-  /** Release ownership on orderly shutdown. Deletes the lock ONLY if it
-   *  still carries THIS instance's id — a live/foreign owner's lock is
-   *  never deleted. */
+  /** Release ownership on orderly shutdown. Deletes the lock ONLY when a
+   *  READABLE owner record still matches THIS instance (C5 closure, audit
+   *  L-1): a missing, corrupt/unreadable, or foreign lock is left untouched —
+   *  an unattributable lock is operator-recovery territory (§8.1); deleting
+   *  it could displace a fresh owner racing this shutdown. */
   releaseStoreOwnership(): void {
     if (!this.ownsStore) return;
     const { rec } = this.readOwner();
-    if (rec && rec.instanceId !== this.instanceId) {
-      this.diag('store ownership not released: lock no longer ours (foreign instance)');
+    if (!rec || rec.instanceId !== this.instanceId) {
+      this.diag(rec
+        ? 'store ownership not released: lock no longer ours (foreign instance) — not deleted'
+        : 'store ownership not released: lock missing or unreadable — left untouched for operator recovery (§8.1)');
       this.ownsStore = false;
       return;
     }

@@ -49,6 +49,10 @@
  *      dispatched, A's lock untouched); source assertion: the supervision
  *      contains NO recovery-rename path (exactly one renameSync — the
  *      owner's heartbeat replace — and no `.recovering-` markers);
+ *  O11 C5 closure (audit L-1): releaseStoreOwnership deletes the lock ONLY
+ *      when a readable owner record matches the instance — a CORRUPT/
+ *      unreadable lock and a FOREIGN lock are left byte-identical (never
+ *      deleted); a readable OWN record is deleted (positive control);
  *  O5  resource recording (spawns, ops, wall clock).
  */
 
@@ -531,6 +535,43 @@ let packA: ReturnType<typeof createCogneePack> | null = null;
     { b: rb, c: rc, aServed: servedByA, aSpawns: spawnsByA, lockIntact,
       renameSyncCount: renameCount, sourceClean }, Date.now() - t);
   await packI.supervision.shutdown();
+}
+
+// ---- O11 (C5 closure, audit L-1): release NEVER deletes an unattributable lock
+// releaseStoreOwnership() is exercised directly — no worker spawn needed. Three
+// sub-cases against fresh instances whose constructor owns the lock:
+//  (i)   the lock is overwritten with CORRUPT/unreadable bytes (torn-record
+//        simulation) -> release leaves it byte-identical;
+//  (ii)  the lock is overwritten with a FOREIGN owner record -> release leaves
+//        it byte-identical;
+//  (iii) positive control: a readable OWN record -> release deletes the lock.
+// The harness performs the lock deletions between sub-cases (the §8.1 operator
+// step for unattributable bytes).
+{
+  const t = Date.now();
+  const corrupt = '{"schema":"vict.cognee.store-ownership@1","torn';
+  // (i) corrupt/unreadable
+  const packK = makePack();
+  writeFileSync(LOCK, corrupt);
+  packK.supervision.releaseStoreOwnership();
+  const corruptLeft = existsSync(LOCK) && readFileSync(LOCK, 'utf8') === corrupt;
+  if (corruptLeft) unlinkSync(LOCK); // operator step (unattributable bytes)
+  // (ii) foreign owner record
+  const packL = makePack();
+  const foreignPid = await deadPid();
+  const foreign = craftLock(LOCK, {
+    pid: foreignPid, instanceId: 'foreign-release-0000', heartbeatAgeMs: 60_000,
+  });
+  packL.supervision.releaseStoreOwnership();
+  const foreignLeft = existsSync(LOCK) && readFileSync(LOCK, 'utf8') === foreign;
+  if (foreignLeft) unlinkSync(LOCK); // operator step (foreign record, dead pid verified by deadPid())
+  // (iii) positive control: readable OWN record is deleted
+  const packM = makePack();
+  packM.supervision.releaseStoreOwnership();
+  const ownDeleted = !existsSync(LOCK);
+  check('O11', 'release deletes ONLY a readable matching owner record: corrupt and foreign locks left byte-identical, own record deleted (audit L-1)',
+    corruptLeft && foreignLeft && ownDeleted,
+    { corruptLeft, foreignLeft, ownDeleted }, Date.now() - t);
 }
 
 // ---- O5: resource recording ---------------------------------------------------

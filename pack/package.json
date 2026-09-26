@@ -20,20 +20,21 @@
     "node": ">=22"
   },
   "peerDependencies": {
-    "@victframework/sdk": "^0.1.0",
-    "@victframework/runtime": "^0.1.0"
+    "@victframework/sdk": "^0.3.1",
+    "@victframework/runtime": "^0.3.1"
   },
   "peerDependenciesMeta": {
     "@victframework/sdk": { "optional": true },
     "@victframework/runtime": { "optional": true }
   },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "typescript": "^6.0.3"
+  },
   "license": "UNLICENSED",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "pack:check": "npm pack",
-    "verify": "tsx verify/verify.ts",
-    "verify:ownership": "tsx verify/ownership-verify.ts",
-    "proof:c4": "node ../../worker/proof_c4.mjs",
-    "proof:equiv": "node ../../worker/graph_equiv_c4.mjs"
+    "prepack": "node scripts/build.mjs",
+    "pack:check": "npm pack"
   }
 }

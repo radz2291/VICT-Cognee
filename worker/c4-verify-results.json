@@ -2,20 +2,20 @@
   "verification": "c4-pack-through-real-runtime",
   "victAbiReference": "radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)",
   "store": "fresh (proof/.cognee-verify)",
-  "started": "2026-09-26T06:04:14.008Z",
-  "duration_s": 99,
+  "started": "2026-09-26T07:55:39.076Z",
+  "duration_s": 119,
   "environment": {
-    "freeRamGbStart": 3.18,
-    "freeRamGbEnd": 3.9,
+    "freeRamGbStart": 1.97,
+    "freeRamGbEnd": 2.37,
     "note": "Windows low-memory class: cognee cognify peaks ~2.0 GB; native crashes (0xC0000005) were observed in earlier batteries when free RAM dropped near 1.9 GB (agent observations, C1/C2). None occurred in this run; the supervision poison+respawn policy contains worker deaths as COGNEE_WRITE_UNKNOWN/COGNEE_WORKER_UNAVAILABLE."
   },
   "supervisionStats": {
     "spawns": 1,
     "respawns": 0,
     "kills": 0,
-    "lastRssBytes": 343556096,
+    "lastRssBytes": 343465984,
     "opsServed": 9,
-    "stderrLines": 164,
+    "stderrLines": 163,
     "stdoutViolations": 0
   },
   "results": [
@@ -26,7 +26,7 @@
       "detail": {
         "capabilities": 6
       },
-      "ms": 3
+      "ms": 4
     },
     {
       "id": "V1",
@@ -42,7 +42,7 @@
           "cognee.forgetDataset"
         ]
       },
-      "ms": 2
+      "ms": 5
     },
     {
       "id": "V2",
@@ -60,7 +60,7 @@
         },
         "spawns": 0
       },
-      "ms": 25
+      "ms": 31
     },
     {
       "id": "V2b",
@@ -87,7 +87,7 @@
         "spawns": 0,
         "spawnsBefore": 0
       },
-      "ms": 3
+      "ms": 4
     },
     {
       "id": "ABI",
@@ -108,14 +108,14 @@
           "code": "VICT_RUNTIME_PERMISSION_DENIED",
           "details": {
             "capabilityId": "cognee.add",
-            "errorId": "err_1920f65f3d2d8251",
+            "errorId": "err_570e82367b95755f",
             "invokedVia": "real",
             "nodeId": "put"
           },
           "message": "Permission 'cognee.write' required by capability 'cognee.add' is not granted in this runtime; the handler was not invoked."
         }
       },
-      "ms": 30
+      "ms": 37
     },
     {
       "id": "V5",
@@ -125,7 +125,7 @@
         "status": "completed",
         "output": {
           "datasetName": "qa.verify",
-          "idempotencyKey": "idem_958ff8a16e3b00ee709db5a3299d7f1e",
+          "idempotencyKey": "idem_143543584d067a99ba282b6e34097acf",
           "reconciled": "fresh-execution",
           "itemsBefore": 1,
           "itemsAfter": 1,
@@ -134,7 +134,7 @@
         "error": null,
         "spawns": 1
       },
-      "ms": 72752
+      "ms": 89822
     },
     {
       "id": "V5",
@@ -149,7 +149,7 @@
           "datasetName": "qa.verify"
         }
       },
-      "ms": 440
+      "ms": 465
     },
     {
       "id": "V5b",
@@ -165,11 +165,11 @@
             "nodeId": "put",
             "invokedVia": "real",
             "errorName": "Error",
-            "errorId": "err_a2a62906b4f72609"
+            "errorId": "err_4a89a064f401423e"
           }
         }
       },
-      "ms": 3
+      "ms": 2
     },
     {
       "id": "V6",
@@ -179,7 +179,7 @@
         "first": "fresh-execution",
         "replay": "replayed-known-outcome"
       },
-      "ms": 579
+      "ms": 835
     },
     {
       "id": "V6",
@@ -188,7 +188,7 @@
       "detail": {
         "got": "COGNEE_IDEMPOTENCY_MISMATCH"
       },
-      "ms": 6
+      "ms": 10
     },
     {
       "id": "V6",
@@ -197,7 +197,7 @@
       "detail": {
         "itemsAfter": 1
       },
-      "ms": 8042
+      "ms": 10825
     },
     {
       "id": "V7",
@@ -207,7 +207,7 @@
         "status": "blocked",
         "error": null
       },
-      "ms": 6
+      "ms": 13
     },
     {
       "id": "V7",
@@ -217,13 +217,13 @@
         "status": "completed",
         "receipt": {
           "datasetName": "qa.binding",
-          "datasetId": "03471b49-178b-56a7-947b-ba86d0498170",
+          "datasetId": "49cb063d-74c8-5488-97b3-82ce9efa861a",
           "purged": "file-level",
           "storeFilesBefore": 2,
           "storeFilesAfter": 0
         }
       },
-      "ms": 961
+      "ms": 1157
     },
     {
       "id": "V9a",
@@ -234,7 +234,7 @@
         "spawns": 1,
         "storeUnchanged": true
       },
-      "ms": 23
+      "ms": 34
     },
     {
       "id": "V9b",
@@ -243,7 +243,7 @@
       "detail": {
         "status": "running"
       },
-      "ms": 16
+      "ms": 23
     },
     {
       "id": "V9c",
@@ -252,7 +252,7 @@
       "detail": {
         "status": "failed"
       },
-      "ms": 21
+      "ms": 19
     },
     {
       "id": "V9d",
@@ -261,7 +261,7 @@
       "detail": {
         "status": "failed"
       },
-      "ms": 13
+      "ms": 17
     },
     {
       "id": "V10a",
@@ -279,7 +279,7 @@
       "detail": {
         "code": "COGNEE_DEADLINE_EXCEEDED"
       },
-      "ms": 8
+      "ms": 12
     },
     {
       "id": "V10c",
@@ -296,7 +296,7 @@
         "code": "COGNEE_DEADLINE_EXCEEDED",
         "servedOps": 1
       },
-      "ms": 2659
+      "ms": 2769
     },
     {
       "id": "V10g",
@@ -310,7 +310,7 @@
         "servedOps": 1,
         "probeErr": null
       },
-      "ms": 1309
+      "ms": 1338
     },
     {
       "id": "V10e",
@@ -321,7 +321,7 @@
         "op1": 1,
         "probeServed": 2
       },
-      "ms": 3110
+      "ms": 3096
     },
     {
       "id": "V10f",
@@ -336,7 +336,7 @@
           "deadlineHonored": true
         }
       },
-      "ms": 806
+      "ms": 811
     },
     {
       "id": "V10f",
@@ -345,7 +345,7 @@
       "detail": {
         "code": "CLIENT_DEADLINE"
       },
-      "ms": 801
+      "ms": 805
     },
     {
       "id": "V11",

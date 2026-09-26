@@ -229,3 +229,44 @@ The smoke needed the absolute path of the tested Python venv (`proof/.venv` on t
 
 **Stop:** per the C5 mandate — stop here for a focused independent review before any consumer
 adoption or publication.
+
+---
+
+## Closure pass (C5 audit findings M-1/M-2/L-1/L-2 + Info-2)
+
+After the independent audit at `audit/c5-package-readiness` @ `931bd7a` (verdict: *verified
+with non-blocking issues*), a bounded closure pass landed on this branch:
+
+- **M-1 (npm peers):** `pack/package.json` peers are now `^0.3.1` (the tested npm line) —
+  clean `npm install` of the rebuilt tarball + VICT 0.3.1 with STOCK npm (no
+  `--legacy-peer-deps`, no overrides, no pre-existing lockfile) succeeds (complete command +
+  output: `docs/c5-evidence/closure-install.log`). The manifest's `victCompatibility: ^0.1.0`
+  is unchanged and is documented in `pack/README.md` as the capability-pack ABI contract
+  version, conceptually separate from npm package versions.
+- **M-2 (reproducible source build):** `typescript` + `@types/node` are declared
+  devDependencies with a committed `pack/package-lock.json`; `build.mjs` prefers the local
+  compiler. `npm install && npm run build` now works from a fresh clone with NO sibling VICT
+  clone and NO `C5_TSC` (proven with `C5_VICT_HOME` pointed nowhere); the env overrides remain
+  optional development conveniences. Build-from-source documented in `pack/README.md`.
+- **L-1 (ownership release):** `releaseStoreOwnership()` deletes the lock ONLY when a readable
+  owner record matches the instance; missing/corrupt/foreign locks are left untouched (§8.1).
+  New regression **O11** — ownership suite now **17/17 PASS, exit 0**.
+- **L-2 (pack completeness):** `prepack` runs the build — a normal `npm pack` builds first or
+  fails when the toolchain is absent. Recorded with scripts DISABLED (`npm pack
+  --ignore-scripts`, `dist/` absent): **exit 0 with only 2 files** — that case is documented
+  in `pack/README.md` as VOID, not covered.
+- **Info-2/Info-3:** shipped `scripts` aligned to what a tarball consumer can run (only
+  build/prepack/pack:check; repo-only verify/proof commands moved to `pack/README.md`); the
+  smoke install output is now committed evidence. Heartbeat + operator-recovery limits are
+  documented in `pack/README.md` and `docs/c3-pack-contract.md` (release-deletion precision +
+  the µs-scale heartbeat verify→rename residual with its §8.1 operator-compliance
+  precondition).
+
+Reruns on the corrected tree: `npm run build` (no sibling/C5_TSC) exit 0; `npm pack` 19 files;
+ownership suite 17/17; `verify.ts` 27 PASS + 1 EXPECTED-OBSERVATION, exit 0 (run 1 hit the
+pre-existing V10f-read timing margin under load — COGNEE_DEADLINE_EXCEEDED pre-dispatch
+instead of CLIENT_DEADLINE — classified as environmental variance around the 250 ms margin,
+not a delta regression; clean rerun passed with `remainingMs=368`); clean-install smoke 7/7
+PASS exit 0; installed-artifact boundary probe 9/9 PASS exit 0. Full details:
+`docs/c5-evidence/closure-checks.log`. `proof_c4.mjs` / `graph_equiv_c4.mjs` were NOT rerun —
+the delta touches only the release path, not the dispatch paths those batteries exercise.

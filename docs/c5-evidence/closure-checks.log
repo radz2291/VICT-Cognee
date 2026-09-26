@@ -1,0 +1,39 @@
+# C5 closure pass — build / pack / suites / smoke / probe (exact commands + exit codes)
+# Date: 2026-09-26T16:00:16+08:00 · Host: Win11 x64, node v22.13.1, npm 10.9.2, Python 3.12.10 venv (cognee 1.6.1)
+
+## M-2 reproducible source build (fresh pack/node_modules from declared devDependencies)
+$ cd pack && npm install --no-audit --no-fund  -> exit 0 ("added 3 packages"; typescript 6.0.3, @types/node 22.20.4; lockfile records devDependencies)
+$ C5_VICT_HOME=Z:/definitely-nonexistent npm run build   # NO sibling clone, NO C5_TSC
+  -> exit 0; tsc (strict) clean; dist/ = 17 files + worker/guard (build log tail: DONE)
+
+## L-2 pack completeness
+$ npm pack                                -> exit 0, "total files: 19" (prepack ran the build first)
+$ mv dist /tmp/c5-dist-stash; npm pack --ignore-scripts
+  -> exit 0, "total files: 2" (README + package.json ONLY — no dist/)
+  -> recorded: with lifecycle scripts DISABLED and dist/ absent, npm packs a silently
+     incomplete tarball. This case is documented in pack/README.md as VOID, not covered.
+
+## Ownership suite (incl. new O11 — audit L-1)
+$ node ../260831-VCT-02/node_modules/tsx/dist/cli.mjs pack/verify/ownership-verify.ts
+  -> exit 0 — 17/17 PASS (31 s); O11 PASS: release deletes ONLY a readable matching owner
+     record — corrupt and foreign locks left byte-identical, own record deleted
+
+## Real-runtime verify.ts
+$ node ../260831-VCT-02/node_modules/tsx/dist/cli.mjs pack/verify/verify.ts
+  -> run 1: exit 1 — V10f(read) FAIL: COGNEE_DEADLINE_EXCEEDED instead of CLIENT_DEADLINE
+     (slow_read respawn consumed >550ms of the 800ms budget; remaining<250ms margin ->
+      pre-dispatch refusal. Timing variance around the margin, NOT this delta: the closure
+      touches only releaseStoreOwnership, not dispatch/deadline code)
+  -> run 2 (clean): exit 0 — 27 PASS + 1 EXPECTED-OBSERVATION (119 s); slow_read remainingMs=368
+
+## Clean-install smoke through the real VICT runtime (stock install of the new tarball)
+$ node smoke.mjs -> exit 0 — S1..S6: 7/7 PASS (docs/c5-evidence/smoke.mjs, throwaway store)
+
+## Installed-artifact boundary probe (docs/audit-evidence-c5/installed-probe.mjs on the audit branch)
+$ node probe.mjs -> exit 0 — P1..P9: 9/9 PASS
+
+## Expensive model proofs NOT rerun (justification)
+proof_c4.mjs (353 s) / graph_equiv_c4.mjs (245 s): the closure delta touches only
+releaseStoreOwnership (release path), not the add/cognify/search/journal dispatch paths
+those batteries exercise; the real-worker write/search paths are re-proven by smoke S3/S4
+and probe P6/P7 on the corrected artifact.

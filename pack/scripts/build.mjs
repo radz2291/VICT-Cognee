@@ -30,20 +30,26 @@ const repo = path.resolve(packDir, '..');
 const dist = path.join(packDir, 'dist');
 
 // Locate the TypeScript compiler (build-time only; never shipped).
+// C5 closure (audit M-2): typescript + @types/node are DECLARED devDependencies,
+// so `npm install && npm run build` works from a fresh clone with NO sibling
+// VICT clone and NO C5_TSC. The env overrides remain optional development
+// conveniences (e.g. pinning a different compiler) — never required.
 const victHome = process.env.C5_VICT_HOME ?? path.resolve(repo, '..', '260831-VCT-02');
 const tscCandidates = [
   process.env.C5_TSC,
+  path.join(packDir, 'node_modules', 'typescript', 'bin', 'tsc'),
   path.join(victHome, 'node_modules', 'typescript', 'bin', 'tsc'),
 ].filter(Boolean);
 const tsc = tscCandidates.find((p) => existsSync(p));
 if (!tsc) {
   console.error(`[build] TypeScript compiler not found (looked at: ${tscCandidates.join(', ')})`);
-  console.error('[build] set C5_TSC=<path to typescript/bin/tsc> or C5_VICT_HOME=<vict clone>');
+  console.error('[build] run `npm install` inside pack/ first (typescript is a declared devDependency).');
+  console.error('[build] Optional overrides: C5_TSC=<path to typescript/bin/tsc> or C5_VICT_HOME=<vict clone>.');
   process.exit(1);
 }
-// @types/node for the compile (also build-time only).
-const typeRootsNode = process.env.C5_TYPES_ROOTS ?? path.join(victHome, 'node_modules', '@types');
-const typeRootsArg = existsSync(path.join(typeRootsNode, 'node')) ? typeRootsNode : null;
+// @types/node is a declared devDependency and is discovered automatically from
+// node_modules/@types. Pass --typeRoots ONLY when explicitly requested.
+const typeRootsArg = process.env.C5_TYPES_ROOTS ?? null;
 
 const node = process.execPath;
 const rel = (p) => path.relative(repo, p).replace(/\\/g, '/');

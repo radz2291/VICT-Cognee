@@ -521,6 +521,17 @@ guarantees must implement them outside this pack.
      (verified O4 step (iii)).
   If the old lock was foreign-host and cannot be verified, do NOT recover;
   provision a NEW store root instead (§3).
+- **Release deletion precision (C5 closure, audit L-1).** An instance releasing
+  ownership (orderly shutdown / explicit release) deletes the lock ONLY when a
+  READABLE owner record still matches the releasing instance; a missing,
+  corrupt/unreadable, or foreign lock is left untouched for §8.1 recovery —
+  releasing never deletes a lock it cannot attribute (regression O11).
+- **Heartbeat residual (documented).** The heartbeat replace is guarded by a
+  verify-read immediately before an unconditional rename of the owner's OWN
+  lock; a fresh acquire can only interleave inside that µs-scale window if an
+  actor removed the owner's lock there — i.e. an §8.1 procedure violation,
+  never a pack code path. No code-path recovery exists; exclusivity therefore
+  carries the operator-compliance precondition above.
 - **Store roots are disjoint directories (§3; C5).** One store root per
   runtime/trust domain; roots must be disjoint (neither nested inside
   another pack store nor overlapping its data directories). A store root

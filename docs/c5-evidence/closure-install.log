@@ -1,0 +1,12 @@
+# C5 closure pass — complete clean-install proof (M-1)
+# Date: 2026-09-26T16:00:07+08:00
+# Directory state BEFORE install: pristine new dir, NO package-lock.json, NO node_modules,
+#   no npm flags (no --legacy-peer-deps, no overrides), stock npm 10.9.2, node v22.13.1
+# Command (run in %TEMP%/c5-closure-smoke):
+#   npm install --no-audit --no-fund
+#   dependencies: @victframework/cognee -> file:<repo>/pack/victframework-cognee-0.1.0.tgz (rebuilt with peers ^0.3.1),
+#     @victframework/sdk=file:<vict>/packages/sdk (0.3.1), @victframework/runtime=file:<vict>/packages/runtime (0.3.1), zod ^3.25.0
+# Exit code: 0
+
+
+added 4 packages in 6s

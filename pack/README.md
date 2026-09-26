@@ -15,7 +15,11 @@ npm install ./victframework-cognee-0.1.0.tgz   # plus the VICT packages below
 Supported VICT packages (same versions this candidate was smoke-tested
 against): `@victframework/sdk@0.3.1`, `@victframework/runtime@0.3.1` and
 their local dependencies (`@victframework/contracts`, `@victframework/kernel`)
-— installed from their build directories via `file:` paths.
+— installed from their build directories via `file:` paths. The npm peer
+ranges declared by this package (`^0.3.1`) describe exactly these tested npm
+packages and nothing broader. They are conceptually SEPARATE from the
+manifest's `victCompatibility: ^0.1.0`, which is the capability-pack ABI
+contract version (manifest schema generation), not an npm package version.
 
 ## Runtime requirements (tested platform)
 
@@ -68,6 +72,60 @@ const pack = createCogneePack({
 The pack resolves its OWN bundled worker (`dist/worker/cognee_worker.py`)
 and guard (`dist/worker/guard_store_roots.py`) from the installed package —
 no repository paths, no TypeScript/tsx runtime, no test fault hooks.
+
+A tarball consumer runs NOTHING from the package `scripts`: the installed
+package is prebuilt (`dist/` ships in the tarball). The `scripts` entries in
+`package.json` (`build` / `prepack` / `pack:check`) exist for building this
+SOURCE repository; run inside `node_modules` they fail loudly (no `src/`, no
+toolchain). `npm pack` runs the build first via `prepack` — or fails if the
+toolchain is absent. With lifecycle scripts disabled (`npm pack
+--ignore-scripts`) the completeness guarantee is void: whatever is on disk is
+packed (an unbuilt tree packs a tarball WITHOUT `dist/`) — verify `dist/`
+presence when scripts are disabled.
+
+## Build from source (fresh clone — no sibling clone or C5_TSC needed)
+
+```powershell
+cd pack
+npm install     # build-only devDependencies (typescript, @types/node); nothing at runtime
+npm run build   # compiles dist/ + ships the Python worker/guard; tsc strict
+```
+
+`npm pack` then produces the installable tarball (the `prepack` lifecycle
+script runs the same build first, so packing an unbuilt tree fails instead of
+shipping an empty package). Optional development overrides — NEVER required:
+`C5_TSC=<path to typescript/bin/tsc>` pins a different compiler;
+`C5_VICT_HOME=<vict clone>` adds a fallback compiler source;
+`C5_TYPES_ROOTS=<dir>` overrides type discovery.
+
+Repository-only verification commands (NOT part of the package; they need the
+source tree, the VICT clone and the proof venv):
+
+```powershell
+node ../260831-VCT-02/node_modules/tsx/dist/cli.mjs pack/verify/ownership-verify.ts
+node ../260831-VCT-02/node_modules/tsx/dist/cli.mjs pack/verify/verify.ts
+node worker/proof_c4.mjs
+node worker/graph_equiv_c4.mjs
+```
+
+## Ownership limits (accurate as of the C5 closure pass)
+
+- There is NO automatic stale-lock recovery. Recovery is the §8.1 operator
+  procedure in `docs/c3-pack-contract.md`, and its safety depends on the
+  operator actually verifying BOTH the old owner process (step 2) AND its
+  worker (step 3) are stopped before deleting the lock.
+- The ownership heartbeat is a liveness signal ONLY: the owner refreshes its
+  OWN lock per operation and every `staleMs/3` (floor 1 s) while an operation
+  is in flight. It never drives recovery, and a stale heartbeat is an
+  indication, never a proof, of a dead owner.
+- An instance releasing ownership (orderly shutdown) deletes the lock ONLY
+  when a readable owner record matches the instance. A missing, corrupt, or
+  foreign lock is left untouched for §8.1 recovery — releasing never deletes
+  a lock it cannot attribute.
+- A store root nested INSIDE another pack-owned store root that holds a lock
+  is refused at construction; provisioning an OUTER store root over an active
+  INNER root is deliberately NOT auto-detected and surfaces as typed
+  ladybug/sqlite contention at op time (§3: roots must be disjoint).
 
 ## What is deliberately NOT in the shipped package
 
