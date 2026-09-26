@@ -431,27 +431,60 @@ guarantees must implement them outside this pack.
 
 ## 8. Storage ownership and safety
 
-- **Exclusive store ownership (C4 exit; correction pass 2).** Pack-level
+- **Exclusive store ownership (C4 exit; C5 fail-closed protocol).** Pack-level
   supervision covers one process, but separate pack instances or separate
   PROCESSES could point at the same Cognee root (the ladybug lock only fails
-  at op time — after a worker spawn, possibly mid-write). Every pack
-  instance therefore claims a store-owner lock
+  at op time — after a worker spawn, possibly mid-write). Every pack instance
+  therefore claims a store-owner lock
   (`<storeRoot>/cognee-store-owner.lock`, atomic `O_EXCL` create, schema
   `vict.cognee.store-ownership@1`, pid + host + instanceId + heartbeat) at
   construction:
-  - a LIVE owner fails the second instance closed (`COGNEE_STORE_OWNED`)
-    BEFORE any worker spawn (verified O2);
-  - liveness is verified EXACTLY for same-host owners by pid probe; a live
-    pid is live even with a stale heartbeat, and a live owner's lock is
-    NEVER deleted (verified O2b/O9a — lock bytes unchanged);
-  - a verifiably STALE owner (dead pid on this host; foreign host whose
-    heartbeat exceeded the stale budget, default 15 min; unreadable lock
-    older than the budget) is recovered by an ATOMIC RENAME-BASED CLAIM
-    (verified O4);
+  - ANY existing lock — LIVE or STALE — fails the second instance closed
+    (`COGNEE_STORE_OWNED`) BEFORE any worker spawn (verified O2/O4/O7a/O8);
+    the refusal message carries the owner record, a liveness assessment, and
+    the §8.1 operator recovery procedure;
+  - the lock is created ONLY via the atomic `O_EXCL` create, replaced ONLY by
+    its owner's heartbeat (atomic tmp→rename of its OWN lock), and deleted
+    ONLY by its owner's orderly release or an explicit operator action —
+    there is NO third code path (verified O10 source assertion: exactly one
+    `renameSync` in the supervision — the heartbeat replace — and no
+    recovery-rename/trash markers);
+  - a store root nested INSIDE another pack-owned store root that holds a
+    lock is refused at construction (ancestors are checked for a lock file;
+    roots must be disjoint, §3); the worker's ready `store_root` is
+    cross-checked against the configured boundary and a mismatching worker is
+    killed before it can resolve anything (C5);
+  - the store root is resolved to its REAL filesystem path at construction
+    (symlinks/subst/case), so every spelling of one physical store maps to
+    ONE lock file (C5);
   - ownership is RELEASED on orderly shutdown and a restarted instance
     acquires cleanly (verified O3b/O3c); the heartbeat is refreshed per
     serialized op AND on an interval while an op is in flight
     (interval = staleMs/3, floored at 1 s — verified O9c).
+- **NO automatic stale recovery (C5 design decision; closes C4-exit audit
+  finding L1).** The earlier protocol recovered a verifiably stale owner
+  automatically (rename-aside + verify + restore-on-mismatch). The C4 exit
+  audit demonstrated a deterministic three-process interleaving in which
+  that recovery path let instance A and a fresh instance C run CONCURRENT
+  operations on one physical store (the moved lock leaves the path free; a
+  restore — exclusive or not — cannot close a window that opened at move
+  time; rename-replace schemes cannot be proven atomic on the supported
+  Windows host and can still displace a fresh owner whose op is in flight).
+  The protocol therefore fails closed instead: a stale lock is recovered by
+  an OPERATOR per §8.1, and the acceptance condition — no concurrent
+  operations on one physical store, including during recovery — holds for
+  every code path (verified O4/O7/O8/O10).
+- **Foreign-host heartbeat budget (advisory since C5).** Foreign-host
+  owners rely on the heartbeat; the heartbeat is refreshed per op and
+  DURING long in-flight operations, so a live, running owner is not
+  stale-looking regardless of op duration (verified O9a fresh heartbeat →
+  refused; O9b stale heartbeat → ALSO refused, no auto-recovery; O9c
+  heartbeat advanced during a 3 s op under a 1.5 s budget). Since C5 the
+  budget is NOT a steal trigger: a stale-looking FOREIGN lock is still
+  refused and recovered only via §8.1 (cross-host liveness cannot be
+  verified from here). If a lock is stolen or removed mid-op DESPITE the
+  refreshes (external action), the in-flight op completes and the instance
+  then fails closed permanently (above).
 - **Ownership LOSS fails closed (correction pass 2; verified O2b/O6).**
   Ownership is verified against the lock file at THREE points: before any
   spawn/dispatch (heartbeat refresh), immediately before dispatch (after
@@ -462,35 +495,39 @@ guarantees must implement them outside this pack.
   `COGNEE_STORE_OWNED` and NO effect; an ALREADY-DISPATCHED op completes
   (its outcome is real — the request was sent), after which the worker is
   killed and poisoned; EVERY subsequent request of that instance fails
-  closed before spawn/dispatch. An active instance whose lock is replaced
-  or removed performs NO further operation.
-- **Stale recovery is race-safe (correction pass 2).** The old
-  read→unlink→create recovery had a TOCTOU window in which two contenders
-  could both acquire. Recovery now: (1) read + judge the stale lock from a
-  snapshot; (2) ATOMICALLY rename the lock out of the way to a unique
-  recovery file — exactly ONE contender can succeed (every other contender's
-  rename fails ENOENT and re-evaluates); (3) prove the moved lock is STILL
-  the exact bytes that were judged stale; a mismatch means a fresh owner
-  replaced it in the window — the contender FAILS CLOSED and RESTORES the
-  displaced lock (byte-identical) if the path is free, so the fresh owner
-  keeps working; (4) create its own lock via `O_EXCL`. Verified:
-  O7 (deterministic two-contender race: EXACTLY ONE acquires, the other is
-  refused, winner's lock intact) and O8 (a stale contender whose claim lands
-  after a fresh owner acquired NEVER removes the fresh lock — the fresh
-  owner's lock bytes are restored unchanged and the fresh owner keeps
-  holding). An exiting owner's lock becomes legitimately stale the moment
-  its pid dies (same-host exactness) — recovery by another contender is
-  then correct and permitted.
-- **Foreign-host heartbeat budget (correction pass 2).** Foreign-host
-  owners rely on the heartbeat; the heartbeat is refreshed per op and
-  DURING long in-flight operations, so the staleness budget (default
-  15 min) is NOT eroded by long-running operations: a live, running owner
-  is not stealable regardless of op duration; the budget is only the
-  maximum time a crashed foreign host's lock lingers (verified O9a fresh
-  heartbeat → refused; O9b stale heartbeat → recovered; O9c heartbeat
-  advanced during a 3 s op under a 1.5 s budget). If the lock is stolen or
-  removed mid-op DESPITE the refreshes, the in-flight op completes and the
-  instance then fails closed permanently (above).
+  closed before spawn/dispatch. When the loss is detected while NO op is in
+  flight, the idle worker is killed immediately (C5: no orphaned live worker
+  holding store handles). An active instance whose lock is replaced or
+  removed performs NO further operation.
+- **Operator recovery of a stale lock (§8.1 — the ONLY recovery path).**
+  The refusal error `COGNEE_STORE_OWNED` names the owner record (instance,
+  pid, host, user, startedAt) and states whether the owner process is still
+  running on this host. Recovery procedure:
+  1. STOP the owning application/process on the listed host (and every other
+     process that could own this store — one store per trust domain, §3).
+  2. VERIFY the owner process is stopped: on Windows,
+     `Get-Process -Id <pid>` must fail (or `tasklist /FI "PID eq <pid>"`);
+     on a foreign host, coordinate with its operator — a heartbeat older
+     than the staleness budget is an indication, never a proof.
+  3. VERIFY no worker is still serving the store: on Windows,
+     `Get-CimInstance Win32_Process | Where-Object CommandLine -match 'cognee_worker.py'`
+     must return nothing for this store root (the worker command line
+     contains `--store-root <storeRoot>`). A live worker holding the store
+     makes ops fail typed (ladybug/sqlite contention) — never delete the
+     lock while a worker is live.
+  4. DELETE the lock file `<storeRoot>/cognee-store-owner.lock` (and any
+     stale `cognee-store-owner.lock.tmp-*` heartbeat leftovers).
+  5. RE-CREATE the pack instance — it acquires cleanly via `O_EXCL`
+     (verified O4 step (iii)).
+  If the old lock was foreign-host and cannot be verified, do NOT recover;
+  provision a NEW store root instead (§3).
+- **Store roots are disjoint directories (§3; C5).** One store root per
+  runtime/trust domain; roots must be disjoint (neither nested inside
+  another pack store nor overlapping its data directories). A store root
+  nested inside an ACTIVE pack store is refused at construction (ancestor
+  lock check); provisioning an OUTER root over an active INNER root is
+  deliberately unsupported direct use — it is not detected automatically
+  and surfaces as typed ladybug/sqlite contention at op time.
 - `cognee.systemRoot` MUST be a pack-owned, per-runtime directory **(§3: one
   store per trust domain)**. The worker resolves **all seven destructive roots**
   (system/data/cache/logs/repos + `vector_db_url` + `graph_file_path`) at
@@ -534,16 +571,26 @@ guarantees must implement them outside this pack.
   `C4_PROOF_FAULT` (default OFF — inert unless set).
 - **One op at a time** per worker; ops run in isolated asyncio tasks (C2 ContextVar
   persistence finding). One worker per store per trust domain (§3).
-- **Startup:** guard (§8) → ready message with versions (cognee, python) and the
-  verified store boundary → ready budget 120–180 s (observed 10–36 s in the C3
-  fresh-store runs on the RAM-constrained host).
+- **Startup:** guard (§8) → ready message (protocol `vict-cognee-worker/5`,
+  pid, RSS, import_ms, allowed namespaces, verified store boundary — NO
+  component version fields in this release) → ready budget 120–180 s
+  (observed 10–36 s in the C3 fresh-store runs on the RAM-constrained host).
+  C5: the supervision cross-checks the ready message's `store_root` against
+  the configured boundary and kills a mismatching worker; a ready-budget
+  expiry KILLS the child (no stranded worker) and the next request respawns
+  fresh (verified V10g).
 - **Deadlines:** every op carries an ABSOLUTE deadline (context `deadlineAt`
   preserved through queue + startup, re-checked immediately before dispatch;
   on expiry the client fails the op — `COGNEE_WRITE_UNKNOWN` for mutations
   already dispatched / `CLIENT_DEADLINE` for reads — and applies the §7.2
   poison-and-respawn policy for mutations).
-- **Memory:** worker reports RSS per op (psutil); budget 2.5 GB (observed peak
-  ~2.0 GB after cognify). Exceeding the budget ⇒ graceful restart after the op.
+- **Memory:** the worker reports RSS on `ready` and `status` messages
+  (supervision records `stats.lastRssBytes`); there is NO per-op RSS report,
+  NO RSS budget, and NO automatic post-op restart in this release — restart
+  triggers are worker death and mutating-op timeout (§7.2 poison/respawn).
+  A per-op RSS budget with post-op graceful restart is DEFERRED (§12 item).
+  Observed peak ~2.0 GB during cognify on the RAM-constrained host; size
+  the host accordingly.
 - **Shutdown:** `shutdown` op → graceful exit 0 (observed ~0.5 s in C3).
   Unsolicited worker death ⇒ `COGNEE_WORKER_UNAVAILABLE`; the client respawns
   before the next request; persistence across restarts is a demonstrated
@@ -854,15 +901,18 @@ the worker boundary; the interface never exposes the storage name.
    store locks on this host).
 7. Production-grade durability of the reconciliation journal (OS-crash
    semantics beyond `fsync`; journal compaction/rotation).
-8. **Upstream VICT fixes (documented, not edit-able here):**
+8. Per-op RSS reporting with an RSS budget and post-op graceful restart
+   (contract §9 states the implemented behavior: RSS on ready/status only;
+   restart on death/timeout). Deferred — not needed by the first release.
+9. **Upstream VICT fixes (documented, not edit-able here):**
    - UV-1: durable engine should honor `useDouble` or block real non-pure
      bindings in test/simulate (`docs/upstream-vict-issues.md`); the pack
      guards its own boundary meanwhile.
    - UV-2: `deriveIdempotencyKey` should hash `invocationId`
      (`vict.idempotency-key@2`) or drop it from the signature.
-9. **Release/packaging metadata** (§11 remaining limits): build artifact,
+10. **Release/packaging metadata** (§11 remaining limits): build artifact,
    `files` allowlist incl. the bundled worker + guard, packaging smoke test.
    Publication itself remains excluded from this task.
-10. Read-capability test/simulate doubles, if read isolation via doubles is
+11. Read-capability test/simulate doubles, if read isolation via doubles is
     ever wanted on capability-only graphs (currently they fail closed, which
     is safe).

@@ -1,8 +1,8 @@
 {
   "proof": "c4-worker-corrections",
   "store": "fresh (proof/.cognee-c4)",
-  "started": "2026-09-26T04:26:25.254Z",
-  "duration_s": 289,
+  "started": "2026-09-26T06:07:38.776Z",
+  "duration_s": 353,
   "results": [
     {
       "id": "c1",
@@ -10,7 +10,7 @@
       "outcome": "PASS",
       "detail": {
         "protocol": "vict-cognee-worker/5",
-        "import_ms": 10781,
+        "import_ms": 63490,
         "namespaces": [
           "qa",
           "zeta"
@@ -18,7 +18,7 @@
         "storeRoot": "C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-c4",
         "rss_mb": 330
       },
-      "ms": 11113
+      "ms": 64837
     },
     {
       "id": "c2",
@@ -38,7 +38,7 @@
         "expected": "COGNEE_PARAMS_REJECTED",
         "got": "COGNEE_PARAMS_REJECTED: add requires ctx.idempotencyKey (VICT CapabilityContext.idempotencyKey); declare a retry policy on the graph node so the runtime derives one"
       },
-      "ms": 4
+      "ms": 5
     },
     {
       "id": "c2",
@@ -48,7 +48,7 @@
         "expected": "COGNEE_PARAMS_REJECTED",
         "got": "COGNEE_PARAMS_REJECTED: cognify requires ctx.idempotencyKey (VICT CapabilityContext.idempotencyKey); declare a retry policy on the graph node so the runtime derives"
       },
-      "ms": 2
+      "ms": 4
     },
     {
       "id": "c3",
@@ -61,9 +61,9 @@
         "itemsBefore": 0,
         "itemsAfter": 1,
         "deduplicated": false,
-        "duration_ms": 20985
+        "duration_ms": 24339
       },
-      "ms": 20984
+      "ms": 24346
     },
     {
       "id": "c3",
@@ -76,9 +76,9 @@
         "itemsBefore": 0,
         "itemsAfter": 1,
         "deduplicated": false,
-        "duration_ms": 10
+        "duration_ms": 14
       },
-      "ms": 13
+      "ms": 18
     },
     {
       "id": "c3",
@@ -94,7 +94,7 @@
         "firstScore": 0.25775325298309326,
         "truncated": false
       },
-      "ms": 23896
+      "ms": 26891
     },
     {
       "id": "c4",
@@ -104,7 +104,7 @@
         "expected": "COGNEE_IDEMPOTENCY_MISMATCH",
         "got": "COGNEE_IDEMPOTENCY_MISMATCH: idempotency key 'k2-1' is durably bound to (add, qa__alpha) with a different input fingerprint; refusing to reuse it for different logical w"
       },
-      "ms": 14
+      "ms": 15
     },
     {
       "id": "c4",
@@ -139,7 +139,7 @@
         "deduplicated": false,
         "duration_ms": 0
       },
-      "ms": 23
+      "ms": 25
     },
     {
       "id": "c5",
@@ -152,7 +152,7 @@
           "signal": null
         }
       },
-      "ms": 35903
+      "ms": 35508
     },
     {
       "id": "c5",
@@ -175,9 +175,9 @@
         "itemsBefore": 0,
         "itemsAfter": 1,
         "deduplicated": false,
-        "duration_ms": 22399
+        "duration_ms": 12788
       },
-      "ms": 36944
+      "ms": 27922
     },
     {
       "id": "c5",
@@ -190,9 +190,9 @@
         "itemsBefore": 0,
         "itemsAfter": 1,
         "deduplicated": false,
-        "duration_ms": 11
+        "duration_ms": 8
       },
-      "ms": 14
+      "ms": 10
     },
     {
       "id": "c6",
@@ -206,7 +206,7 @@
         },
         "attempt": 1
       },
-      "ms": 58465
+      "ms": 52029
     },
     {
       "id": "c6",
@@ -227,7 +227,7 @@
         "itemsAfter": 1,
         "searchTotal": 1
       },
-      "ms": 31760
+      "ms": 51952
     },
     {
       "id": "c7",
@@ -237,7 +237,7 @@
         "expected": "COGNEE_SCOPE_REJECTED",
         "got": "COGNEE_SCOPE_REJECTED: namespace 'evil' is not granted (allowed: ['qa', 'zeta'])"
       },
-      "ms": 2
+      "ms": 4
     },
     {
       "id": "c7",
@@ -247,7 +247,7 @@
         "expected": "COGNEE_SCOPE_REJECTED",
         "got": "COGNEE_SCOPE_REJECTED: request is unscoped: datasetName is required"
       },
-      "ms": 2
+      "ms": 3
     },
     {
       "id": "c7",
@@ -257,7 +257,7 @@
         "expected": "COGNEE_SCOPE_REJECTED",
         "got": "COGNEE_SCOPE_REJECTED: namespace 'evil' is not granted (allowed: ['qa', 'zeta'])"
       },
-      "ms": 3
+      "ms": 2
     },
     {
       "id": "c7",
@@ -303,7 +303,7 @@
       "name": "second-namespace dataset cognified",
       "outcome": "PASS",
       "detail": {},
-      "ms": 61995
+      "ms": 61840
     },
     {
       "id": "c8",
@@ -315,7 +315,7 @@
         "qaLeak": false,
         "zetaLeak": false
       },
-      "ms": 721
+      "ms": 650
     },
     {
       "id": "c8",
@@ -324,7 +324,7 @@
       "detail": {
         "total": 1
       },
-      "ms": 228
+      "ms": 238
     },
     {
       "id": "c9",
@@ -335,7 +335,7 @@
         "filesBefore": 2,
         "filesAfter": 0
       },
-      "ms": 390
+      "ms": 397
     },
     {
       "id": "c9",
@@ -345,7 +345,7 @@
         "expected": "COGNEE_DATASET_UNKNOWN",
         "got": "COGNEE_DATASET_UNKNOWN: DatasetNotFoundError: DatasetNotFoundError: Dataset(s) not found: 'qa__crashadd'. Dataset names resolve only among the datasets you own in t"
       },
-      "ms": 44
+      "ms": 45
     },
     {
       "id": "c9",
@@ -360,10 +360,10 @@
       "name": "clean shutdown",
       "outcome": "PASS",
       "detail": {
-        "stderrLines": 255,
+        "stderrLines": 262,
         "respawns": 1
       },
-      "ms": 515
+      "ms": 529
     }
   ]
 }

@@ -45,6 +45,20 @@ const PY = path.join(repo, 'proof', '.venv', 'Scripts', 'python.exe');
 const WORKER = path.join(repo, 'pack', 'src', 'worker', 'cognee_worker.py');
 const PROOF_WORKER = path.join(repo, 'worker', 'worker_proof.py');
 
+// ---- C5 (audit M1): controlled failing assertion ----------------------------
+// C5_FORCED_FAIL=1 makes this driver record one deliberately failing assertion
+// and exit 1 WITHOUT running the suite — proving the exit-status coupling (a
+// FAIL/observation can never exit 0).
+if (process.env.C5_FORCED_FAIL === '1') {
+  console.error('[equiv] forced-fail: controlled failing assertion (C5_FORCED_FAIL=1)');
+  writeFileSync(path.join(here, 'c4-graph-equiv-results.json'), JSON.stringify({
+    proof: 'c4-exit-cognify-graph-equivalence', forcedFail: true,
+    started: new Date().toISOString(), duration_s: 0,
+    results: [{ id: 'forced-fail', name: 'controlled failing assertion', outcome: 'FAIL', detail: { forced: true } }],
+  }, null, 2));
+  process.exit(1);
+}
+
 const DOC = 'C4EQUIV marker: settlement windows close at 17:00 local time; ' +
   'ledger reconciliation runs nightly under dual approval; exceptions escalate ' +
   'to the on-call settlement controller before the next business day; the ' +
@@ -308,7 +322,9 @@ const out = {
 writeFileSync(path.join(here, 'c4-graph-equiv-results.json'), JSON.stringify(out, null, 2));
 console.error(`[equiv] COMPLETE ${out.duration_s}s — ` +
   `${results.filter((r) => r.outcome === 'PASS').length}/${results.length} PASS`);
-process.exit(0);
+// C5 (audit M1): failed assertions AND unexpected-worker observations MUST
+// produce a non-zero exit status — an observation is recorded, never green.
+process.exit(results.some((r) => r.outcome !== 'PASS') ? 1 : 0);
 
 // Crash guards: never orphan workers silently — record and shut down.
 process.on('uncaughtException', async (e) => {

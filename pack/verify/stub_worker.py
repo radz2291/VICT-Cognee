@@ -8,6 +8,11 @@ heartbeat) deterministically.
 
 Env knobs:
   STUB_READY_DELAY_MS   delay before the `ready` message (default 0)
+  STUB_READY_ONCE_MARKER  when set to a path: STUB_READY_DELAY_MS applies only
+                        to the FIRST spawn for that store — the marker file is
+                        created after the first ready, and later spawns become
+                        ready immediately (lets one supervision instance have
+                        a slow first start and a fast recovery start, V10g)
   STUB_DELAY_OPS        comma list of op names that get the artificial delay
   STUB_DELAY_MS         delay applied to those ops (default 0)
   STUB_OP_DELAY_MS      legacy global per-op delay (default 0; only used
@@ -28,6 +33,19 @@ import time
 
 def main() -> int:
     ready_delay = float(os.environ.get("STUB_READY_DELAY_MS", "0") or 0)
+    once_marker = os.environ.get("STUB_READY_ONCE_MARKER", "")
+    if ready_delay > 0 and once_marker:
+        if os.path.exists(once_marker):
+            ready_delay = 0.0  # a previous spawn already paid the startup delay
+        else:
+            # Claim the FIRST slot immediately (before the delay): even if
+            # this spawn is killed before becoming ready, later spawns start
+            # fast — the slow start is paid at most once per store.
+            try:
+                with open(once_marker, "w", encoding="utf-8") as f:
+                    f.write("claimed\n")
+            except OSError:
+                pass
     slow_ops = {s.strip() for s in os.environ.get("STUB_DELAY_OPS", "").split(",") if s.strip()}
     if slow_ops:
         op_delay = float(os.environ.get("STUB_DELAY_MS", "0") or 0)

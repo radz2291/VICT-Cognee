@@ -1,29 +1,30 @@
 {
-  "verification": "c4-exit-store-ownership",
+  "verification": "c5-store-ownership-fail-closed",
   "victAbiReference": "radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)",
   "store": "fresh (proof/.cognee-ownership + race/heartbeat sub-stores)",
-  "started": "2026-09-26T04:14:04.522Z",
-  "duration_s": 29,
+  "started": "2026-09-26T05:54:17.964Z",
+  "duration_s": 31,
   "results": [
     {
       "id": "O1",
       "name": "first instance claims exclusive store ownership (lock held, pid recorded)",
       "outcome": "PASS",
       "detail": {
-        "lockPid": 5828,
+        "lockPid": 23584,
         "held": true
       },
-      "ms": 10
+      "ms": 31
     },
     {
       "id": "O2",
-      "name": "second pack instance on the SAME store fails closed (COGNEE_STORE_OWNED, pre-spawn)",
+      "name": "second pack instance on the SAME store fails closed (COGNEE_STORE_OWNED, pre-spawn, operator guidance in message)",
       "outcome": "PASS",
       "detail": {
         "code": "COGNEE_STORE_OWNED",
-        "spawns": 0
+        "spawns": 0,
+        "guidance": true
       },
-      "ms": 2
+      "ms": 9
     },
     {
       "id": "O3a",
@@ -33,7 +34,7 @@
         "spawns": 1,
         "held": true
       },
-      "ms": 14985
+      "ms": 17521
     },
     {
       "id": "O3b",
@@ -42,23 +43,26 @@
       "detail": {
         "held": false
       },
-      "ms": 506
+      "ms": 519
     },
     {
       "id": "O3c",
       "name": "restart: a new instance acquires ownership after orderly release",
       "outcome": "PASS",
       "detail": {},
-      "ms": 2
+      "ms": 3
     },
     {
       "id": "O4",
-      "name": "stale-owner recovery: dead-pid owner lock is recovered by a new instance",
+      "name": "crash/restart: dead-pid lock is refused (never auto-recovered, bytes untouched, owner record + procedure in message); after the §8.1 operator step a new instance acquires",
       "outcome": "PASS",
       "detail": {
-        "deadPid": 17644
+        "refused": "COGNEE_STORE_OWNED",
+        "lockUntouched": true,
+        "guidanceInMessage": true,
+        "recovered": true
       },
-      "ms": 59
+      "ms": 68
     },
     {
       "id": "O2b",
@@ -72,7 +76,7 @@
         "opsServed": 0,
         "sticky": "COGNEE_STORE_OWNED"
       },
-      "ms": 320
+      "ms": 321
     },
     {
       "id": "O6",
@@ -84,59 +88,82 @@
         "spawns": 0,
         "opsServed": 0
       },
-      "ms": 3
+      "ms": 5
     },
     {
-      "id": "O7",
-      "name": "two contenders race for a stale lock: EXACTLY ONE acquires, the other fails closed, winner lock intact",
+      "id": "O7a",
+      "name": "two contenders vs a stale lock: BOTH refuse (no auto-recovery), lock bytes untouched by both",
+      "outcome": "PASS",
+      "detail": {
+        "results": [
+          {
+            "event": "done",
+            "acquired": false,
+            "code": "COGNEE_STORE_OWNED",
+            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=race-sta pid=65"
+          },
+          {
+            "event": "done",
+            "acquired": false,
+            "code": "COGNEE_STORE_OWNED",
+            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=race-sta pid=65"
+          }
+        ],
+        "lockUntouched": true
+      },
+      "ms": 766
+    },
+    {
+      "id": "O7b",
+      "name": "after operator recovery, two fresh contenders race for the free store: EXACTLY ONE acquires (O_EXCL), the other fails closed, winner lock intact",
       "outcome": "PASS",
       "detail": {
         "results": [
           {
             "event": "done",
             "acquired": true,
-            "instanceId": "bcc93bec-2c1f-4e05-bb11-b2590714a807",
-            "pid": 24156
+            "instanceId": "4f654ba6-dff1-48e3-9458-b511fbdad9af",
+            "pid": 23332
           },
           {
             "event": "done",
             "acquired": false,
             "code": "COGNEE_STORE_OWNED",
-            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 is owned by a LIVE owner (unreadable lock); a second pack instance/process must no"
+            "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race1 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=4f654ba6 pid=23"
           }
         ],
         "winnerLock": {
           "schema": "vict.cognee.store-ownership@1",
-          "instanceId": "bcc93bec-2c1f-4e05-bb11-b2590714a807",
-          "pid": 24156,
+          "instanceId": "4f654ba6-dff1-48e3-9458-b511fbdad9af",
+          "pid": 23332,
           "host": "MyTingkap",
           "user": "RZ1",
-          "startedAt": "2026-09-26T04:14:21.022Z",
-          "heartbeatAt": "2026-09-26T04:14:21.023Z"
+          "startedAt": "2026-09-26T05:54:37.907Z",
+          "heartbeatAt": "2026-09-26T05:54:37.908Z"
         }
       },
-      "ms": 613
+      "ms": 767
     },
     {
       "id": "O8",
-      "name": "stale contender NEVER removes a fresh live lock (fails closed; fresh lock restored byte-identical; fresh owner still holds)",
+      "name": "contender vs a fresh LIVE lock: refuses, lock bytes unchanged, owner keeps holding",
       "outcome": "PASS",
       "detail": {
         "freshOwner": {
           "event": "done",
           "acquired": true,
-          "instanceId": "24aed4a3-e796-4335-8056-bd281cd894f4",
-          "pid": 19308
+          "instanceId": "ea0f6935-8b4a-4d39-ba32-3974fc4f3e64",
+          "pid": 23836
         },
-        "staleContender": {
+        "contender": {
           "event": "done",
           "acquired": false,
           "code": "COGNEE_STORE_OWNED",
-          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2: stale-owner recovery raced with a fresh owner (the lock changed between judgment "
+          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=ea0f6935 pid=23"
         },
-        "lockRestored": true
+        "lockUnchanged": true
       },
-      "ms": 8675
+      "ms": 1248
     },
     {
       "id": "O9a",
@@ -146,23 +173,27 @@
         "code": "COGNEE_STORE_OWNED",
         "unchanged": true
       },
-      "ms": 3
+      "ms": 6
     },
     {
       "id": "O9b",
-      "name": "foreign-host owner with STALE heartbeat is recovered (budget honored)",
+      "name": "foreign-host owner with STALE heartbeat is REFUSED (no auto-recovery; foreign host named; operator procedure in message)",
       "outcome": "PASS",
-      "detail": {},
-      "ms": 6
+      "detail": {
+        "code": "COGNEE_STORE_OWNED",
+        "unchanged": true,
+        "guidanceInMessage": true
+      },
+      "ms": 8
     },
     {
       "id": "O9c",
       "name": "long op: heartbeat refreshed DURING the op (budget never erodes) and a second instance is refused mid-op; op completes",
       "outcome": "PASS",
       "detail": {
-        "hb1": "2026-09-26T04:14:30.026Z",
-        "hb2": "2026-09-26T04:14:31.112Z",
-        "advancedMs": 1086,
+        "hb1": "2026-09-26T05:54:39.556Z",
+        "hb2": "2026-09-26T05:54:39.563Z",
+        "advancedMs": 7,
         "midOp": "COGNEE_STORE_OWNED",
         "receipt": {
           "op": "add",
@@ -171,7 +202,32 @@
           "servedOps": 1
         }
       },
-      "ms": 3080
+      "ms": 4161
+    },
+    {
+      "id": "O10",
+      "name": "auditor's three-process interleaving CLOSED: while A operates, B and C refuse pre-spawn (nothing dispatched, lock intact); supervision source has NO recovery-rename path (only the owner heartbeat replace)",
+      "outcome": "PASS",
+      "detail": {
+        "b": {
+          "event": "done",
+          "acquired": false,
+          "code": "COGNEE_STORE_OWNED",
+          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=5de464a5 pid=23"
+        },
+        "c": {
+          "event": "done",
+          "acquired": false,
+          "code": "COGNEE_STORE_OWNED",
+          "message": "store C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-ownership-race2 has a store-owner lock — a second pack instance/process must not attach to the same Cognee root (§3/§8). Owner: owner instance=5de464a5 pid=23"
+        },
+        "aServed": 1,
+        "aSpawns": 1,
+        "lockIntact": true,
+        "renameSyncCount": 1,
+        "sourceClean": true
+      },
+      "ms": 4143
     },
     {
       "id": "O5",
@@ -181,11 +237,11 @@
         "spawns": 1,
         "respawns": 0,
         "kills": 0,
-        "lastRssBytes": 342900736,
+        "lastRssBytes": 343171072,
         "opsServed": 2,
-        "stderrLines": 63,
+        "stderrLines": 70,
         "stdoutViolations": 0,
-        "duration_s": 29
+        "duration_s": 31
       }
     }
   ]

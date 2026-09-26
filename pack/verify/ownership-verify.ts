@@ -1,13 +1,17 @@
 /**
- * C4-exit ownership verification — exclusive store ownership at the
- * supervision layer (contract §3/§8).
+ * C5 ownership verification — exclusive store ownership at the supervision
+ * layer (contract §3/§8), FAIL-CLOSED protocol (no automatic stale recovery).
  *
- * CORRECTION PASS 2: ownership LOSS fails closed (an active instance whose
- * lock is removed or replaced performs NO further operation — O2b/O6), and
- * stale recovery is ATOMIC (rename-based claim; two contenders can never
- * both acquire — O7; a stale contender can never remove a freshly acquired
- * live lock — O8; foreign-host heartbeat budget + long-op in-flight
- * heartbeat — O9).
+ * C5 DESIGN (closes C4-exit audit finding L1/Medium): the audit demonstrated
+ * a deterministic three-process interleaving in which the stale-recovery
+ * rename-aside/restore path let instance A and a fresh instance C run
+ * CONCURRENT operations on one physical store. The protocol is now trivially
+ * provable: the lock is created ONLY via atomic `O_EXCL` ('wx'), replaced
+ * ONLY by its owner's heartbeat (atomic tmp→rename of its own lock), and
+ * deleted ONLY by its owner's orderly release or an explicit OPERATOR action
+ * (contract §8.1). A contender REFUSES whenever a lock exists — live or
+ * stale — and never moves, overwrites, or deletes it. Acceptance: no
+ * concurrent operations on one physical store, including during recovery.
  *
  * Run (from repo root):
  *   ../260831-VCT-02/node_modules/.bin/tsx pack/verify/ownership-verify.ts
@@ -18,25 +22,33 @@
  *      (COGNEE_STORE_OWNED) at construction — before any worker spawn;
  *  O3  the owning instance runs a real worker op under ownership; orderly
  *      shutdown RELEASES ownership; a new instance acquires it (restart);
- *  O4  stale-owner recovery: a lock whose owner pid is verifiably DEAD is
- *      recovered by a new instance (atomic rename claim);
+ *  O4  CRASH/RESTART with OPERATOR recovery: a lock whose owner pid is
+ *      verifiably DEAD is NOT auto-recovered — a new instance REFUSES with
+ *      the owner record + operator guidance in the message, the lock bytes
+ *      are untouched; after the operator step (delete the lock, which the
+ *      harness performs only after verifying the pid is dead — the §8.1
+ *      procedure) a new instance acquires cleanly;
  *  O2b a crafted lock belonging to a LIVE owner (live pid) fails closed and
  *      is NEVER deleted — AND the instance whose lock was replaced by the
  *      crafted one fails closed on its next operation (no spawn, no
- *      dispatch): the test cannot pass while its active instance has lost
- *      ownership;
+ *      dispatch), and its idle worker (if any) is killed (orphan facet);
  *  O6  an active instance whose lock file is REMOVED fails closed on the
  *      next op and stays failed (sticky);
- *  O7  DETERMINISTIC two-contender race: exactly one of two concurrent
- *      processes recovers a stale lock; the other fails closed and the
- *      winner's lock is intact;
- *  O8  a stale contender NEVER removes a freshly acquired live lock: the
- *      delayed contender fails closed and the fresh owner's lock bytes are
- *      restored unchanged;
- *  O9  foreign-host heartbeat budget: fresh-heartbeat foreign owner is
- *      respected (refused), stale-heartbeat foreign owner is recovered, and
- *      the heartbeat is refreshed DURING long in-flight operations (the
- *      budget never erodes while the owner is alive and running);
+ *  O7  DETERMINISTIC two-contender race: against a stale lock BOTH
+ *      contenders refuse (lock bytes untouched by both); after operator
+ *      recovery two fresh contenders race for the FREE store — exactly one
+ *      acquires (O_EXCL), the other fails closed, winner's lock intact;
+ *  O8  a contender NEVER removes a fresh LIVE lock: it fails closed, the
+ *      live owner's lock bytes are unchanged, and the owner keeps holding;
+ *  O9  foreign-host budget: fresh-heartbeat foreign owner is refused; a
+ *      stale-heartbeat foreign owner is ALSO refused (no auto-recovery —
+ *      cross-host coordination is the operator's §8.1 procedure); the
+ *      heartbeat is still refreshed DURING long in-flight operations;
+ *  O10 REGRESSION of the auditor's three-process interleaving: while A
+ *      operates, contender roles B and C both refuse pre-spawn (nothing
+ *      dispatched, A's lock untouched); source assertion: the supervision
+ *      contains NO recovery-rename path (exactly one renameSync — the
+ *      owner's heartbeat replace — and no `.recovering-` markers);
  *  O5  resource recording (spawns, ops, wall clock).
  */
 
@@ -51,7 +63,6 @@ import { createCogneePack, WorkerError } from '../src/index.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..', '..');
 const VICT = path.resolve(repo, '..', '260831-VCT-02');
-const TSX_CLI = path.join(VICT, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 const PY = path.join(repo, 'proof', '.venv', 'Scripts', 'python.exe');
 const STUB = path.join(here, 'stub_worker.py');
 const NAMESPACES = ['qa'];
@@ -97,6 +108,19 @@ function check(id: string, name: string, cond: boolean, detail?: unknown, ms?: n
   return cond;
 }
 
+// ---- C5 (audit M1): controlled failing assertion ----------------------------
+// C5_FORCED_FAIL=1 records one deliberately failing assertion and exits 1
+// WITHOUT running the suite — proving the exit-status coupling.
+if (process.env.C5_FORCED_FAIL === '1') {
+  console.error('[own] forced-fail: controlled failing assertion (C5_FORCED_FAIL=1)');
+  results.push({ id: 'forced-fail', name: 'controlled failing assertion', outcome: 'FAIL', detail: { forced: true } });
+  writeFileSync(path.join(repo, 'worker', 'c4-ownership-results.json'), JSON.stringify({
+    verification: 'c5-store-ownership-fail-closed', forcedFail: true,
+    started: new Date().toISOString(), duration_s: 0, results,
+  }, null, 2));
+  process.exit(1);
+}
+
 function makePack(store = STORE, extra: Record<string, unknown> = {}):
   ReturnType<typeof createCogneePack> {
   return createCogneePack({
@@ -113,15 +137,15 @@ function readHeartbeat(lockPath: string): string | null {
   } catch { return null; }
 }
 
-/** Spawn a contender child; resolves its NDJSON events. */
-interface ContenderEvent { event: string; acquired?: boolean; code?: string; message?: string; instanceId?: string; delayMs?: number }
-function contender(store: string, delayMs = 0, hold = false): {
+/** Spawn a contender child; resolves its NDJSON done-event. */
+interface ContenderEvent { event: string; acquired?: boolean; code?: string; message?: string; instanceId?: string }
+function contender(store: string, hold = false): {
   done: Promise<ContenderEvent>;
   child: ReturnType<typeof spawn>;
 } {
   const child = spawn(process.execPath, [
     path.join(VICT, 'node_modules', 'tsx', 'dist', 'cli.mjs'),
-    path.join(here, 'ownership-contender.ts'), store, String(delayMs), ...(hold ? ['hold'] : []),
+    path.join(here, 'ownership-contender.ts'), store, ...(hold ? ['hold'] : []),
   ], { cwd: repo, stdio: ['ignore', 'pipe', 'inherit'] });
   const done = new Promise<ContenderEvent>((resolve) => {
     let buf = '';
@@ -141,6 +165,14 @@ function contender(store: string, delayMs = 0, hold = false): {
     child.on('exit', () => resolve({ event: 'done', acquired: false, code: 'CHILD_EXITED' }));
   });
   return { done, child };
+}
+
+/** A reliably-dead pid (spawn + reap a trivial node process). */
+async function deadPid(): Promise<number> {
+  const p = spawn(process.execPath, ['-e', 'process.exit(0)'], { stdio: 'ignore' });
+  const pid = p.pid!;
+  await new Promise((r) => { p.on('exit', () => r(null)); setTimeout(() => r(null), 5_000); });
+  return pid;
 }
 
 function craftLock(lockPath: string, o: { pid: number; instanceId: string; heartbeatAgeMs: number; host?: string }): string {
@@ -179,10 +211,11 @@ let packA: ReturnType<typeof createCogneePack> | null = null;
   let refused: unknown = null;
   try { makePack(); } catch (e) { refused = e; }
   const we = refused instanceof WorkerError ? refused : null;
-  check('O2', 'second pack instance on the SAME store fails closed (COGNEE_STORE_OWNED, pre-spawn)',
-    we?.code === 'COGNEE_STORE_OWNED' && packA!.supervision.stats.spawns === 0,
-    { code: we?.code ?? String(refused), spawns: packA!.supervision.stats.spawns },
-    Date.now() - t);
+  check('O2', 'second pack instance on the SAME store fails closed (COGNEE_STORE_OWNED, pre-spawn, operator guidance in message)',
+    we?.code === 'COGNEE_STORE_OWNED' && packA!.supervision.stats.spawns === 0 &&
+      typeof we?.message === 'string' && we.message.includes('§8.1'),
+    { code: we?.code ?? String(refused), spawns: packA!.supervision.stats.spawns,
+      guidance: we?.message.includes('§8.1') === true }, Date.now() - t);
 }
 
 // ---- O3: real op under ownership + orderly shutdown releases + restart -------
@@ -213,19 +246,31 @@ let packA: ReturnType<typeof createCogneePack> | null = null;
   packC.supervision.releaseStoreOwnership();
 }
 
-// ---- O4: stale-owner recovery (dead pid, atomic rename claim) ----------------
+// ---- O4: crash/restart — a dead owner's lock is NOT auto-recovered; the §8.1
+// operator procedure recovers it ------------------------------------------------
 {
   const t = Date.now();
-  const dead = spawn(process.execPath, ['-e', 'process.exit(0)'], { stdio: 'ignore' });
-  const deadPid = dead.pid!;
-  await new Promise((r) => {
-    dead.on('exit', () => r(null));
-    setTimeout(() => r(null), 5_000);
-  });
-  craftLock(LOCK, { pid: deadPid, instanceId: 'dead-owner-00000000', heartbeatAgeMs: 3_600_000 });
+  const pid = await deadPid();
+  const crafted = craftLock(LOCK, { pid, instanceId: 'dead-owner-00000000', heartbeatAgeMs: 3_600_000 });
+  // (i) a new instance REFUSES on the stale (dead-pid) lock — no auto-recovery.
+  let refused: unknown = null;
+  try { makePack(); } catch (e) { refused = e; }
+  const we = refused instanceof WorkerError ? refused : null;
+  const untouched = readFileSync(LOCK, 'utf8') === crafted;
+  const guidance = typeof we?.message === 'string' &&
+    we.message.includes(String(pid)) && we.message.includes('NOT running') &&
+    we.message.includes('§8.1');
+  // (ii) the OPERATOR step: the harness has verified the pid is dead (deadPid()
+  // reaped the process) — exactly the §8.1 precondition — and deletes the lock.
+  unlinkSync(LOCK);
+  // (iii) after operator recovery a new instance acquires cleanly.
   const packD = makePack();
-  check('O4', 'stale-owner recovery: dead-pid owner lock is recovered by a new instance',
-    packD.supervision.storeOwnershipHeld, { deadPid }, Date.now() - t);
+  check('O4', 'crash/restart: dead-pid lock is refused (never auto-recovered, bytes untouched, owner record + procedure in message); after the §8.1 operator step a new instance acquires',
+    we?.code === 'COGNEE_STORE_OWNED' && untouched && guidance &&
+      packD.supervision.storeOwnershipHeld,
+    { refused: we?.code ?? String(refused), lockUntouched: untouched,
+      guidanceInMessage: guidance, recovered: packD.supervision.storeOwnershipHeld },
+    Date.now() - t);
   packD.supervision.releaseStoreOwnership();
 }
 
@@ -308,63 +353,61 @@ let packA: ReturnType<typeof createCogneePack> | null = null;
   await packF.supervision.shutdown();
 }
 
-// ---- O7: DETERMINISTIC two-contender race (atomic rename claim) ---------------
+// ---- O7: two contenders vs a STALE lock (both refuse; lock untouched), then
+// an O_EXCL race for the FREED store (exactly one winner) -----------------------
 {
   const t = Date.now();
   await freshDir(RACE1);
   const raceLock = path.join(RACE1, 'cognee-store-owner.lock');
-  const dead = spawn(process.execPath, ['-e', 'process.exit(0)'], { stdio: 'ignore' });
-  const deadPid = dead.pid!;
-  await new Promise((r) => { dead.on('exit', () => r(null)); setTimeout(() => r(null), 5_000); });
-  craftLock(raceLock, { pid: deadPid, instanceId: 'race-stale-owner-000', heartbeatAgeMs: 3_600_000 });
-  const [a, b] = [contender(RACE1, 0, true), contender(RACE1, 0, true)]; // simultaneous contenders, BOTH HOLD
+  const pid = await deadPid();
+  const staleBytes = craftLock(raceLock, { pid, instanceId: 'race-stale-owner-000', heartbeatAgeMs: 3_600_000 });
+  const [a, b] = [contender(RACE1, true), contender(RACE1, true)]; // simultaneous contenders
   const [ra, rb] = await Promise.all([a.done, b.done]);
-  const winner = [ra, rb].find((r) => r.acquired === true);
-  const loser = [ra, rb].find((r) => r.acquired === false);
-  const lockAfter = (): { instanceId?: string } | null => {
+  const untouchedAfterRefusals = readFileSync(raceLock, 'utf8') === staleBytes;
+  a.child.kill('SIGKILL'); b.child.kill('SIGKILL');
+  check('O7a', 'two contenders vs a stale lock: BOTH refuse (no auto-recovery), lock bytes untouched by both',
+    ra.acquired === false && rb.acquired === false &&
+      ra.code === 'COGNEE_STORE_OWNED' && rb.code === 'COGNEE_STORE_OWNED' &&
+      untouchedAfterRefusals,
+    { results: [ra, rb], lockUntouched: untouchedAfterRefusals }, Date.now() - t);
+  // Operator recovery (§8.1; the harness verified the pid is dead above).
+  unlinkSync(raceLock);
+  // Now two FRESH contenders race for the FREE store: exactly one wins O_EXCL.
+  const t2 = Date.now();
+  const [c, d] = [contender(RACE1, true), contender(RACE1, true)];
+  const [rc, rd] = await Promise.all([c.done, d.done]);
+  const winner = [rc, rd].find((r) => r.acquired === true);
+  const loser = [rc, rd].find((r) => r.acquired === false);
+  const finalLock = ((): { instanceId?: string } | null => {
     try { return JSON.parse(readFileSync(raceLock, 'utf8')) as { instanceId?: string }; }
     catch { return null; }
-  };
-  const finalLock = lockAfter();
-  check('O7', 'two contenders race for a stale lock: EXACTLY ONE acquires, the other fails closed, winner lock intact',
+  })();
+  check('O7b', 'after operator recovery, two fresh contenders race for the free store: EXACTLY ONE acquires (O_EXCL), the other fails closed, winner lock intact',
     !!winner && !!loser && loser!.code === 'COGNEE_STORE_OWNED' &&
       !!finalLock && finalLock.instanceId === winner!.instanceId,
-    { results: [ra, rb], winnerLock: finalLock }, Date.now() - t);
-  a.child.kill('SIGKILL'); b.child.kill('SIGKILL');
+    { results: [rc, rd], winnerLock: finalLock }, Date.now() - t2);
+  c.child.kill('SIGKILL'); d.child.kill('SIGKILL');
 }
 
-// ---- O8: a stale contender NEVER removes a freshly acquired live lock --------
+// ---- O8: a contender NEVER removes a fresh LIVE lock --------------------------
 {
   const t = Date.now();
   await freshDir(RACE2);
   const raceLock = path.join(RACE2, 'cognee-store-owner.lock');
-  const dead = spawn(process.execPath, ['-e', 'process.exit(0)'], { stdio: 'ignore' });
-  const deadPid = dead.pid!;
-  await new Promise((r) => { dead.on('exit', () => r(null)); setTimeout(() => r(null), 5_000); });
-  craftLock(raceLock, { pid: deadPid, instanceId: 'race2-stale-owner-00', heartbeatAgeMs: 3_600_000 });
-  // A: stale contender with the verification-only recovery delay — it reads
-  // the stale lock, then PAUSES (claiming event), giving a fresh owner time
-  // to acquire before A's claim lands.
-  const a = contender(RACE2, 8_000);
-  {
-    // Wait for A's "claiming" signal (stale lock judged; claim pending).
-    await new Promise<void>((resolve) => {
-      const onData = () => { a.child.stdout!.off('data', onData); resolve(); };
-      a.child.stdout!.on('data', onData);
-      setTimeout(resolve, 30_000);
-    });
-  }
-  // B acquires while A is paused, then HOLDS the live lock.
-  const b = contender(RACE2, 0, true);
+  // B acquires and HOLDS the live lock.
+  const b = contender(RACE2, true);
   const rb = await b.done;
   const freshBytes = existsSync(raceLock) ? readFileSync(raceLock, 'utf8') : null;
+  // A stale-judgment contender (any second instance) refuses WITHOUT touching
+  // the lock — there is no recovery path in the protocol.
+  const a = contender(RACE2, false);
   const ra = await a.done;
   const bytesAfterA = existsSync(raceLock) ? readFileSync(raceLock, 'utf8') : null;
   const bStillAlive = !b.child.killed && b.child.exitCode === null;
-  check('O8', 'stale contender NEVER removes a fresh live lock (fails closed; fresh lock restored byte-identical; fresh owner still holds)',
+  check('O8', 'contender vs a fresh LIVE lock: refuses, lock bytes unchanged, owner keeps holding',
     rb.acquired === true && ra.acquired === false && ra.code === 'COGNEE_STORE_OWNED' &&
       bytesAfterA === freshBytes && bStillAlive,
-    { freshOwner: rb, staleContender: ra, lockRestored: bytesAfterA === freshBytes },
+    { freshOwner: rb, contender: ra, lockUnchanged: bytesAfterA === freshBytes },
     Date.now() - t);
   b.child.kill('SIGKILL');
   a.child.kill('SIGKILL');
@@ -391,44 +434,103 @@ let packA: ReturnType<typeof createCogneePack> | null = null;
       we?.code === 'COGNEE_STORE_OWNED' && unchanged,
       { code: we?.code ?? String(refused), unchanged }, Date.now() - t);
   }
-  // (b) foreign host, STALE heartbeat (beyond the budget) => recovered.
+  // (b) foreign host, STALE heartbeat (beyond the budget) => ALSO refused:
+  // no automatic recovery — cross-host liveness cannot be verified from here,
+  // so recovery is the operator's §8.1 procedure (coordinate, verify, delete).
   {
     const t = Date.now();
-    craftLock(hbLock, {
+    const stale = craftLock(hbLock, {
       pid: sleeper.pid!, instanceId: 'foreign-stale-000000', heartbeatAgeMs: 20 * 60_000,
       host: 'other-host.example',
     });
-    const pack = makePack(HBSTORE);
-    check('O9b', 'foreign-host owner with STALE heartbeat is recovered (budget honored)',
-      pack.supervision.storeOwnershipHeld, {}, Date.now() - t);
-    pack.supervision.releaseStoreOwnership();
+    let refused: unknown = null;
+    try { makePack(HBSTORE); } catch (e) { refused = e; }
+    const we = refused instanceof WorkerError ? refused : null;
+    const unchanged = readFileSync(hbLock, 'utf8') === stale;
+    const guidance = typeof we?.message === 'string' &&
+      we.message.includes('other-host.example') && we.message.includes('§8.1');
+    check('O9b', 'foreign-host owner with STALE heartbeat is REFUSED (no auto-recovery; foreign host named; operator procedure in message)',
+      we?.code === 'COGNEE_STORE_OWNED' && unchanged && guidance,
+      { code: we?.code ?? String(refused), unchanged, guidanceInMessage: guidance },
+      Date.now() - t);
+    unlinkSync(hbLock); // operator step (foreign owner verified as the test sleeper, controlled by this harness)
   }
   // (c) in-flight heartbeat during a LONG operation: with a 1.5 s staleness
-  // budget and a 3 s op, the heartbeat must be refreshed DURING the op (a
-  // foreign-host contender must never see it go stale while it runs).
+  // budget and a 4 s op, the heartbeat must be refreshed DURING the op (a
+  // foreign-host contender must never see it go stale while it runs). The
+  // probe POLLS for the heartbeat to advance (deterministic against
+  // spawn-speed variance) instead of sleeping a fixed interval.
   {
     const t = Date.now();
     const pack9 = makePack(HBSTORE, {
       workerPath: STUB, ownershipStaleMs: 1_500, readyBudgetMs: 30_000,
-      env: { STUB_OP_DELAY_MS: '3000' },
+      env: { STUB_OP_DELAY_MS: '4000' },
     });
     const hb1 = readHeartbeat(hbLock);
     const opPromise = pack9.supervision.request('add',
       { datasetName: 'qa.hb', content: 'long op' }, { mutating: true, deadlineAt: Date.now() + 30_000 });
-    await sleep(1_200); // mid-op
-    const hb2 = readHeartbeat(hbLock);
+    let hb2 = hb1;
+    const pollStart = Date.now();
+    while (Date.now() - pollStart < 2_600) {
+      await sleep(150);
+      const hb = readHeartbeat(hbLock);
+      if (hb && hb !== hb1) { hb2 = hb; break; }
+    }
     let midOpRefused: unknown = null;
     try { makePack(HBSTORE); } catch (e) { midOpRefused = e; }
     const midWe = midOpRefused instanceof WorkerError ? midOpRefused : null;
     const receipt = await opPromise as { servedOps?: number };
     check('O9c', 'long op: heartbeat refreshed DURING the op (budget never erodes) and a second instance is refused mid-op; op completes',
-      hb1 !== null && hb2 !== null && (Date.parse(hb2!) - Date.parse(hb1!)) >= 500 &&
+      hb1 !== null && hb2 !== null && hb2 !== hb1 &&
         midWe?.code === 'COGNEE_STORE_OWNED' && receipt?.servedOps === 1,
       { hb1, hb2, advancedMs: hb1 && hb2 ? Date.parse(hb2!) - Date.parse(hb1!) : null,
         midOp: midWe?.code ?? String(midOpRefused), receipt }, Date.now() - t);
     await pack9.supervision.shutdown();
   }
   sleeper.kill('SIGKILL');
+}
+
+// ---- O10: REGRESSION — the auditor's three-process interleaving ---------------
+// Audit (docs/c4-exit-audit.md L1): A operates; the old recoverer B moved A's
+// lock, C acquired the free path and DISPATCHED, and A+C ran concurrent ops
+// until C's settlement. Under the C5 protocol B/C cannot exist: any second/
+// third instance refuses pre-spawn while ANY lock exists, and no pack code
+// path moves a lock out of its path.
+{
+  const t = Date.now();
+  await freshDir(RACE2);
+  const iLock = path.join(RACE2, 'cognee-store-owner.lock');
+  // A: acquires and runs a 4 s op (stub worker).
+  const packI = makePack(RACE2, {
+    workerPath: STUB, readyBudgetMs: 30_000, env: { STUB_OP_DELAY_MS: '4000' },
+  });
+  const opA = packI.supervision.request('add', { datasetName: 'qa.o10', content: 'x' },
+    { mutating: true, deadlineAt: Date.now() + 30_000 });
+  await sleep(1_000); // A dispatched, op in flight
+  // B and C (the audit's recoverer and third instance): both must refuse,
+  // pre-spawn, while A's lock exists.
+  const b = contender(RACE2, false);
+  const c = contender(RACE2, false);
+  const [rb, rc] = await Promise.all([b.done, c.done]);
+  const servedByA = packI.supervision.stats.opsServed;
+  const spawnsByA = packI.supervision.stats.spawns;
+  const receipt = await opA as { servedOps?: number };
+  const lockIntact = existsSync(iLock) &&
+    (JSON.parse(readFileSync(iLock, 'utf8')) as { instanceId?: string }).instanceId !== undefined;
+  // Source assertion: the ONLY renameSync is the owner's heartbeat replace —
+  // no recovery rename exists; no `.recovering-` trash names exist.
+  const supSource = readFileSync(path.join(repo, 'pack', 'src', 'supervision.ts'), 'utf8');
+  const renameCount = (supSource.match(/renameSync\(/g) ?? []).length;
+  const sourceClean = renameCount === 1 && !supSource.includes('.recovering-') &&
+    supSource.includes('renameSync(tmp, this.ownershipLockPath)');
+  check('O10', "auditor's three-process interleaving CLOSED: while A operates, B and C refuse pre-spawn (nothing dispatched, lock intact); supervision source has NO recovery-rename path (only the owner heartbeat replace)",
+    rb.acquired === false && rc.acquired === false &&
+      rb.code === 'COGNEE_STORE_OWNED' && rc.code === 'COGNEE_STORE_OWNED' &&
+      servedByA === 1 && spawnsByA === 1 && receipt?.servedOps === 1 && lockIntact &&
+      sourceClean,
+    { b: rb, c: rc, aServed: servedByA, aSpawns: spawnsByA, lockIntact,
+      renameSyncCount: renameCount, sourceClean }, Date.now() - t);
+  await packI.supervision.shutdown();
 }
 
 // ---- O5: resource recording ---------------------------------------------------
@@ -440,7 +542,7 @@ let packA: ReturnType<typeof createCogneePack> | null = null;
 }
 
 const out = {
-  verification: 'c4-exit-store-ownership',
+  verification: 'c5-store-ownership-fail-closed',
   victAbiReference: 'radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)',
   store: 'fresh (proof/.cognee-ownership + race/heartbeat sub-stores)',
   started: new Date(t0).toISOString(),
@@ -450,4 +552,5 @@ const out = {
 writeFileSync(path.join(repo, 'worker', 'c4-ownership-results.json'), JSON.stringify(out, null, 2));
 console.error(`[own] COMPLETE ${out.duration_s}s — ` +
   `${results.filter((r) => r.outcome === 'PASS').length}/${results.length} PASS`);
-process.exit(0);
+// C5 (audit M1): failed assertions MUST produce a non-zero exit status.
+process.exit(results.some((r) => r.outcome !== 'PASS') ? 1 : 0);

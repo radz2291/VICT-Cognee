@@ -2,20 +2,20 @@
   "verification": "c4-pack-through-real-runtime",
   "victAbiReference": "radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)",
   "store": "fresh (proof/.cognee-verify)",
-  "started": "2026-09-26T04:16:16.099Z",
-  "duration_s": 67,
+  "started": "2026-09-26T06:04:14.008Z",
+  "duration_s": 99,
   "environment": {
-    "freeRamGbStart": 4.38,
-    "freeRamGbEnd": 4.44,
+    "freeRamGbStart": 3.18,
+    "freeRamGbEnd": 3.9,
     "note": "Windows low-memory class: cognee cognify peaks ~2.0 GB; native crashes (0xC0000005) were observed in earlier batteries when free RAM dropped near 1.9 GB (agent observations, C1/C2). None occurred in this run; the supervision poison+respawn policy contains worker deaths as COGNEE_WRITE_UNKNOWN/COGNEE_WORKER_UNAVAILABLE."
   },
   "supervisionStats": {
     "spawns": 1,
     "respawns": 0,
     "kills": 0,
-    "lastRssBytes": 342863872,
+    "lastRssBytes": 343556096,
     "opsServed": 9,
-    "stderrLines": 163,
+    "stderrLines": 164,
     "stdoutViolations": 0
   },
   "results": [
@@ -26,7 +26,7 @@
       "detail": {
         "capabilities": 6
       },
-      "ms": 2
+      "ms": 3
     },
     {
       "id": "V1",
@@ -42,7 +42,7 @@
           "cognee.forgetDataset"
         ]
       },
-      "ms": 3
+      "ms": 2
     },
     {
       "id": "V2",
@@ -60,7 +60,7 @@
         },
         "spawns": 0
       },
-      "ms": 16
+      "ms": 25
     },
     {
       "id": "V2b",
@@ -76,7 +76,7 @@
           "storeFilesAfter": 0
         }
       },
-      "ms": 2
+      "ms": 4
     },
     {
       "id": "V3",
@@ -87,12 +87,12 @@
         "spawns": 0,
         "spawnsBefore": 0
       },
-      "ms": 1
+      "ms": 3
     },
     {
       "id": "ABI",
       "name": "durable engine runs real bindings in test/simulate; pack bindings fail closed (UV-1)",
-      "outcome": "OBSERVATION",
+      "outcome": "EXPECTED-OBSERVATION",
       "detail": {
         "source": "orchestration-driver.ts (~line 702) + canonical.ts declaresControlSemantics; pack guard: bindings.ts requireNormalMode",
         "consequence": "mode isolation restored at the pack boundary; upstream durable graphs (other packs) still affected"
@@ -108,14 +108,14 @@
           "code": "VICT_RUNTIME_PERMISSION_DENIED",
           "details": {
             "capabilityId": "cognee.add",
-            "errorId": "err_fa51230c5c35b5c4",
+            "errorId": "err_1920f65f3d2d8251",
             "invokedVia": "real",
             "nodeId": "put"
           },
           "message": "Permission 'cognee.write' required by capability 'cognee.add' is not granted in this runtime; the handler was not invoked."
         }
       },
-      "ms": 15
+      "ms": 30
     },
     {
       "id": "V5",
@@ -125,7 +125,7 @@
         "status": "completed",
         "output": {
           "datasetName": "qa.verify",
-          "idempotencyKey": "idem_0bfb4b914e3229250215f2bf608dc87d",
+          "idempotencyKey": "idem_958ff8a16e3b00ee709db5a3299d7f1e",
           "reconciled": "fresh-execution",
           "itemsBefore": 1,
           "itemsAfter": 1,
@@ -134,7 +134,7 @@
         "error": null,
         "spawns": 1
       },
-      "ms": 45852
+      "ms": 72752
     },
     {
       "id": "V5",
@@ -149,7 +149,7 @@
           "datasetName": "qa.verify"
         }
       },
-      "ms": 281
+      "ms": 440
     },
     {
       "id": "V5b",
@@ -165,11 +165,11 @@
             "nodeId": "put",
             "invokedVia": "real",
             "errorName": "Error",
-            "errorId": "err_e7dcca9624256d47"
+            "errorId": "err_a2a62906b4f72609"
           }
         }
       },
-      "ms": 2
+      "ms": 3
     },
     {
       "id": "V6",
@@ -179,7 +179,7 @@
         "first": "fresh-execution",
         "replay": "replayed-known-outcome"
       },
-      "ms": 588
+      "ms": 579
     },
     {
       "id": "V6",
@@ -188,7 +188,7 @@
       "detail": {
         "got": "COGNEE_IDEMPOTENCY_MISMATCH"
       },
-      "ms": 8
+      "ms": 6
     },
     {
       "id": "V6",
@@ -197,7 +197,7 @@
       "detail": {
         "itemsAfter": 1
       },
-      "ms": 7104
+      "ms": 8042
     },
     {
       "id": "V7",
@@ -207,7 +207,7 @@
         "status": "blocked",
         "error": null
       },
-      "ms": 8
+      "ms": 6
     },
     {
       "id": "V7",
@@ -217,13 +217,13 @@
         "status": "completed",
         "receipt": {
           "datasetName": "qa.binding",
-          "datasetId": "1e22b940-b88b-5738-94d8-55bca48f76ba",
+          "datasetId": "03471b49-178b-56a7-947b-ba86d0498170",
           "purged": "file-level",
           "storeFilesBefore": 2,
           "storeFilesAfter": 0
         }
       },
-      "ms": 658
+      "ms": 961
     },
     {
       "id": "V9a",
@@ -234,7 +234,7 @@
         "spawns": 1,
         "storeUnchanged": true
       },
-      "ms": 21
+      "ms": 23
     },
     {
       "id": "V9b",
@@ -243,7 +243,7 @@
       "detail": {
         "status": "running"
       },
-      "ms": 9
+      "ms": 16
     },
     {
       "id": "V9c",
@@ -252,7 +252,7 @@
       "detail": {
         "status": "failed"
       },
-      "ms": 12
+      "ms": 21
     },
     {
       "id": "V9d",
@@ -261,7 +261,7 @@
       "detail": {
         "status": "failed"
       },
-      "ms": 12
+      "ms": 13
     },
     {
       "id": "V10a",
@@ -270,7 +270,7 @@
       "detail": {
         "code": "COGNEE_DEADLINE_EXCEEDED"
       },
-      "ms": 6
+      "ms": 12
     },
     {
       "id": "V10b",
@@ -279,14 +279,14 @@
       "detail": {
         "code": "COGNEE_DEADLINE_EXCEEDED"
       },
-      "ms": 5
+      "ms": 8
     },
     {
       "id": "V10c",
       "name": "expired deadline on a read fails before the worker request",
       "outcome": "PASS",
       "detail": {},
-      "ms": 0
+      "ms": 1
     },
     {
       "id": "V10d",
@@ -296,7 +296,21 @@
         "code": "COGNEE_DEADLINE_EXCEEDED",
         "servedOps": 1
       },
-      "ms": 2611
+      "ms": 2659
+    },
+    {
+      "id": "V10g",
+      "name": "ready-budget expiry KILLS the stranded worker and the next request recovers via a fresh spawn",
+      "outcome": "PASS",
+      "detail": {
+        "code": "COGNEE_WORKER_UNAVAILABLE",
+        "kills": 1,
+        "spawns": 2,
+        "respawns": 0,
+        "servedOps": 1,
+        "probeErr": null
+      },
+      "ms": 1309
     },
     {
       "id": "V10e",
@@ -307,7 +321,7 @@
         "op1": 1,
         "probeServed": 2
       },
-      "ms": 3102
+      "ms": 3110
     },
     {
       "id": "V10f",
@@ -331,7 +345,7 @@
       "detail": {
         "code": "CLIENT_DEADLINE"
       },
-      "ms": 812
+      "ms": 801
     },
     {
       "id": "V11",

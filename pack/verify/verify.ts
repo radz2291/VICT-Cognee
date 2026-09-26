@@ -109,6 +109,21 @@ function check(id: string, name: string, cond: boolean, detail?: unknown, ms?: n
   return cond;
 }
 
+// ---- C5 (audit M1): controlled failing assertion ----------------------------
+// C5_FORCED_FAIL=1 makes each proof/verify driver deliberately record one
+// failing assertion and exit 1 WITHOUT running the suite — proving the
+// exit-status coupling (a FAIL can never exit 0). Run from repo root:
+//   C5_FORCED_FAIL=1 ../260831-VCT-02/node_modules/.bin/tsx pack/verify/verify.ts
+if (process.env.C5_FORCED_FAIL === '1') {
+  console.error('[verify] forced-fail: controlled failing assertion (C5_FORCED_FAIL=1)');
+  writeFileSync(path.join(repo, 'worker', 'c4-verify-results.json'), JSON.stringify({
+    verification: 'c4-pack-through-real-runtime', forcedFail: true,
+    started: new Date().toISOString(), duration_s: 0,
+    results: [{ id: 'forced-fail', name: 'controlled failing assertion', outcome: 'FAIL', detail: { forced: true } }],
+  }, null, 2));
+  process.exit(1);
+}
+
 // ---- pack instance (one supervision => one live worker per store) -----------
 // NOTE: no explicit workerPath — the pack MUST resolve its own BUNDLED worker
 // (pack/src/worker/cognee_worker.py). V11 verifies that resolution.
@@ -354,7 +369,10 @@ const runtimeGranted = newRuntime(true);
 // (V9), so durable graphs can no longer touch the worker/store outside
 // normal mode; VICT-side durable graphs for OTHER packs remain affected.
 record('ABI', 'durable engine runs real bindings in test/simulate; pack bindings fail closed (UV-1)',
-  'OBSERVATION', {
+  // 'EXPECTED-OBSERVATION' (C5): a documented, reviewed upstream fact — it
+  // does NOT fail the exit gate (unlike FAIL/ERROR/AGENT-OBSERVATION, which
+  // always exit 1). Unexpected worker observations are never green.
+  'EXPECTED-OBSERVATION', {
     source: 'orchestration-driver.ts (~line 702) + canonical.ts declaresControlSemantics; pack guard: bindings.ts requireNormalMode',
     consequence: 'mode isolation restored at the pack boundary; upstream durable graphs (other packs) still affected',
   });
@@ -666,6 +684,46 @@ const STUB = path.join(here, 'stub_worker.py');
   } finally {
     await supD.shutdown();
   }
+  // Instance G: ready-budget expiry must NOT strand the worker (C5, audit L2):
+  // the timed-out child is KILLED, and the NEXT request recovers via a fresh
+  // spawn (the stub delays ready by 4 s on its FIRST start only — see
+  // STUB_READY_ONCE_MARKER in stub_worker.py — so the recovery leg becomes
+  // ready fast).
+  {
+    const t = Date.now();
+    const supG = createCogneePack({
+      pythonPath: PY, cwd: STUB_STORE, storeRoot: STUB_STORE, namespaces: ['qa'],
+      workerPath: STUB, readyBudgetMs: 1_200,
+      env: { STUB_READY_DELAY_MS: '4000',
+        STUB_READY_ONCE_MARKER: path.join(STUB_STORE, '.stub-ready-once') },
+      diag: (line) => console.error(`[stub-G] ${line.slice(0, 140)}`),
+    }).supervision;
+    try {
+      let timedOut: unknown = null;
+      try {
+        await supG.request('add', { datasetName: 'qa.stub', content: 'x' },
+          { mutating: true, deadlineMs: 30_000 });
+      } catch (e) { timedOut = e; }
+      const we = timedOut instanceof WorkerError ? timedOut : null;
+      const killsAfterTimeout = supG.stats.kills;
+      // Recovery: the next request must respawn a FRESH worker (spawns 2) and
+      // succeed (the fresh stub served exactly this probe: servedOps 1).
+      let probe: { servedOps?: number } | null = null;
+      let probeErr: unknown = null;
+      try {
+        probe = await supG.request('datasets_status', {}, { deadlineMs: 30_000 }) as { servedOps?: number };
+      } catch (e) { probeErr = e; }
+      check('V10g', 'ready-budget expiry KILLS the stranded worker and the next request recovers via a fresh spawn',
+        we?.code === 'COGNEE_WORKER_UNAVAILABLE' && killsAfterTimeout >= 1 &&
+          probe?.servedOps === 1 && supG.stats.spawns === 2,
+        { code: we?.code ?? String(timedOut), kills: killsAfterTimeout,
+          spawns: supG.stats.spawns, respawns: supG.stats.respawns,
+          servedOps: probe?.servedOps, probeErr: probeErr === null ? null : String(probeErr) },
+        Date.now() - t);
+    } finally {
+      await supG.shutdown();
+    }
+  }
   // Instance E: per-op delay for the slow ops (queueing + post-dispatch expiry).
   const supE = createCogneePack({
     pythonPath: PY, cwd: STUB_STORE, storeRoot: STUB_STORE, namespaces: ['qa'],
@@ -759,4 +817,7 @@ const out = {
 writeFileSync(path.join(repo, 'worker', 'c4-verify-results.json'), JSON.stringify(out, null, 2));
 console.error(`[verify] COMPLETE ${out.duration_s}s — ` +
   `${results.filter((r) => r.outcome === 'PASS').length}/${results.length} PASS`);
-process.exit(0);
+// C5 (audit M1): failed assertions and UNEXPECTED observations MUST produce a
+// non-zero exit status. Only PASS and the documented EXPECTED-OBSERVATION
+// records keep the gate green.
+process.exit(results.some((r) => !/^(PASS|EXPECTED-OBSERVATION)$/.test(r.outcome)) ? 1 : 0);

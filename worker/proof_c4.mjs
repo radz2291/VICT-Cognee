@@ -32,6 +32,20 @@ const FRESH = path.join(repo, 'proof', '.cognee-c4');
 const PY = path.join(repo, 'proof', '.venv', 'Scripts', 'python.exe');
 const NAMESPACES = ['qa', 'zeta'];
 
+// ---- C5 (audit M1): controlled failing assertion ----------------------------
+// C5_FORCED_FAIL=1 makes this driver record one deliberately failing assertion
+// and exit 1 WITHOUT running the suite (fails fast — before store creation and
+// the slow seed step) — proving the exit-status coupling.
+if (process.env.C5_FORCED_FAIL === '1') {
+  console.error('[proof] forced-fail: controlled failing assertion (C5_FORCED_FAIL=1)');
+  writeFileSync(path.join(here, 'c4-results.json'), JSON.stringify({
+    proof: 'c4-worker-corrections', forcedFail: true,
+    started: new Date().toISOString(), duration_s: 0,
+    results: [{ id: 'forced-fail', name: 'controlled failing assertion', outcome: 'FAIL', detail: { forced: true } }],
+  }, null, 2));
+  process.exit(1);
+}
+
 // ---- fresh disposable store -------------------------------------------------
 for (let attempt = 0; ; attempt++) {
   try {
@@ -130,6 +144,11 @@ async function scenario(id, name, fn) {
   try {
     await fn();
   } catch (e) {
+    // C5 (audit M1): an unexpected worker error raised outside expectError is
+    // recorded as AGENT-OBSERVATION — a reviewed, non-green record. Since the
+    // exit-status rule below requires EVERY result to be PASS, an observation
+    // makes the run exit 1: unexpected worker errors can never be silently
+    // counted as a passing observation.
     record(id, name, OBS_CODES.includes(e.code) ? 'AGENT-OBSERVATION' : 'ERROR',
       { code: e.code ?? '?', message: String(e.message ?? e).slice(0, 220) },
       Date.now() - t);
@@ -413,4 +432,6 @@ const out = {
 writeFileSync(path.join(here, 'c4-results.json'), JSON.stringify(out, null, 2));
 console.error(`[proof] COMPLETE ${out.duration_s}s — ` +
   `${results.filter((r) => r.outcome === 'PASS').length}/${results.length} PASS`);
-process.exit(0); // no lingering worker timers keep the loop alive
+// C5 (audit M1): failed assertions AND unexpected-worker observations MUST
+// produce a non-zero exit status — an observation is recorded, never green.
+process.exit(results.some((r) => r.outcome !== 'PASS') ? 1 : 0); // no lingering worker timers keep the loop alive

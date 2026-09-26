@@ -6,14 +6,20 @@
  *    bindings of a pack instance share one supervision instance; a second
  *    live worker on the same store would collide on the ladybug lock (C4
  *    observation) and is made impossible here.
- *  - EXCLUSIVE STORE OWNERSHIP (C4 exit correction): pack-level supervision
- *    covers one process, but separate pack instances or separate PROCESSES
- *    could still point at the same Cognee root. An owner lock (atomic
- *    O_EXCL create inside the store root) is claimed at construction and
- *    FAILS CLOSED on a live owner (COGNEE_STORE_OWNED), recovers a
- *    verifiably STALE owner (dead pid on this host; foreign host whose
- *    heartbeat exceeded the stale budget), and is RELEASED on orderly
- *    shutdown — a live owner's lock is never deleted.
+ *  - EXCLUSIVE STORE OWNERSHIP (C4 exit correction; C5 fail-closed design):
+ *    pack-level supervision covers one process, but separate pack instances
+ *    or separate PROCESSES could still point at the same Cognee root. An
+ *    owner lock (atomic `O_EXCL` create inside the store root) is claimed at
+ *    construction and FAILS CLOSED on ANY existing lock — live or stale
+ *    (COGNEE_STORE_OWNED) — and is RELEASED on orderly shutdown. There is
+ *    NO automatic stale-lock recovery: any scheme that moves a lock out of
+ *    its path (rename-aside/restore) provably opens a window in which the
+ *    store path has no lock while the previous owner may still be operating,
+ *    letting another instance acquire AND dispatch concurrently (demonstrated
+ *    deterministically in the C4 exit audit, finding L1). A stale lock is
+ *    recovered by an OPERATOR, after verifying the old owner process and its
+ *    worker are stopped (contract §8.1); the refusal error carries the owner
+ *    record and those exact steps. A live owner's lock is never deleted.
  *  - bounded NDJSON on the worker's stdout (1 MiB line cap); stderr is
  *    diagnostics only (never parsed);
  *  - per-op deadline mapped from the invocation context as an ABSOLUTE
@@ -37,7 +43,7 @@
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { setTimeout as delay } from 'node:timers/promises';
-import { closeSync, existsSync, openSync, readFileSync, renameSync, statSync, unlinkSync, writeSync } from 'node:fs';
+import { closeSync, existsSync, openSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, writeSync } from 'node:fs';
 import { hostname, userInfo } from 'node:os';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -52,15 +58,13 @@ const MAX_LINE = 1024 * 1024;
  *  MIN_USABLE_DEADLINE_REMAINING_MS). */
 const MIN_DISPATCH_REMAINING_MS = 250;
 
-/** Default staleness budget for a foreign-host owner's heartbeat. A same-host
- *  owner is verified exactly by pid liveness; only cross-host owners rely on
- *  the heartbeat, so the budget is deliberately generous (§8 residual risk).
- *  The heartbeat is refreshed per op AND continuously while an op is in
- *  flight (interval = staleMs/3, floored at 1 s), so a foreign-host owner is
- *  NOT stealable while it runs arbitrarily long operations; the budget is
- *  only the maximum time a crashed foreign host's lock lingers. */
+/** In-flight ownership heartbeat interval floor: interval = staleMs/3,
+ *  floored at 1 s. The staleness budget itself is NO LONGER a recovery
+ *  trigger (C5: no automatic recovery) — it only sizes how often a long
+ *  in-flight operation refreshes the owner heartbeat. */
 const DEFAULT_OWNERSHIP_STALE_MS = 15 * 60_000;
 const OWNERSHIP_SCHEMA = 'vict.cognee.store-ownership@1';
+const LOCK_FILE_NAME = 'cognee-store-owner.lock';
 
 /** Default path of the PACK-BUNDLED worker, resolved against this module. */
 function bundledWorkerPath(): string {
@@ -76,6 +80,14 @@ function pidAlive(pid: number): boolean {
   } catch (e) {
     return (e as NodeJS.ErrnoException).code === 'EPERM'; // exists, not ours
   }
+}
+
+/** Windows-tolerant path comparison (case-insensitive, both separators).
+ *  Used ONLY for the ready store_root cross-check, where the worker reports
+ *  the resolved boundary path. */
+function pathsMatch(a: string, b: string): boolean {
+  const norm = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+  return norm(a) === norm(b);
 }
 
 export class WorkerError extends Error {
@@ -96,19 +108,16 @@ export interface SupervisionOptions {
   /** Worker cwd — the store directory holding its own .env (§8 dotenv rule). */
   cwd: string;
   namespaces: readonly string[];
-  /** Fail-closed containment boundary passed to the worker guard. */
+  /** Fail-closed containment boundary passed to the worker guard. Resolved
+   *  to its real filesystem path at construction (symlinks/subst/case
+   *  resolved) so every spelling of one physical store maps to ONE lock
+   *  file (audit L3). */
   storeRoot: string;
   readyBudgetMs?: number;
-  /** Ownership staleness budget for foreign-host owners (default 15 min).
-   *  Same-host owners are verified exactly by pid liveness; the heartbeat is
-   *  also refreshed continuously while an op is in flight, so long-running
-   *  operations do not erode the budget. */
+  /** Sizes the in-flight ownership heartbeat interval (staleMs/3, floor
+   *  1 s). NOT a recovery trigger — there is no automatic stale recovery
+   *  (C5 fail-closed design). */
   ownershipStaleMs?: number;
-  /** VERIFICATION-ONLY (default 0): artificial pause between judging a lock
-   *  stale and executing the atomic claim. Widens the recovery race window
-   *  deterministically so the two-contender and stale-contender tests can
-   *  exercise it. Must stay 0 in production. */
-  ownershipRecoveryDelayMs?: number;
   /** Extra environment for the worker process (verification knobs for the
    *  stub worker; the real worker needs none). */
   env?: Record<string, string>;
@@ -138,20 +147,6 @@ interface OwnerRecord {
 interface OwnerSnapshot {
   rec: OwnerRecord | null;
   mtimeAgeMs: number;
-  /** Raw lock bytes as read (exact-comparison anchor for recovery). */
-  raw: string | null;
-}
-
-/** Synchronous sleep (verification-only recovery-delay hook; blocks the
- *  thread so the race window is deterministic). */
-function sleepSync(ms: number): void {
-  if (ms <= 0) return;
-  try {
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
-    return;
-  } catch { /* fall back to a spin */ }
-  const end = Date.now() + ms;
-  while (Date.now() < end) { /* spin */ }
 }
 
 export class CogneeWorkerSupervision {
@@ -176,20 +171,30 @@ export class CogneeWorkerSupervision {
   readonly stats = { spawns: 0, respawns: 0, kills: 0, lastRssBytes: 0, opsServed: 0, stderrLines: 0, stdoutViolations: 0 };
 
   constructor(opts: SupervisionOptions) {
-    this.opts = { ...opts, workerPath: opts.workerPath ?? bundledWorkerPath() };
+    // C5 (audit L3): cover the PHYSICAL store, not a spelling of it — resolve
+    // symlinks/junctions/subst and case so all spellings of one store root
+    // map to ONE lock file (the lock lives inside the store).
+    let storeRoot = opts.storeRoot;
+    if (storeRoot && existsSync(storeRoot)) {
+      try { storeRoot = realpathSync(storeRoot); } catch { /* keep spelling */ }
+    }
+    this.opts = { ...opts, storeRoot, workerPath: opts.workerPath ?? bundledWorkerPath() };
     this.diag = opts.diag ?? (() => {});
-    this.ownershipLockPath = path.join(opts.storeRoot, 'cognee-store-owner.lock');
+    this.ownershipLockPath = path.join(storeRoot, LOCK_FILE_NAME);
     this.staleMs = opts.ownershipStaleMs ?? DEFAULT_OWNERSHIP_STALE_MS;
     this.acquireStoreOwnership();
   }
 
-  // ---- exclusive store ownership (C4 exit; contract §3/§8) ---------------
+  // ---- exclusive store ownership (C4 exit + C5 fail-closed; §3/§8) -------
   // Pack-level supervision covers one process, but separate pack instances
   // or separate PROCESSES could still point at the same Cognee root (the
   // ladybug lock only fails at op time — after a worker spawn, possibly
-  // mid-write). Ownership is claimed atomically at construction, verified
-  // against liveness, refreshed per op, released on orderly shutdown, and
-  // NEVER deleted while a live owner holds it.
+  // mid-write). Ownership is claimed atomically at construction ('wx'),
+  // never moved/renamed/overwritten/deleted by any other code path,
+  // verified against THIS instance's id at three points (heartbeat refresh,
+  // pre-dispatch, in-flight interval), released on orderly shutdown, and
+  // NEVER deleted while a live owner holds it. There is NO automatic stale
+  // recovery — see acquireStoreOwnership().
 
   private lockRecord(): OwnerRecord {
     let user: string | undefined;
@@ -210,31 +215,39 @@ export class CogneeWorkerSupervision {
     try {
       raw = readFileSync(this.ownershipLockPath, 'utf8');
     } catch {
-      return { rec: null, mtimeAgeMs: Infinity, raw: null };
+      return { rec: null, mtimeAgeMs: Infinity };
     }
     let mtimeAgeMs = Infinity;
     try { mtimeAgeMs = Date.now() - statSync(this.ownershipLockPath).mtimeMs; } catch { /* gone */ }
     try {
-      return { rec: JSON.parse(raw) as OwnerRecord, mtimeAgeMs, raw };
+      return { rec: JSON.parse(raw) as OwnerRecord, mtimeAgeMs };
     } catch {
-      return { rec: null, mtimeAgeMs, raw }; // torn/corrupt lock: judged by mtime
+      return { rec: null, mtimeAgeMs }; // torn/corrupt lock: describe by age
     }
   }
 
-  private ownerIsLive(rec: OwnerRecord | null, mtimeAgeMs: number): boolean {
-    if (!rec || rec.schema !== OWNERSHIP_SCHEMA) {
-      // Unparseable/foreign lock: treat as live unless provably ancient.
-      return mtimeAgeMs < this.staleMs;
+  /** Human-readable owner/liveness description for refusal diagnostics
+   *  (informational only — the refusal happens regardless of liveness). */
+  private describeOwner(snap: OwnerSnapshot): string {
+    if (!snap.rec) {
+      return snap.mtimeAgeMs === Infinity
+        ? 'the lock file is unreadable'
+        : `the lock file is unreadable/corrupt (age ${Math.round(snap.mtimeAgeMs / 1000)}s)`;
     }
-    if (rec.host === hostname()) {
-      // Same host: pid liveness is EXACT. A dead pid proves staleness
-      // regardless of heartbeat age; a live pid is live even with a stale
-      // heartbeat (never deleted).
-      return pidAlive(rec.pid);
+    const r = snap.rec;
+    let liveness: string;
+    if (r.host === hostname()) {
+      liveness = pidAlive(r.pid)
+        ? 'the owner process IS STILL RUNNING on this host'
+        : 'the owner process is NOT running on this host (stale lock)';
+    } else {
+      const hb = Date.parse(r.heartbeatAt);
+      liveness = Number.isFinite(hb)
+        ? `foreign host '${r.host}' (last heartbeat ${Math.round((Date.now() - hb) / 1000)}s ago — cannot be verified from here)`
+        : `foreign host '${r.host}' (no parseable heartbeat)`;
     }
-    // Foreign host: pid cannot be verified — heartbeat only.
-    const hb = Date.parse(rec.heartbeatAt);
-    return Number.isFinite(hb) ? (Date.now() - hb) < this.staleMs : mtimeAgeMs < this.staleMs;
+    return `owner instance=${r.instanceId.slice(0, 8)} pid=${r.pid} host=${r.host}` +
+      (r.user ? ` user=${r.user}` : '') + ` startedAt=${r.startedAt} — ${liveness}`;
   }
 
   private createLockAtomically(): boolean {
@@ -250,7 +263,24 @@ export class CogneeWorkerSupervision {
     return true;
   }
 
-  /** Claim the store or fail closed (COGNEE_STORE_OWNED). */
+  /** Claim the store or fail closed (COGNEE_STORE_OWNED).
+   *
+   *  C5 DESIGN DECISION (closes audit finding L1/Medium): there is NO
+   *  automatic stale-lock recovery. The audited implementation moved the
+   *  existing lock out of the path (rename-aside) and restored it on
+   *  mismatch; that provably opens a window in which the store path has no
+   *  lock while the previous owner may still be operating, so another
+   *  instance could acquire AND dispatch a concurrent operation (the
+   *  auditor's deterministic three-process interleaving). An `openSync('wx')`
+   *  restore alone does not close the window — the overlap already exists
+   *  while the moved lock sits outside the path, before any restore. Rename-
+   *  replace schemes cannot be proven atomic on the supported Windows host
+   *  (AV/filter drivers) and can still displace a fresh owner whose operation
+   *  is in flight. The protocol is therefore trivially provable: the lock is
+   *  created ONLY via atomic `O_EXCL` ('wx'), replaced ONLY by its owner's
+   *  heartbeat (atomic tmp→rename of its own lock), and deleted ONLY by its
+   *  owner's orderly release or an explicit OPERATOR action after verifying
+   *  the old owner process and its worker are stopped (contract §8.1). */
   private acquireStoreOwnership(): void {
     if (this.ownsStore) return;
     if (!existsSync(this.opts.storeRoot)) {
@@ -258,88 +288,61 @@ export class CogneeWorkerSupervision {
         `store root ${this.opts.storeRoot} does not exist — the binding host must ` +
         'provision the pack-owned store directory (with its own .env) first (§8)');
     }
+    this.refuseNestedStoreRoot();
     if (existsSync(this.ownershipLockPath) || !this.createLockAtomically()) {
-      this.acquireStoreOwnershipContended();
+      throw this.storeOwnedError();
     }
     this.ownsStore = true;
     this.diag(`store ownership acquired: pid=${process.pid} host=${hostname()} ` +
       `instance=${this.instanceId.slice(0, 8)} -> ${this.ownershipLockPath}`);
   }
 
-  private acquireStoreOwnershipContended(depth = 0): void {
-    if (depth > 8) {
-      throw new WorkerError('COGNEE_STORE_OWNED',
-        `store ${this.opts.storeRoot}: ownership could not be settled ` +
-        `deterministically after ${depth} contention rounds — failing closed (§8)`);
+  /** Audit L3: a store root nested INSIDE another pack-owned store root that
+   *  holds a lock is refused — the two roots would be distinct lock files
+   *  over one overlapping directory tree (two live workers on one physical
+   *  store is forbidden, §3). Only ANCESTORS are scanned (cheap, no tree
+   *  walk); provisioning an OUTER root over an active INNER root is a
+   *  documented operator rule (roots must be disjoint), not an automatic
+   *  detection. */
+  private refuseNestedStoreRoot(): void {
+    let dir = path.dirname(this.opts.storeRoot);
+    for (;;) {
+      const candidate = path.join(dir, LOCK_FILE_NAME);
+      if (existsSync(candidate)) {
+        let who = '';
+        try {
+          const r = JSON.parse(readFileSync(candidate, 'utf8')) as OwnerRecord;
+          if (r && typeof r.instanceId === 'string') {
+            who = ` (owner instance=${r.instanceId.slice(0, 8)} pid=${r.pid} host=${r.host})`;
+          }
+        } catch { /* diagnostic only */ }
+        throw new WorkerError('COGNEE_STORE_OWNED',
+          `store root ${this.opts.storeRoot} is nested INSIDE another pack-owned ` +
+          `store root that holds a lock: ${candidate}${who} — nested store roots ` +
+          'share physical disks/caches and are forbidden (§3: roots must be ' +
+          'disjoint per trust domain). Provision a store root outside the ' +
+          'other store\'s directory tree.');
+      }
+      const parent = path.dirname(dir);
+      if (parent === dir) return; // filesystem root reached
+      dir = parent;
     }
+  }
+
+  /** The single fail-closed refusal for an existing lock, with the owner
+   *  record and the exact operator recovery steps (contract §8.1). */
+  private storeOwnedError(): WorkerError {
     const snap = this.readOwner();
-    if (this.ownerIsLive(snap.rec, snap.mtimeAgeMs)) {
-      const who = snap.rec
-        ? `instance=${snap.rec.instanceId.slice(0, 8)} pid=${snap.rec.pid} host=${snap.rec.host}`
-        : 'unreadable lock';
-      throw new WorkerError('COGNEE_STORE_OWNED',
-        `store ${this.opts.storeRoot} is owned by a LIVE owner (${who}); a second ` +
-        'pack instance/process must not attach to the same Cognee root (§3/§8). ' +
-        'Provision a separate store root for this runtime/trust domain.');
-    }
-    const why = snap.rec
-      ? (snap.rec.host === hostname()
-        ? `owner pid ${snap.rec.pid} is dead on this host`
-        : `foreign-host owner heartbeat older than ${this.staleMs}ms`)
-      : `unreadable lock older than ${this.staleMs}ms`;
-    if (this.opts.ownershipRecoveryDelayMs) {
-      // VERIFICATION-ONLY: widen the judgment→claim window deterministically.
-      sleepSync(this.opts.ownershipRecoveryDelayMs);
-    }
-    // ATOMIC claim: rename the judged-stale lock out of the way. rename() is
-    // atomic and fails for every OTHER contender (ENOENT) once one contender
-    // has moved the file — exactly one contender can win the claim. The old
-    // unlink-then-create path had a read/unlink/create TOCTOU window in which
-    // two contenders could BOTH acquire; that window is closed here.
-    const trash = `${this.ownershipLockPath}.recovering-${process.pid}-${randomUUID()}`;
-    try {
-      renameSync(this.ownershipLockPath, trash);
-    } catch (e) {
-      if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
-        // The stale lock vanished while we acted: a concurrent contender
-        // claimed it (or the owner removed it). Re-evaluate current state.
-        this.diag(`stale ownership claim raced (lock moved by a contender); re-evaluating`);
-        return this.acquireStoreOwnershipContended(depth + 1);
-      }
-      // Unexpected rename failure — never unlink blindly; fail closed.
-      throw new WorkerError('COGNEE_STORE_OWNED',
-        `store ${this.opts.storeRoot}: stale-owner recovery could not be performed ` +
-        `safely (${(e as NodeJS.ErrnoException).code}) — failing closed (§8)`);
-    }
-    // We now hold the ONLY reference to the moved lock. Prove it is STILL the
-    // exact lock we judged stale — a fresh owner may have replaced the stale
-    // lock between our read and the rename.
-    let movedRaw: string | null = null;
-    try { movedRaw = readFileSync(trash, 'utf8'); } catch { movedRaw = null; }
-    if (movedRaw !== snap.raw) {
-      // We displaced a DIFFERENT (possibly fresh/live) lock. Never acquire on
-      // an unprovable claim: restore the displaced lock if the path is free
-      // (its owner keeps working — the bytes are exactly what it wrote),
-      // otherwise the displaced owner will detect the loss at its next
-      // operation and fail closed. Either way NO second owner can exist.
-      if (!existsSync(this.ownershipLockPath)) {
-        try { renameSync(trash, this.ownershipLockPath); } catch { /* raced */ }
-      }
-      try { unlinkSync(trash); } catch { /* best effort */ }
-      throw new WorkerError('COGNEE_STORE_OWNED',
-        `store ${this.opts.storeRoot}: stale-owner recovery raced with a fresh ` +
-        'owner (the lock changed between judgment and claim) — failing closed; ' +
-        'the displaced lock was restored or its owner will detect the loss on ' +
-        'its next operation (§8)');
-    }
-    // The moved lock is proven stale — discard the evidence copy.
-    try { unlinkSync(trash); } catch { /* best effort */ }
-    if (!this.createLockAtomically()) {
-      // A contender created a lock between our rename and create — it wins;
-      // re-evaluate against its (live) record.
-      return this.acquireStoreOwnershipContended(depth + 1);
-    }
-    this.diag(`stale store ownership recovered (${why})`);
+    const r = snap.rec;
+    return new WorkerError('COGNEE_STORE_OWNED',
+      `store ${this.opts.storeRoot} has a store-owner lock — a second pack ` +
+      'instance/process must not attach to the same Cognee root (§3/§8). ' +
+      `Owner: ${this.describeOwner(snap)}. There is NO automatic stale-lock ` +
+      'recovery (C5 fail-closed design). To recover manually, FIRST verify the ' +
+      (r ? `old owner process (pid ${r.pid}${r.host !== hostname() ? ` on host '${r.host}'` : ''}) ` : 'old owner process ') +
+      'and its worker are STOPPED, then delete the lock file — full procedure ' +
+      'in contract §8.1 (docs/c3-pack-contract.md §8.1). The lock was NOT ' +
+      'modified or removed by this instance.');
   }
 
   /** Verify the ownership lock still exists and still belongs to THIS
@@ -355,6 +358,17 @@ export class CogneeWorkerSupervision {
     const { rec } = this.readOwner();
     if (!rec || rec.instanceId !== this.instanceId) {
       this.ownsStore = false; // permanently fail closed from this point on
+      // Audit L1 secondary facet: if no operation is in flight (strict
+      // serialization ⇒ pending is empty at the pre-dispatch/refresh call
+      // sites), kill the idle worker NOW so a lost owner never leaves an
+      // orphaned live worker holding store handles. An IN-FLIGHT op is left
+      // alone — its outcome is already real; it is killed at settlement
+      // (§7.2 lostMidOp policy below).
+      if (this.pending.size === 0 && this.child) {
+        this.stats.kills += 1;
+        this.child.kill('SIGKILL');
+        this.child = null;
+      }
       throw new WorkerError('COGNEE_STORE_OWNED',
         `${op}: store ownership LOST (lock missing or now held by another ` +
         'instance) — refusing before any worker request or effect (§8)');
@@ -412,17 +426,22 @@ export class CogneeWorkerSupervision {
     const args: string[] = [this.opts.workerPath];
     for (const ns of this.opts.namespaces) args.push('--allow-ns', ns);
     args.push('--store-root', this.opts.storeRoot);
-    this.child = spawn(this.opts.pythonPath, args, {
+    const proc = spawn(this.opts.pythonPath, args, {
       cwd: this.opts.cwd,
       env: { ...process.env, PYTHONUNBUFFERED: '1', ...(this.opts.env ?? {}) },
       stdio: ['pipe', 'pipe', 'pipe'],
     });
+    this.child = proc;
     this.stats.spawns += 1;
-    const rl = createInterface({ input: this.child.stdout!, crlfDelay: Infinity });
+    const rl = createInterface({ input: proc.stdout, crlfDelay: Infinity });
     rl.on('line', (line: string) => {
+      // C5: this handler is scoped to `proc` — a STALE child's late output is
+      // ignored (it must never resolve the CURRENT child's readiness or
+      // settle ops that belong to the newer lifecycle).
+      if (this.child !== proc) return;
       if (line.length > MAX_LINE) {
         this.diag(`FATAL: stdout line exceeds ${MAX_LINE} bytes — aborting`);
-        this.child?.kill('SIGKILL');
+        proc.kill('SIGKILL');
         return;
       }
       let msg: Record<string, unknown>;
@@ -438,6 +457,17 @@ export class CogneeWorkerSupervision {
         return;
       }
       if (msg.type === 'ready') {
+        // C5 (audit L3): cross-check the worker's REPORTED store boundary
+        // against the configured one — a worker serving a different root is
+        // killed before it can resolve anything. The stub worker sends no
+        // store_root (absent ⇒ no check); the real worker always does.
+        const reportedRoot = typeof msg.store_root === 'string' ? msg.store_root : null;
+        if (reportedRoot && !pathsMatch(reportedRoot, this.opts.storeRoot)) {
+          this.diag(`FATAL: worker ready store_root mismatch: reported=${reportedRoot} ` +
+            `configured=${this.opts.storeRoot} — killing worker (§8 boundary)`);
+          proc.kill('SIGKILL');
+          return; // never resolve readiness for a mis-bounded worker
+        }
         this.readyInfo = msg;
         this.stats.lastRssBytes = Number(msg.rss_bytes ?? 0);
         if (this.readyResolve) {
@@ -462,11 +492,20 @@ export class CogneeWorkerSupervision {
         this.diag(`unexpected stdout message: ${JSON.stringify(msg).slice(0, 120)}`);
       }
     });
-    this.child.stderr!.on('data', (d: Buffer) => {
+    proc.stderr.on('data', (d: Buffer) => {
       this.stats.stderrLines += 1;
       this.diag(`[worker] ${String(d).trimEnd().slice(0, 200)}`);
     });
-    this.child.on('exit', (code, signal) => {
+    proc.on('exit', (code, signal) => {
+      // C5 lifecycle scoping: only the CURRENT child's exit may clear the
+      // lifecycle state. A stale child's exit (already replaced by a newer
+      // spawn, or already settled by the ready timer) is ignored — otherwise
+      // the killed child's late exit event would null the NEW child reference
+      // and reject the NEW ready promise (race found by the V10g test).
+      if (this.child !== proc) {
+        this.diag(`stale worker exit ignored (code=${code} signal=${signal})`);
+        return;
+      }
       this.child = null;
       if (this.readyReject) {
         if (this.readyTimer) clearTimeout(this.readyTimer);
@@ -497,8 +536,16 @@ export class CogneeWorkerSupervision {
       this.readyTimer = setTimeout(() => {
         this.readyResolve = null;
         this.readyReject = null;
+        // C5 (audit L2): a ready-budget expiry must not strand a live child.
+        // Nothing was dispatched (the request never reached pending), so
+        // killing is clean — no unknown-outcome window — and the next
+        // request respawns a fresh worker (proven by verify.ts V10g).
+        this.stats.kills += 1;
+        try { proc.kill('SIGKILL'); } catch { /* already gone */ }
+        if (this.child === proc) this.child = null;
         reject(new WorkerError('COGNEE_WORKER_UNAVAILABLE',
-          `worker not ready within ${this.opts.readyBudgetMs ?? 180_000}ms`));
+          `worker not ready within ${this.opts.readyBudgetMs ?? 180_000}ms — ` +
+          'worker killed; the next request respawns a fresh worker'));
       }, this.opts.readyBudgetMs ?? 180_000);
     });
   }

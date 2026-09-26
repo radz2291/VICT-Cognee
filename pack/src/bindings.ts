@@ -34,11 +34,11 @@
 
 import { CogneeWorkerSupervision, WorkerError } from './supervision.js';
 import {
-  AddInput, MutatingReceipt, DatasetRef, SearchInput, SearchOutput,
-  StatusInput, StatusOutput, ForgetReceipt,
+  AddInput, DatasetRef, SearchInput,
   AddInputContract, MutatingReceiptContract, DatasetRefContract,
   SearchInputContract, SearchOutputContract, StatusInputContract,
   StatusOutputContract, ForgetReceiptContract,
+  type Contract,
 } from './contracts.js';
 
 /** Minimal structural mirror of the VICT CapabilityContext (type-only use). */
@@ -120,6 +120,23 @@ function requireKey(ctx: InvocationContext, op: string): string {
   return ctx.idempotencyKey;
 }
 
+/** C5 (audit L4): run the worker receipt (or double output) through the
+ *  capability's OUTPUT contract at the BINDING boundary — before the value
+ *  can cross into VICT. Previously enforcement relied on the runtime's node
+ *  output check (only when a graph node declares `output`), so a malformed
+ *  worker receipt could cross the boundary untyped via a direct binding call
+ *  or a graph that omits `output`. A contract-violating receipt is a typed
+ *  failure; nothing malformed is ever returned to the caller. */
+function parseOutput<T>(contract: Contract<T>, op: string, value: unknown): T {
+  const parsed = contract.parse(value);
+  if (!parsed.ok) {
+    throw new BindingRefusedError('COGNEE_OUTPUT_CONTRACT',
+      `${op}: receipt failed its output contract (${contract.id}): ` +
+      parsed.issues.map((i) => `${i.path ?? '(root)'}: ${i.message}`).join('; '));
+  }
+  return parsed.value;
+}
+
 export interface PackBindings {
   readonly capabilities: readonly {
     readonly id: string;
@@ -142,45 +159,50 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
     requireNormalMode(ctx, 'cognee.add');
     const input = rawInput as AddInput;
     const key = requireKey(ctx, 'cognee.add');
-    return await sup.request('add',
+    const receipt = await sup.request('add',
       { datasetName: input.datasetName, content: input.content },
       { mutating: true, deadlineAt: deadlineFrom(ctx, 'cognee.add', DEFAULT_MUTATING_DEADLINE_MS),
         ctx: { idempotencyKey: key, ...(ctx.attemptNumber !== undefined
-          ? { attemptNumber: ctx.attemptNumber } : {}) } }) as Promise<MutatingReceipt>;
+          ? { attemptNumber: ctx.attemptNumber } : {}) } });
+    return parseOutput(MutatingReceiptContract, 'cognee.add', receipt);
   };
 
   const cognify: Invoke = async (rawInput: unknown, ctx: InvocationContext) => {
     requireNormalMode(ctx, 'cognee.cognify');
     const input = rawInput as DatasetRef;
     const key = requireKey(ctx, 'cognee.cognify');
-    return await sup.request('cognify', { datasetName: input.datasetName },
+    const receipt = await sup.request('cognify', { datasetName: input.datasetName },
       { mutating: true, deadlineAt: deadlineFrom(ctx, 'cognee.cognify', DEFAULT_MUTATING_DEADLINE_MS),
         ctx: { idempotencyKey: key, ...(ctx.attemptNumber !== undefined
-          ? { attemptNumber: ctx.attemptNumber } : {}) } }) as Promise<MutatingReceipt>;
+          ? { attemptNumber: ctx.attemptNumber } : {}) } });
+    return parseOutput(MutatingReceiptContract, 'cognee.cognify', receipt);
   };
 
   const searchChunks: Invoke = async (rawInput: unknown, ctx: InvocationContext) => {
     requireNormalMode(ctx, 'cognee.searchChunks');
     const input = rawInput as SearchInput;
-    return await sup.request('search_chunks',
+    const output = await sup.request('search_chunks',
       { datasets: [...input.datasets], query: input.query,
         ...(input.topK !== undefined ? { topK: input.topK } : {}) },
-      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.searchChunks', DEFAULT_READ_DEADLINE_MS) }) as Promise<SearchOutput>;
+      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.searchChunks', DEFAULT_READ_DEADLINE_MS) });
+    return parseOutput(SearchOutputContract, 'cognee.searchChunks', output);
   };
 
   const searchSummaries: Invoke = async (rawInput: unknown, ctx: InvocationContext) => {
     requireNormalMode(ctx, 'cognee.searchSummaries');
     const input = rawInput as SearchInput;
-    return await sup.request('search_summaries',
+    const output = await sup.request('search_summaries',
       { datasets: [...input.datasets], query: input.query,
         ...(input.topK !== undefined ? { topK: input.topK } : {}) },
-      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.searchSummaries', DEFAULT_READ_DEADLINE_MS) }) as Promise<SearchOutput>;
+      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.searchSummaries', DEFAULT_READ_DEADLINE_MS) });
+    return parseOutput(SearchOutputContract, 'cognee.searchSummaries', output);
   };
 
   const datasetsStatus: Invoke = async (_input: unknown, ctx: InvocationContext) => {
     requireNormalMode(ctx, 'cognee.datasetsStatus');
-    return await sup.request('datasets_status', {},
-      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.datasetsStatus', DEFAULT_READ_DEADLINE_MS) }) as Promise<StatusOutput>;
+    const output = await sup.request('datasets_status', {},
+      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.datasetsStatus', DEFAULT_READ_DEADLINE_MS) });
+    return parseOutput(StatusOutputContract, 'cognee.datasetsStatus', output);
   };
 
   const forgetDataset: Invoke = async (rawInput: unknown, ctx: InvocationContext) => {
@@ -189,17 +211,21 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
     // Irreversible: NEVER journaled, NEVER auto-retried (§7.2/§7.5). VICT
     // denies irreversible capabilities in normal mode unless the run policy
     // sets allowIrreversible — the real handler is unreachable otherwise.
-    return await sup.request('forget_dataset', { datasetName: input.datasetName },
-      { mutating: true, deadlineAt: deadlineFrom(ctx, 'cognee.forgetDataset', DEFAULT_MUTATING_DEADLINE_MS) }) as Promise<ForgetReceipt>;
+    const receipt = await sup.request('forget_dataset', { datasetName: input.datasetName },
+      { mutating: true, deadlineAt: deadlineFrom(ctx, 'cognee.forgetDataset', DEFAULT_MUTATING_DEADLINE_MS) });
+    return parseOutput(ForgetReceiptContract, 'cognee.forgetDataset', receipt);
   };
 
   // ---- test/simulate doubles (mutating capabilities only; reads fail closed)
   // Contract-valid outputs, deterministic, ZERO cognee/store touch. The add
-  // double models a successful fresh write of exactly one data item.
+  // double models a successful fresh write of exactly one data item. Doubles'
+  // outputs pass through the SAME output-contract parse at the boundary
+ // (VICT effect policy: a double's output must satisfy the original
+  // capability's contracts).
 
   const addDouble: Invoke = async (rawInput: unknown, ctx: InvocationContext) => {
     const input = rawInput as AddInput;
-    return {
+    return parseOutput(MutatingReceiptContract, 'cognee.add(double)', {
       datasetName: input.datasetName,
       idempotencyKey: typeof ctx.idempotencyKey === 'string'
         ? ctx.idempotencyKey : 'double-no-key',
@@ -207,12 +233,12 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
       itemsBefore: 0,
       itemsAfter: 1,
       deduplicated: false,
-    };
+    });
   };
 
   const cognifyDouble: Invoke = async (rawInput: unknown, ctx: InvocationContext) => {
     const input = rawInput as DatasetRef;
-    return {
+    return parseOutput(MutatingReceiptContract, 'cognee.cognify(double)', {
       datasetName: input.datasetName,
       idempotencyKey: typeof ctx.idempotencyKey === 'string'
         ? ctx.idempotencyKey : 'double-no-key',
@@ -220,18 +246,18 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
       itemsBefore: 1,
       itemsAfter: 1,
       deduplicated: true,
-    };
+    });
   };
 
   const forgetDouble: Invoke = async (rawInput: unknown) => {
     const input = rawInput as DatasetRef;
-    return {
+    return parseOutput(ForgetReceiptContract, 'cognee.forgetDataset(double)', {
       datasetName: input.datasetName,
       datasetId: 'double-dataset-id',
       purged: 'not-observed',
       storeFilesBefore: 0,
       storeFilesAfter: 0,
-    };
+    });
   };
 
   return {
