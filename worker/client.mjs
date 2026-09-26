@@ -33,7 +33,9 @@ export class WorkerError extends Error {
 export class WorkerClient {
   /**
    * @param {string} pythonPath  absolute path to the venv python
-   * @param {string} workerPath  absolute path to worker.py
+   * @param {string} workerPath  absolute path to the worker entry script
+   *                             (pack-bundled cognee_worker.py, or the
+   *                             proof-only worker_proof.py crash harness)
    * @param {object} opts        { cwd, namespaces: string[], readyBudgetMs, diag }
    */
   constructor(pythonPath, workerPath, opts) {

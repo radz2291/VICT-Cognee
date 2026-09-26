@@ -24,10 +24,18 @@
  *  V7 irreversible gating: forgetDataset in normal mode is denied by default;
  *     with run policy {allowIrreversible:true} it runs and files 2->0... (as
  *     observed: purged 'file-level');
+ *  V9 C4-exit mode guard: DURABLE graphs (reads / add / cognify /
+ *     forgetDataset) in test/simulate are refused by every real binding
+ *     (COGNEE_MODE_REFUSED) — no worker spawn, no store change;
+ *  V10 C4-exit deadlines: an expired or insufficient ctx.deadlineAt fails
+ *     BEFORE the worker request (COGNEE_DEADLINE_EXCEEDED) and is never
+ *     replaced with a fresh full timeout;
+ *  V11 the pack resolves its OWN BUNDLED worker (no proof path) — the
+ *     supervision default workerPath points into pack/src/worker/;
  *  V8 resource + environment recording (spawns, RSS, free RAM, durations).
  */
 
-import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync, readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,7 +47,7 @@ const { createRuntime, createInMemoryStores, installCapabilityPack } =
 const { validateCapabilityPack, neutralJsonContract } =
   await import(`${VICT}/packages/sdk/dist/index.js`);
 
-import { createCogneePack, WorkerError } from '../src/index.js';
+import { createCogneePack, WorkerError, BindingRefusedError } from '../src/index.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '..', '..');
@@ -102,15 +110,30 @@ function check(id: string, name: string, cond: boolean, detail?: unknown, ms?: n
 }
 
 // ---- pack instance (one supervision => one live worker per store) -----------
+// NOTE: no explicit workerPath — the pack MUST resolve its own BUNDLED worker
+// (pack/src/worker/cognee_worker.py). V11 verifies that resolution.
 const pack = createCogneePack({
   pythonPath: PY,
-  workerPath: path.join(repo, 'worker', 'worker.py'),
   cwd: STORE,
   storeRoot: STORE,
   namespaces: NAMESPACES,
   readyBudgetMs: 180_000,
   diag: (line) => console.error(`[sup] ${line.slice(0, 160)}`),
 });
+
+/** Store snapshot for no-store-change assertions (relative path + size). */
+function storeSnapshot(): string[] {
+  const files: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.isFile()) files.push(`${path.relative(STORE, p)}:${statSync(p).size}`);
+    }
+  };
+  walk(STORE);
+  return files.sort();
+}
 
 // ---- durable-driver graphs (decision node + node retry policies + timeouts =>
 //      vict.activation@2: the runtime DERIVES idempotencyKeys for the write
@@ -322,18 +345,18 @@ const runtimeGranted = newRuntime(true);
   }
 }
 
-// ABI OBSERVATION (recorded for the contract, not a pass/fail check): a graph
-// whose nodes carry retry/timeoutMs (or control kinds / route edges) compiles
-// to vict.activation@2 and runs on the DURABLE orchestration engine, which
-// always invokes the pinned REAL binding — even in 'test'/'simulate' modes.
-// Consequence for this pack: any durable graph that includes cognee
-// capabilities touches the REAL worker/store regardless of mode; the
-// verification therefore runs durable graphs only against the disposable
-// store, and mode isolation claims hold only on capability-only graphs.
-record('ABI', 'durable engine runs real bindings in test/simulate (no doubles)',
+// ABI OBSERVATION (updated by the C4 exit corrections): a graph whose nodes
+// carry retry/timeoutMs (or control kinds / route edges) compiles to
+// vict.activation@2 and runs on the DURABLE orchestration engine, which
+// ALWAYS invokes the pinned REAL binding — even in 'test'/'simulate' modes
+// (upstream VICT issue UV-1, docs/upstream-vict-issues.md). Consequence for
+// this pack: every real binding FAILS CLOSED unless ctx.mode === 'normal'
+// (V9), so durable graphs can no longer touch the worker/store outside
+// normal mode; VICT-side durable graphs for OTHER packs remain affected.
+record('ABI', 'durable engine runs real bindings in test/simulate; pack bindings fail closed (UV-1)',
   'OBSERVATION', {
-    source: 'orchestration-driver.ts (~line 700) + canonical.ts declaresControlSemantics',
-    consequence: 'mode isolation only on capability-only graphs; durable graphs always real',
+    source: 'orchestration-driver.ts (~line 702) + canonical.ts declaresControlSemantics; pack guard: bindings.ts requireNormalMode',
+    consequence: 'mode isolation restored at the pack boundary; upstream durable graphs (other packs) still affected',
   });
 
 // ---- V4: permission pre-check (ungranted runtime, handler never invoked) --------
@@ -466,6 +489,150 @@ const qaDoc = 'Quellight C3QA marker: settlement windows close at 17:00 local ti
     allowed.status === 'completed' && receipt?.purged === 'file-level' &&
       receipt?.storeFilesAfter === 0,
     { status: allowed.status, receipt }, Date.now() - t2);
+}
+
+// ---- V9: C4-exit mode guard — durable graphs NEVER reach the real worker in
+// test/simulate (upstream VICT issue UV-1: the durable engine ignores
+// useDouble; the pack fails closed at every real binding) --------------------
+const DURABLE_READ_GRAPH = {
+  id: 'cognee-verify-durable-read', entry: 'find',
+  nodes: [
+    { id: 'find', capability: 'cognee.searchChunks', timeoutMs: 60_000,
+      output: 'cognee.search-output' },
+  ],
+  edges: [],
+};
+{
+  const storeBefore = storeSnapshot();
+  const spawnsBefore = pack.supervision.stats.spawns;
+  // (a) durable WRITE graph (add+cognify) in 'test'
+  {
+    const t = Date.now();
+    await runtimeGranted.activate(WRITE_GRAPH as never);
+    const run = await runtimeGranted.run(
+      { datasetName: 'qa.never', content: 'durable test-mode write must be refused' },
+      { mode: 'test' });
+    check('V9a', 'durable write graph in test mode refused (no worker spawn, no store change)',
+      run.status !== 'completed' && run.status !== 'blocked' &&
+        pack.supervision.stats.spawns === spawnsBefore &&
+        JSON.stringify(storeSnapshot()) === JSON.stringify(storeBefore),
+      { status: run.status, spawns: pack.supervision.stats.spawns,
+        storeUnchanged: JSON.stringify(storeSnapshot()) === JSON.stringify(storeBefore) },
+      Date.now() - t);
+  }
+  // (b) durable WRITE graph in 'simulate'
+  {
+    const t = Date.now();
+    const run = await runtimeGranted.run(
+      { datasetName: 'qa.never', content: 'durable simulate-mode write must be refused' },
+      { mode: 'simulate' });
+    check('V9b', 'durable write graph in simulate mode refused (no worker spawn, no store change)',
+      run.status !== 'completed' && run.status !== 'blocked' &&
+        pack.supervision.stats.spawns === spawnsBefore &&
+        JSON.stringify(storeSnapshot()) === JSON.stringify(storeBefore),
+      { status: run.status }, Date.now() - t);
+  }
+  // (c) durable READ graph in 'test'
+  {
+    const t = Date.now();
+    const activated = await runtimeGranted.activate(DURABLE_READ_GRAPH as never);
+    if (!activated.ok) {
+      check('V9c', 'durable read graph in test mode refused', false,
+        { issues: activated.issues.map((i: { code: string }) => i.code) }, Date.now() - t);
+    } else {
+      const run = await runtimeGranted.run(
+        { datasets: ['qa.verify'], query: 'settlement windows' }, { mode: 'test' });
+      check('V9c', 'durable read graph in test mode refused (no worker spawn, no store change)',
+        run.status !== 'completed' && run.status !== 'blocked' &&
+          pack.supervision.stats.spawns === spawnsBefore &&
+          JSON.stringify(storeSnapshot()) === JSON.stringify(storeBefore),
+        { status: run.status }, Date.now() - t);
+    }
+  }
+  // (d) durable forgetDataset graph in 'test' — the irreversible denial does
+  // NOT fire in test mode (decision.allowed=true, useDouble ignored), so this
+  // real binding's own mode guard is the ONLY protection against a real purge.
+  {
+    const t = Date.now();
+    await runtimeGranted.activate(FORGET_GRAPH as never);
+    const run = await runtimeGranted.run({ datasetName: 'qa.verify' }, { mode: 'test' });
+    check('V9d', 'durable forgetDataset graph in test mode refused (real purge unreachable)',
+      run.status !== 'completed' && run.status !== 'blocked' &&
+        pack.supervision.stats.spawns === spawnsBefore &&
+        JSON.stringify(storeSnapshot()) === JSON.stringify(storeBefore),
+      { status: run.status }, Date.now() - t);
+  }
+}
+
+// ---- V10: C4-exit deadlines — expired/insufficient ctx.deadlineAt fails
+// BEFORE the worker request; never re-armed with a fresh full timeout --------
+{
+  const spawnsBefore = pack.supervision.stats.spawns;
+  const storeBefore = storeSnapshot();
+  const addBinding = pack.bindings.capabilities.find((b) => b.id === 'cognee.add')!;
+  // (a) already expired
+  {
+    const t = Date.now();
+    let refused: unknown = null;
+    try {
+      await addBinding.invoke(
+        { datasetName: 'qa.deadline', content: 'expired deadline must never run' },
+        { mode: 'normal', idempotencyKey: 'verify-deadline-1', deadlineAt: Date.now() - 1_000 });
+    } catch (e) { refused = e; }
+    check('V10a', 'expired ctx.deadlineAt fails BEFORE the worker request',
+      refused instanceof BindingRefusedError &&
+        (refused as BindingRefusedError).code === 'COGNEE_DEADLINE_EXCEEDED' &&
+        pack.supervision.stats.spawns === spawnsBefore &&
+        JSON.stringify(storeSnapshot()) === JSON.stringify(storeBefore),
+      { code: refused instanceof Error ? (refused as BindingRefusedError).code ?? refused.name : String(refused) },
+      Date.now() - t);
+  }
+  // (b) insufficient remaining time (would be silently re-armed before)
+  {
+    const t = Date.now();
+    let refused: unknown = null;
+    try {
+      await addBinding.invoke(
+        { datasetName: 'qa.deadline', content: 'insufficient deadline must never run' },
+        { mode: 'normal', idempotencyKey: 'verify-deadline-2', deadlineAt: Date.now() + 100 });
+    } catch (e) { refused = e; }
+    check('V10b', 'insufficient ctx.deadlineAt fails BEFORE the worker request (no fresh timeout)',
+      refused instanceof BindingRefusedError &&
+        (refused as BindingRefusedError).code === 'COGNEE_DEADLINE_EXCEEDED' &&
+        pack.supervision.stats.spawns === spawnsBefore &&
+        JSON.stringify(storeSnapshot()) === JSON.stringify(storeBefore),
+      { code: refused instanceof Error ? (refused as BindingRefusedError).code ?? refused.name : String(refused) },
+      Date.now() - t);
+  }
+  // (c) a read deadline is honored the same way
+  {
+    const t = Date.now();
+    let refused: unknown = null;
+    try {
+      const readBinding = pack.bindings.capabilities.find((b) => b.id === 'cognee.searchChunks')!;
+      await readBinding.invoke(
+        { datasets: ['qa.verify'], query: 'x' },
+        { mode: 'normal', deadlineAt: Date.now() - 5_000 });
+    } catch (e) { refused = e; }
+    check('V10c', 'expired deadline on a read fails before the worker request',
+      refused instanceof BindingRefusedError &&
+        (refused as BindingRefusedError).code === 'COGNEE_DEADLINE_EXCEEDED',
+      {}, Date.now() - t);
+  }
+}
+
+// ---- V11: the pack resolves its OWN BUNDLED worker (distributable surface) ----
+{
+  const t = Date.now();
+  const wp = pack.supervision.workerPath;
+  const normalized = wp.replace(/\\/g, '/');
+  let workerSource = '';
+  try { workerSource = readFileSync(wp, 'utf8'); } catch { /* missing */ }
+  check('V11', 'pack resolves its OWN BUNDLED worker (no proof path; C4_FAULT absent)',
+    normalized.includes('pack/src/worker/cognee_worker.py') && existsSync(wp) &&
+      !workerSource.includes('C4_FAULT'),
+    { workerPath: normalized, faultHookAbsent: !workerSource.includes('C4_FAULT') },
+    Date.now() - t);
 }
 
 await pack.supervision.shutdown();

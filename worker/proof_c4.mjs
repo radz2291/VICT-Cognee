@@ -9,7 +9,8 @@
  *  - journal keys are BOUND to (op, dataset, input fingerprint); mismatched
  *    reuse is rejected with COGNEE_IDEMPOTENCY_MISMATCH, journal unchanged;
  *  - FORCED CRASH AFTER Cognee's write but BEFORE the journal commit
- *    (PROOF-ONLY env-gated fault hook): the client reports
+ *    (PROOF-ONLY harness worker/worker_proof.py, env C4_PROOF_FAULT — the
+ *    pack-bundled worker itself ships NO fault injection): the client reports
  *    COGNEE_WRITE_UNKNOWN (any worker exit during a pending mutation), the
  *    keyed reissue re-executes convergently — item-level convergence for add
  *    (count stays 1, no duplicate) and graph-level convergence for cognify
@@ -102,22 +103,24 @@ function expectError(fn, code, label) {
 
 function journalRecords() {
   try {
-    return readFileSync(path.join(FRESH, 'system', 'c4_idempotency_journal.jsonl'),
+    return readFileSync(path.join(FRESH, 'system', 'cognee_idempotency_journal.jsonl'),
       'utf8').split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l));
   } catch {
     return [];
   }
 }
 
-const client = new WorkerClient(PY, path.join(here, 'worker.py'),
+const client = new WorkerClient(PY, path.join(repo, 'pack', 'src', 'worker', 'cognee_worker.py'),
   { cwd: FRESH, namespaces: NAMESPACES, readyBudgetMs: 180_000,
     storeRoot: FRESH, diag: (m) => console.error(m) });
 
 /** Crash-window client: same store, but with the PROOF-ONLY fault hook armed. */
 function crashClient(fault) {
-  return new WorkerClient(PY, path.join(here, 'worker.py'),
+  // PROOF-ONLY crash harness: the pack-bundled worker ships with NO fault
+  // injection; worker_proof.py patches the journal commit under C4_PROOF_FAULT.
+  return new WorkerClient(PY, path.join(repo, 'worker', 'worker_proof.py'),
     { cwd: FRESH, namespaces: NAMESPACES, readyBudgetMs: 180_000,
-      storeRoot: FRESH, env: { C4_FAULT: fault }, diag: (m) => console.error(m) });
+      storeRoot: FRESH, env: { C4_PROOF_FAULT: fault }, diag: (m) => console.error(m) });
 }
 
 const OBS_CODES = ['COGNEE_WORKER_UNAVAILABLE', 'COGNEE_WRITE_UNKNOWN', 'CLIENT_DEADLINE'];

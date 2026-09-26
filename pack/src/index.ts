@@ -10,6 +10,15 @@
  * (contract §3/§7.2). Installing the SAME pack object into a second runtime
  * sharing a store is forbidden by contract §8 — the binding host must create
  * a fresh pack per runtime with its own store root.
+ *
+ * C4 exit corrections:
+ *  - the worker is the PACK-BUNDLED src/worker/cognee_worker.py (resolved
+ *    against this module by default — no disposable proof path) and ships
+ *    its guard asset alongside; it contains NO fault injection (crash
+ *    injection lives only in the proof harness worker/worker_proof.py);
+ *  - the supervision claims EXCLUSIVE store ownership at construction and
+ *    fails closed (COGNEE_STORE_OWNED) if another live pack instance or
+ *    process already owns the store root (§3/§8).
  */
 
 import { PACK_MANIFEST } from './manifest.js';
@@ -44,4 +53,5 @@ export function createCogneePack(opts: CogneePackOptions): CogneePack {
 
 export { PACK_MANIFEST };
 export { CogneeWorkerSupervision, WorkerError } from './supervision.js';
+export { BindingRefusedError } from './bindings.js';
 export * from './contracts.js';

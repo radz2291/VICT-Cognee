@@ -1,0 +1,89 @@
+{
+  "proof": "c4-exit-cognify-graph-equivalence",
+  "stores": {
+    "baseline": "proof/.cognee-equiv-a",
+    "crashReissue": "proof/.cognee-equiv-b"
+  },
+  "method": "full ladybug graph dump (graph_dump_c4.py) + node/edge/property set diff; volatile per-store fields (random ids, timestamps, pipeline-run provenance) excluded and listed in graph_dump_c4.py",
+  "started": "2026-09-26T03:10:14.056Z",
+  "duration_s": 588,
+  "results": [
+    {
+      "id": "g1",
+      "name": "baseline store A: add + cognify (uninterrupted)",
+      "outcome": "PASS",
+      "detail": {
+        "addItems": 1,
+        "cogItems": 1,
+        "reconciled": "fresh-execution"
+      }
+    },
+    {
+      "id": "g2",
+      "name": "forced crash after cognify write -> COGNEE_WRITE_UNKNOWN",
+      "outcome": "PASS",
+      "detail": {
+        "workerExit": {
+          "code": 2,
+          "signal": null
+        }
+      }
+    },
+    {
+      "id": "g3",
+      "name": "journal shows begun-without-commit after the crash",
+      "outcome": "PASS",
+      "detail": {
+        "journalAfterCrash": [
+          "begun"
+        ]
+      }
+    },
+    {
+      "id": "g4",
+      "name": "keyed reissue completes (reissued-after-interruption) and is searchable",
+      "outcome": "PASS",
+      "detail": {
+        "reconciled": "reissued-after-interruption",
+        "itemsAfter": 1,
+        "searchTotal": 1
+      }
+    },
+    {
+      "id": "g5",
+      "name": "full graph dumps (ladybug, nodes + edges + properties)",
+      "outcome": "PASS",
+      "detail": {
+        "a": {
+          "nodes": 12,
+          "edges": 12
+        },
+        "b": {
+          "nodes": 12,
+          "edges": 12
+        }
+      }
+    },
+    {
+      "id": "g6",
+      "name": "GRAPH EQUIVALENCE (nodes, edges, identities, properties)",
+      "outcome": "PASS",
+      "detail": {
+        "missingInB": [],
+        "extraInB": [],
+        "propertyDiffs": [],
+        "counts": {
+          "missingInB": 0,
+          "extraInB": 0,
+          "propertyDiffs": 0
+        }
+      }
+    },
+    {
+      "id": "verdict",
+      "name": "cognify keyedRetry SUPPORTED by graph equivalence",
+      "outcome": "PASS",
+      "detail": {}
+    }
+  ]
+}

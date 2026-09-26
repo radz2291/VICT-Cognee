@@ -2,20 +2,20 @@
   "verification": "c4-pack-through-real-runtime",
   "victAbiReference": "radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)",
   "store": "fresh (proof/.cognee-verify)",
-  "started": "2026-09-25T22:39:34.229Z",
-  "duration_s": 184,
+  "started": "2026-09-26T03:38:48.391Z",
+  "duration_s": 60,
   "environment": {
-    "freeRamGbStart": 2.62,
-    "freeRamGbEnd": 3.67,
+    "freeRamGbStart": 4.44,
+    "freeRamGbEnd": 4.66,
     "note": "Windows low-memory class: cognee cognify peaks ~2.0 GB; native crashes (0xC0000005) were observed in earlier batteries when free RAM dropped near 1.9 GB (agent observations, C1/C2). None occurred in this run; the supervision poison+respawn policy contains worker deaths as COGNEE_WRITE_UNKNOWN/COGNEE_WORKER_UNAVAILABLE."
   },
   "supervisionStats": {
     "spawns": 1,
     "respawns": 0,
     "kills": 0,
-    "lastRssBytes": 343023616,
+    "lastRssBytes": 343306240,
     "opsServed": 9,
-    "stderrLines": 165,
+    "stderrLines": 162,
     "stdoutViolations": 0
   },
   "results": [
@@ -26,7 +26,7 @@
       "detail": {
         "capabilities": 6
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "V1",
@@ -42,7 +42,7 @@
           "cognee.forgetDataset"
         ]
       },
-      "ms": 5
+      "ms": 4
     },
     {
       "id": "V2",
@@ -87,15 +87,15 @@
         "spawns": 0,
         "spawnsBefore": 0
       },
-      "ms": 4
+      "ms": 3
     },
     {
       "id": "ABI",
-      "name": "durable engine runs real bindings in test/simulate (no doubles)",
+      "name": "durable engine runs real bindings in test/simulate; pack bindings fail closed (UV-1)",
       "outcome": "OBSERVATION",
       "detail": {
-        "source": "orchestration-driver.ts (~line 700) + canonical.ts declaresControlSemantics",
-        "consequence": "mode isolation only on capability-only graphs; durable graphs always real"
+        "source": "orchestration-driver.ts (~line 702) + canonical.ts declaresControlSemantics; pack guard: bindings.ts requireNormalMode",
+        "consequence": "mode isolation restored at the pack boundary; upstream durable graphs (other packs) still affected"
       }
     },
     {
@@ -108,14 +108,14 @@
           "code": "VICT_RUNTIME_PERMISSION_DENIED",
           "details": {
             "capabilityId": "cognee.add",
-            "errorId": "err_f2b89fdadaa5ceb9",
+            "errorId": "err_804ed76eb506e3c7",
             "invokedVia": "real",
             "nodeId": "put"
           },
           "message": "Permission 'cognee.write' required by capability 'cognee.add' is not granted in this runtime; the handler was not invoked."
         }
       },
-      "ms": 46
+      "ms": 35
     },
     {
       "id": "V5",
@@ -125,7 +125,7 @@
         "status": "completed",
         "output": {
           "datasetName": "qa.verify",
-          "idempotencyKey": "idem_9e9222e29dcd57b2a0ab8413690f7a89",
+          "idempotencyKey": "idem_bcd3bec49aa6743391c92a5a31bfef03",
           "reconciled": "fresh-execution",
           "itemsBefore": 1,
           "itemsAfter": 1,
@@ -134,7 +134,7 @@
         "error": null,
         "spawns": 1
       },
-      "ms": 164386
+      "ms": 49288
     },
     {
       "id": "V5",
@@ -149,7 +149,7 @@
           "datasetName": "qa.verify"
         }
       },
-      "ms": 773
+      "ms": 310
     },
     {
       "id": "V5b",
@@ -165,11 +165,11 @@
             "nodeId": "put",
             "invokedVia": "real",
             "errorName": "Error",
-            "errorId": "err_871ef2d42ec69279"
+            "errorId": "err_d746913bdc2f629e"
           }
         }
       },
-      "ms": 7
+      "ms": 2
     },
     {
       "id": "V6",
@@ -179,7 +179,7 @@
         "first": "fresh-execution",
         "replay": "replayed-known-outcome"
       },
-      "ms": 1150
+      "ms": 539
     },
     {
       "id": "V6",
@@ -197,7 +197,7 @@
       "detail": {
         "itemsAfter": 1
       },
-      "ms": 11740
+      "ms": 6586
     },
     {
       "id": "V7",
@@ -207,7 +207,7 @@
         "status": "blocked",
         "error": null
       },
-      "ms": 12
+      "ms": 7
     },
     {
       "id": "V7",
@@ -217,13 +217,86 @@
         "status": "completed",
         "receipt": {
           "datasetName": "qa.binding",
-          "datasetId": "0fbc9d47-8f3f-517a-b0bf-1ee53d5e9523",
+          "datasetId": "e407b4fc-eb35-5ce0-912f-0af9717ae521",
           "purged": "file-level",
           "storeFilesBefore": 2,
           "storeFilesAfter": 0
         }
       },
-      "ms": 1317
+      "ms": 713
+    },
+    {
+      "id": "V9a",
+      "name": "durable write graph in test mode refused (no worker spawn, no store change)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "running",
+        "spawns": 1,
+        "storeUnchanged": true
+      },
+      "ms": 22
+    },
+    {
+      "id": "V9b",
+      "name": "durable write graph in simulate mode refused (no worker spawn, no store change)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "running"
+      },
+      "ms": 7
+    },
+    {
+      "id": "V9c",
+      "name": "durable read graph in test mode refused (no worker spawn, no store change)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "failed"
+      },
+      "ms": 14
+    },
+    {
+      "id": "V9d",
+      "name": "durable forgetDataset graph in test mode refused (real purge unreachable)",
+      "outcome": "PASS",
+      "detail": {
+        "status": "failed"
+      },
+      "ms": 12
+    },
+    {
+      "id": "V10a",
+      "name": "expired ctx.deadlineAt fails BEFORE the worker request",
+      "outcome": "PASS",
+      "detail": {
+        "code": "COGNEE_DEADLINE_EXCEEDED"
+      },
+      "ms": 8
+    },
+    {
+      "id": "V10b",
+      "name": "insufficient ctx.deadlineAt fails BEFORE the worker request (no fresh timeout)",
+      "outcome": "PASS",
+      "detail": {
+        "code": "COGNEE_DEADLINE_EXCEEDED"
+      },
+      "ms": 6
+    },
+    {
+      "id": "V10c",
+      "name": "expired deadline on a read fails before the worker request",
+      "outcome": "PASS",
+      "detail": {},
+      "ms": 0
+    },
+    {
+      "id": "V11",
+      "name": "pack resolves its OWN BUNDLED worker (no proof path; C4_FAULT absent)",
+      "outcome": "PASS",
+      "detail": {
+        "workerPath": "C:/Users/RZ1/Desktop/RZ/260925-VCT-Cognee/pack/src/worker/cognee_worker.py",
+        "faultHookAbsent": true
+      },
+      "ms": 1
     }
   ]
 }

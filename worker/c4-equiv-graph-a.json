@@ -1,0 +1,425 @@
+{
+ "distinctEdgeCount": 12,
+ "distinctNodeCount": 12,
+ "edgeCount": 12,
+ "edges": {
+  "{\"relationship\": \"contains\", \"source\": {\"name\": \"\", \"type\": \"DocumentChunk\"}, \"target\": {\"name\": \"next business day\", \"type\": \"Entity\"}}": {
+   "edge_text": "Document chunk mentions next business day: next business day",
+   "feedback_weight": 0.5,
+   "relationship_name": "contains",
+   "relationship_type": "contains"
+  },
+  "{\"relationship\": \"contains\", \"source\": {\"name\": \"\", \"type\": \"DocumentChunk\"}, \"target\": {\"name\": \"nightly\", \"type\": \"Entity\"}}": {
+   "edge_text": "Document chunk mentions nightly: nightly",
+   "feedback_weight": 0.5,
+   "relationship_name": "contains",
+   "relationship_type": "contains"
+  },
+  "{\"relationship\": \"contains\", \"source\": {\"name\": \"\", \"type\": \"DocumentChunk\"}, \"target\": {\"name\": \"on-call settlement controller\", \"type\": \"Entity\"}}": {
+   "edge_text": "Document chunk mentions on-call settlement controller: on-call settlement controller",
+   "feedback_weight": 0.5,
+   "relationship_name": "contains",
+   "relationship_type": "contains"
+  },
+  "{\"relationship\": \"contains\", \"source\": {\"name\": \"\", \"type\": \"DocumentChunk\"}, \"target\": {\"name\": \"operations lead\", \"type\": \"Entity\"}}": {
+   "edge_text": "Document chunk mentions operations lead: operations lead",
+   "feedback_weight": 0.5,
+   "relationship_name": "contains",
+   "relationship_type": "contains"
+  },
+  "{\"relationship\": \"contains\", \"source\": {\"name\": \"\", \"type\": \"DocumentChunk\"}, \"target\": {\"name\": \"reconciliation report\", \"type\": \"Entity\"}}": {
+   "edge_text": "Document chunk mentions reconciliation report: reconciliation report",
+   "feedback_weight": 0.5,
+   "relationship_name": "contains",
+   "relationship_type": "contains"
+  },
+  "{\"relationship\": \"is_a\", \"source\": {\"name\": \"next business day\", \"type\": \"Entity\"}, \"target\": {\"name\": \"date\", \"type\": \"EntityType\"}}": {
+   "edge_text": "next business day is a date.",
+   "feedback_weight": 0.5,
+   "relationship_name": "is_a",
+   "relationship_type": "is_a"
+  },
+  "{\"relationship\": \"is_a\", \"source\": {\"name\": \"nightly\", \"type\": \"Entity\"}, \"target\": {\"name\": \"time_period\", \"type\": \"EntityType\"}}": {
+   "edge_text": "nightly is a time_period.",
+   "feedback_weight": 0.5,
+   "relationship_name": "is_a",
+   "relationship_type": "is_a"
+  },
+  "{\"relationship\": \"is_a\", \"source\": {\"name\": \"on-call settlement controller\", \"type\": \"Entity\"}, \"target\": {\"name\": \"role\", \"type\": \"EntityType\"}}": {
+   "edge_text": "on-call settlement controller is a role.",
+   "feedback_weight": 0.5,
+   "relationship_name": "is_a",
+   "relationship_type": "is_a"
+  },
+  "{\"relationship\": \"is_a\", \"source\": {\"name\": \"operations lead\", \"type\": \"Entity\"}, \"target\": {\"name\": \"role\", \"type\": \"EntityType\"}}": {
+   "edge_text": "operations lead is a role.",
+   "feedback_weight": 0.5,
+   "relationship_name": "is_a",
+   "relationship_type": "is_a"
+  },
+  "{\"relationship\": \"is_a\", \"source\": {\"name\": \"reconciliation report\", \"type\": \"Entity\"}, \"target\": {\"name\": \"document\", \"type\": \"EntityType\"}}": {
+   "edge_text": "reconciliation report is a document.",
+   "feedback_weight": 0.5,
+   "relationship_name": "is_a",
+   "relationship_type": "is_a"
+  },
+  "{\"relationship\": \"is_part_of\", \"source\": {\"name\": \"\", \"type\": \"DocumentChunk\"}, \"target\": {\"name\": \"text_577f7cc4e8590f7bf9a614f180d57021\", \"type\": \"TextDocument\"}}": {
+   "edge_text": "C4EQUIV marker: settlement windows close at 17:00 local time; ledger reconciliat is part of text_577f7cc4e8590f7bf9a614f180d57021.",
+   "feedback_weight": 0.5,
+   "relationship_name": "is_part_of",
+   "relationship_type": "is_part_of"
+  },
+  "{\"relationship\": \"made_from\", \"source\": {\"name\": \"\", \"type\": \"TextSummary\"}, \"target\": {\"name\": \"\", \"type\": \"DocumentChunk\"}}": {
+   "edge_text": "date: next business day; document: reconciliation report; role: on-call settleme made from C4EQUIV marker: settlement windows close at 17:00 local time; ledger reconciliat.",
+   "feedback_weight": 0.5,
+   "relationship_name": "made_from",
+   "relationship_type": "made_from"
+  }
+ },
+ "graphFiles": [
+  "C:\\Users\\RZ1\\Desktop\\RZ\\260925-VCT-Cognee\\proof\\.cognee-equiv-a\\system\\databases\\1b2e40a5-b2d5-458f-aee2-b76bbbb6782c\\14b9a8b9-bd3e-50ff-8ebe-5f65a77b15e4.lbug"
+ ],
+ "nodeCount": 12,
+ "nodes": {
+  "{\"name\": \"\", \"type\": \"DocumentChunk\"}": {
+   "belongs_to_set": null,
+   "chunk_index": 0,
+   "chunk_size": 54,
+   "chunker_id": "text_chunker_v1",
+   "content_hash": "59627f94aee6f383d3759a68e756ab28f61facd668d1e40617c4e29b4146d2f4",
+   "cut_type": "sentence_end",
+   "document_name": "text_577f7cc4e8590f7bf9a614f180d57021",
+   "external_metadata": null,
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "max_chunk_tokens": 8191,
+   "metadata": {
+    "index_fields": [
+     "text"
+    ]
+   },
+   "name": "",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "source_content_hash": "577f7cc4e8590f7bf9a614f180d57021",
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_chunks_from_documents",
+   "source_user": "default_user@example.com",
+   "text": "C4EQUIV marker: settlement windows close at 17:00 local time; ledger reconciliation runs nightly under dual approval; exceptions escalate to the on-call settlement controller before the next business day; the reconciliation report is countersigned by the operations lead.",
+   "topological_rank": 3,
+   "truth_alignment": null,
+   "truth_epoch": null,
+   "type": "DocumentChunk",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"\", \"type\": \"TextSummary\"}": {
+   "belongs_to_set": null,
+   "feedback_weight": 0.5,
+   "global_context_bucket_id": null,
+   "importance_weight": 0.5,
+   "metadata": {
+    "index_fields": [
+     "text"
+    ]
+   },
+   "name": "",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "source_content_hash": "577f7cc4e8590f7bf9a614f180d57021",
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_and_summarize_with_gliner",
+   "source_user": "default_user@example.com",
+   "summarized_in": null,
+   "text": "date: next business day; document: reconciliation report; role: on-call settlement controller, operations lead; time_period: nightly",
+   "topological_rank": 4,
+   "type": "TextSummary",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"date\", \"type\": \"EntityType\"}": {
+   "belongs_to_set": null,
+   "description": "date",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "date",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "type": "EntityType",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"document\", \"type\": \"EntityType\"}": {
+   "belongs_to_set": null,
+   "description": "document",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "document",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "type": "EntityType",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"next business day\", \"type\": \"Entity\"}": {
+   "belongs_to_set": null,
+   "description": "next business day",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "next business day",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "truth_alignment": null,
+   "truth_epoch": null,
+   "truth_subspace_signature": null,
+   "type": "Entity",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"nightly\", \"type\": \"Entity\"}": {
+   "belongs_to_set": null,
+   "description": "nightly",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "nightly",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "truth_alignment": null,
+   "truth_epoch": null,
+   "truth_subspace_signature": null,
+   "type": "Entity",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"on-call settlement controller\", \"type\": \"Entity\"}": {
+   "belongs_to_set": null,
+   "description": "on-call settlement controller",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "on-call settlement controller",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "truth_alignment": null,
+   "truth_epoch": null,
+   "truth_subspace_signature": null,
+   "type": "Entity",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"operations lead\", \"type\": \"Entity\"}": {
+   "belongs_to_set": null,
+   "description": "operations lead",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "operations lead",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "truth_alignment": null,
+   "truth_epoch": null,
+   "truth_subspace_signature": null,
+   "type": "Entity",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"reconciliation report\", \"type\": \"Entity\"}": {
+   "belongs_to_set": null,
+   "description": "reconciliation report",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "reconciliation report",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "truth_alignment": null,
+   "truth_epoch": null,
+   "truth_subspace_signature": null,
+   "type": "Entity",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"role\", \"type\": \"EntityType\"}": {
+   "belongs_to_set": null,
+   "description": "role",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "role",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "type": "EntityType",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"text_577f7cc4e8590f7bf9a614f180d57021\", \"type\": \"TextDocument\"}": {
+   "belongs_to_set": null,
+   "external_metadata": "{}",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "index_fields": [
+     "name"
+    ]
+   },
+   "mime_type": "text/plain",
+   "name": "text_577f7cc4e8590f7bf9a614f180d57021",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "source_content_hash": "577f7cc4e8590f7bf9a614f180d57021",
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "classify_documents",
+   "source_user": "default_user@example.com",
+   "topological_rank": 1,
+   "type": "TextDocument",
+   "valid_to": null,
+   "version": 1
+  },
+  "{\"name\": \"time_period\", \"type\": \"EntityType\"}": {
+   "belongs_to_set": null,
+   "description": "time_period",
+   "feedback_weight": 0.5,
+   "importance_weight": 0.5,
+   "metadata": {
+    "identity_fields": [
+     "name"
+    ],
+    "index_fields": [
+     "name"
+    ]
+   },
+   "name": "time_period",
+   "ontology_uri": null,
+   "ontology_valid": false,
+   "relations": [],
+   "source_content_hash": null,
+   "source_node_set": null,
+   "source_pipeline": "cognify_pipeline",
+   "source_task": "extract_graph_from_data",
+   "source_user": null,
+   "topological_rank": 0,
+   "type": "EntityType",
+   "valid_to": null,
+   "version": 1
+  }
+ }
+}

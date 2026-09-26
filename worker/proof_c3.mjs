@@ -99,7 +99,7 @@ function expectError(fn, code, label) {
       Date.now() - t));
 }
 
-const client = new WorkerClient(PY, path.join(here, 'worker.py'),
+const client = new WorkerClient(PY, path.join(repo, 'pack', 'src', 'worker', 'cognee_worker.py'),
   { cwd: FRESH, namespaces: NAMESPACES, readyBudgetMs: 180_000,
     storeRoot: FRESH, diag: (m) => console.error(m) });
 

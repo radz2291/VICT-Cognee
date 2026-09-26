@@ -8,6 +8,12 @@
  * Effect/permission/ambiguity matrix (docs/c3-pack-contract.md §5):
  *   cognee.add            write,  keyed, keyedRetry, cognee.write
  *   cognee.cognify        write,  keyed, keyedRetry, cognee.write
+ *     — cognify's keyedRetry is supported by the C4-exit GRAPH-equivalence
+ *     proof: after a forced post-write/pre-commit crash and keyed reissue,
+ *     the store's full ladybug graph (nodes, edges, identities, properties)
+ *     is IDENTICAL to an uninterrupted cognify run in an isolated store
+ *     (worker/c4-graph-equiv-results.json). Searchability alone was never
+ *     accepted as equivalence.
  *   cognee.searchChunks   read,                          cognee.search
  *   cognee.searchSummaries read,                         cognee.search
  *   cognee.datasetsStatus read,                          cognee.search
@@ -108,8 +114,8 @@ export const PACK_MANIFEST = Object.freeze({
   evaluations: [
     { id: 'eval.cognee.add.convergent', capabilityId: 'cognee.add',
       description: 'Re-issuing an add with the same key never grows the dataset beyond one item per logical document (C4 c5).' },
-    { id: 'eval.cognee.cognify.searchable', capabilityId: 'cognee.cognify',
-      description: 'After cognify (including interrupted-then-reissued), the dataset is searchable in-scope (C4 c6).' },
+    { id: 'eval.cognee.cognify.graph-equivalent', capabilityId: 'cognee.cognify',
+      description: 'After a forced post-write/pre-commit crash and keyed reissue, the dataset graph is EQUIVALENT (nodes, edges, identities, properties) to an uninterrupted cognify in an isolated store (C4 exit; worker/c4-graph-equiv-results.json).' },
     { id: 'eval.cognee.search.scoped', capabilityId: 'cognee.searchChunks',
       description: 'Searches resolve only granted-namespace datasets and return declared hit fields (C3 s2/s3).' },
     { id: 'eval.cognee.status.hides-foreign', capabilityId: 'cognee.datasetsStatus',

@@ -1,0 +1,89 @@
+{
+  "verification": "c4-exit-store-ownership",
+  "victAbiReference": "radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)",
+  "store": "fresh (proof/.cognee-ownership)",
+  "started": "2026-09-26T03:39:49.577Z",
+  "duration_s": 14,
+  "results": [
+    {
+      "id": "O1",
+      "name": "first instance claims exclusive store ownership (lock held, pid recorded)",
+      "outcome": "PASS",
+      "detail": {
+        "lockPid": 11784,
+        "held": true
+      },
+      "ms": 17
+    },
+    {
+      "id": "O2",
+      "name": "second pack instance on the SAME store fails closed (COGNEE_STORE_OWNED, pre-spawn)",
+      "outcome": "PASS",
+      "detail": {
+        "code": "COGNEE_STORE_OWNED",
+        "spawns": 0
+      },
+      "ms": 4
+    },
+    {
+      "id": "O2b",
+      "name": "live owner lock (stale heartbeat, live pid) fails closed AND is never deleted",
+      "outcome": "PASS",
+      "detail": {
+        "code": "COGNEE_STORE_OWNED",
+        "lockUnchanged": true
+      },
+      "ms": 328
+    },
+    {
+      "id": "O3a",
+      "name": "worker op runs under held exclusive ownership (spawn + lock intact)",
+      "outcome": "PASS",
+      "detail": {
+        "spawns": 1,
+        "held": true
+      },
+      "ms": 13393
+    },
+    {
+      "id": "O3b",
+      "name": "orderly shutdown RELEASES ownership (lock gone)",
+      "outcome": "PASS",
+      "detail": {
+        "held": false
+      },
+      "ms": 502
+    },
+    {
+      "id": "O3c",
+      "name": "restart: a new instance acquires ownership after orderly release",
+      "outcome": "PASS",
+      "detail": {},
+      "ms": 2
+    },
+    {
+      "id": "O4",
+      "name": "stale-owner recovery: dead-pid owner lock is recovered by a new instance",
+      "outcome": "PASS",
+      "detail": {
+        "deadPid": 15600
+      },
+      "ms": 64
+    },
+    {
+      "id": "O5",
+      "name": "resource recording (single worker spawn across ownership tests)",
+      "outcome": "PASS",
+      "detail": {
+        "spawns": 1,
+        "respawns": 0,
+        "kills": 0,
+        "lastRssBytes": 343289856,
+        "opsServed": 2,
+        "stderrLines": 69,
+        "stdoutViolations": 0,
+        "duration_s": 14
+      }
+    }
+  ]
+}

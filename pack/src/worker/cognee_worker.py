@@ -1,4 +1,7 @@
-"""Disposable cognee worker v4 for the C3/C4 pack-contract proofs (NOT a VICT pack).
+"""Cognee worker for the proposed @victframework/cognee pack (v0.1.0).
+
+PACK-BUNDLED, DISTRIBUTABLE WORKER (the file a package would ship — it
+contains NO fault injection and NO proof-path imports).
 
 Aligned to docs/c3-pack-contract.md (§7/§9/§11) + the C4 corrections:
   - stdout carries bounded NDJSON protocol messages ONLY (<= 1 MiB/line);
@@ -6,8 +9,10 @@ Aligned to docs/c3-pack-contract.md (§7/§9/§11) + the C4 corrections:
   - Environment pins are set by the worker itself BEFORE cognee is imported
     (vector/graph subprocess layers disabled: killed workers would otherwise
     orphan fork holders of ladybug locks; single-thread + bounded kuzu pool).
-  - Storage guard (proof/guard_store_roots.py) fail-closes at startup unless
-    every destructive root resolves inside the --store-root boundary.
+  - Storage guard (guard_store_roots.py, bundled alongside this worker)
+    fail-closes at startup unless every destructive root resolves inside the
+    --store-root boundary. --store-root is REQUIRED: without an explicit
+    boundary the worker refuses to serve.
   - Trust boundary: ONE worker per store (one trust domain); namespace scope
     enforcement at the interface is a SAFETY RAIL, not per-actor authorization.
     datasetsStatus is scope-filtered: it never lists datasets whose interface
@@ -29,12 +34,10 @@ Aligned to docs/c3-pack-contract.md (§7/§9/§11) + the C4 corrections:
   - Every worker death with a pending mutation is an unknown outcome (client
     maps ANY in-flight mutation at worker exit to COGNEE_WRITE_UNKNOWN;
     kills + respawns; the journal makes the reissue reconcile).
-  - PROOF-ONLY fault injection (C4 crash-window test): env C4_FAULT may be
-    set to 'add.after-write-before-commit' or 'cognify.after-write-before-'
-    'commit'; the worker then os._exit(2)s AFTER cognee's write returns but
-    BEFORE the journal commit — deterministically creating the exact window
-    between the external mutation and the durable journal record. Default is
-    OFF; the hook is inert unless the env var is set explicitly.
+
+Crash injection: deliberately ABSENT here. The C4 proof harness
+(worker/worker_proof.py) imports this module and patches the journal commit
+under an explicit proof-only env var to recreate the exact crash window.
 
 Request:  {"id": "<n>", "op": "add|cognify|search_chunks|search_summaries|
            datasets_status|forget_dataset|status|ping|shutdown", ...params,
@@ -80,9 +83,11 @@ MAX_DATASETS = 8                  # per search request
 MAX_CONTENT_CHARS = 512_000
 MAX_QUERY_CHARS = 2_000
 NAME_RE = re.compile(r"^[^.\s]+\.[^.\s]+$")
-JOURNAL_NAME = "c4_idempotency_journal.jsonl"
+JOURNAL_NAME = "cognee_idempotency_journal.jsonl"
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "proof"))
+# The storage guard ships alongside this worker; make it importable when this
+# module is imported (as a script, Python already puts this dir on sys.path).
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 
 class ScopeViolation(Exception):
@@ -97,14 +102,6 @@ class IdempotencyMismatch(Exception):
     """Journal key bound to a different (op, dataset, fingerprint) — the
     caller re-uses a key for different logical work. Rejected without
     touching journal state (no cognee call)."""
-
-
-def _fault(point: str) -> None:
-    """PROOF-ONLY fault injection (env C4_FAULT, default OFF)."""
-    hook = os.environ.get("C4_FAULT", "")
-    if hook and hook == point:
-        _dlog(f"FAULT-INJECTION: {point} -> os._exit(2) (forced crash)")
-        os._exit(2)
 
 
 def _rss_bytes() -> int:
@@ -430,10 +427,6 @@ async def dispatch(op: str, p: dict, scope: Scope, journal: IdempotencyJournal,
         else:  # cognify (precheck already done above)
             await cognee.cognify(datasets=[cognee_name])
 
-        # C4 crash-window: PROOF-ONLY fault point AFTER cognee's write returns
-        # but BEFORE the journal commit (env C4_FAULT, default OFF).
-        _fault(f"{op}.after-write-before-commit")
-
         items_after, _row = await _items_for_dataset_name(cognee_name)
         journal.commit(key, op, cognee_name, fingerprint, items_before,
                        items_after, started_at)
@@ -504,6 +497,10 @@ def main() -> int:
     if not args.allow_ns:
         _dlog("FATAL: no --allow-ns granted; refusing to serve")
         return 2
+    if not args.store_root:
+        _dlog("FATAL: no --store-root boundary given; refusing to serve "
+              "(fail-closed containment requires an explicit boundary)")
+        return 2
     scope = Scope(args.allow_ns)
 
     # Guard FIRST (imports cognee; fail closed if roots are not in the boundary).
@@ -513,8 +510,7 @@ def main() -> int:
     import contextlib
     import io
 
-    boundary = args.store_root or (
-        pathlib.Path(__file__).resolve().parents[1] / "proof")
+    boundary = pathlib.Path(args.store_root).resolve()
     _guard_out = io.StringIO()
     try:
         with contextlib.redirect_stdout(_guard_out):
@@ -543,7 +539,7 @@ def main() -> int:
 
     import_ms = int((time.perf_counter() - t0) * 1000)
     _emit({"type": "ready", "pid": os.getpid(), "rss_bytes": _rss_bytes(),
-           "import_ms": import_ms, "protocol": "vict-cognee-worker/4",
+           "import_ms": import_ms, "protocol": "vict-cognee-worker/5",
            "allowed_namespaces": args.allow_ns,
            "store_root": str(boundary)})
 
