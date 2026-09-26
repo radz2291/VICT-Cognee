@@ -38,8 +38,10 @@ duplicate) and graph-level convergence (dataset searchable after reissue)
   change (§1, §11).
 - **Fail-closed deadlines** — an expired or insufficient
   `CapabilityContext.deadlineAt` fails BEFORE the worker request
-  (COGNEE_DEADLINE_EXCEEDED); a context deadline is NEVER replaced with a
-  fresh full timeout (§7.2).
+  (COGNEE_DEADLINE_EXCEEDED); the ABSOLUTE `deadlineAt` survives queue wait
+  and worker startup, is re-checked immediately before dispatch, and is
+  NEVER replaced with a fresh full timeout; post-dispatch expiry of a
+  mutation reports an UNKNOWN outcome (§7.2).
 - **Idempotency-key contract corrected** — upstream VICT issue UV-2:
   VICT's `deriveIdempotencyKey` accepts `invocationId` but never hashes it.
   The ABI statement in §1 and the uniqueness analysis in §7.3 were corrected
@@ -256,12 +258,27 @@ adopts **no score threshold** (none was validated) and performs no post-hoc
 filtering.
 
 ### 7.2 Write timeouts and worker exits with unknown outcomes
-- **Fail-closed deadlines (C4 exit).** The invocation context's
-  `deadlineAt` is enforced at the BINDING before any worker request: if it is
-  already expired, or leaves insufficient remaining time (< 250 ms margin),
-  the invocation fails immediately (`COGNEE_DEADLINE_EXCEEDED`) and the
-  operation NEVER starts — so no unknown-outcome window is created. A context
-  deadline is NEVER replaced with a fresh full timeout (verified: V10).
+- **Fail-closed deadlines (C4 exit; correction pass 2).** The invocation
+  context's `deadlineAt` is enforced at the BINDING before any worker
+  request: if it is already expired, or leaves insufficient remaining
+  time (< 250 ms margin), the invocation fails immediately
+  (`COGNEE_DEADLINE_EXCEEDED`) and the operation NEVER starts — so no
+  unknown-outcome window is created. A context deadline is NEVER replaced
+  with a fresh full timeout.
+- **The ABSOLUTE deadline survives the queue and worker startup**
+  (correction pass 2): the binding forwards `ctx.deadlineAt` UNCHANGED (an
+  absolute epoch-ms timestamp); supervision re-checks it immediately
+  before dispatch — after queue wait AND after worker readiness — and an
+  expiry there fails with NO effect (nothing is ever sent;
+  `COGNEE_DEADLINE_EXCEEDED`). The response timer is anchored to the
+  absolute deadline, not re-armed. If the deadline expires AFTER a
+  mutation was dispatched, the outcome is reported as UNKNOWN
+  (`COGNEE_WRITE_UNKNOWN`) — the write may already have landed — never as
+  a clean refusal. Reads report a clean typed failure
+  (`CLIENT_DEADLINE`). Verified: V10a–V10c (real-runtime entry refusals),
+  V10d (expiry during worker startup, deterministic stub), V10e (expiry
+  while queued behind an in-flight op), V10f (post-dispatch mutation →
+  unknown; post-dispatch read → typed failure).
 - The Node-facing client enforces the attempt deadline (`CapabilityContext.deadlineAt`
   at the pack layer; a client-side deadline at the proof layer). If a **mutating** op
   (`add`, `cognify`, `forgetDataset`) does not complete by the deadline, the client
@@ -414,25 +431,66 @@ guarantees must implement them outside this pack.
 
 ## 8. Storage ownership and safety
 
-- **Exclusive store ownership (C4 exit).** Pack-level supervision covers one
-  process, but separate pack instances or separate PROCESSES could point at
-  the same Cognee root (the ladybug lock only fails at op time — after a
-  worker spawn, possibly mid-write). Every pack instance therefore claims a
-  store-owner lock (`<storeRoot>/cognee-store-owner.lock`, atomic `O_EXCL`
-  create, schema `vict.cognee.store-ownership@1`, pid + host + instanceId +
-  heartbeat) at construction:
+- **Exclusive store ownership (C4 exit; correction pass 2).** Pack-level
+  supervision covers one process, but separate pack instances or separate
+  PROCESSES could point at the same Cognee root (the ladybug lock only fails
+  at op time — after a worker spawn, possibly mid-write). Every pack
+  instance therefore claims a store-owner lock
+  (`<storeRoot>/cognee-store-owner.lock`, atomic `O_EXCL` create, schema
+  `vict.cognee.store-ownership@1`, pid + host + instanceId + heartbeat) at
+  construction:
   - a LIVE owner fails the second instance closed (`COGNEE_STORE_OWNED`)
     BEFORE any worker spawn (verified O2);
   - liveness is verified EXACTLY for same-host owners by pid probe; a live
     pid is live even with a stale heartbeat, and a live owner's lock is
-    NEVER deleted (verified O2b — lock bytes unchanged);
+    NEVER deleted (verified O2b/O9a — lock bytes unchanged);
   - a verifiably STALE owner (dead pid on this host; foreign host whose
     heartbeat exceeded the stale budget, default 15 min; unreadable lock
-    older than the budget) is recovered by unlink + atomic re-create (verified
-    O4);
+    older than the budget) is recovered by an ATOMIC RENAME-BASED CLAIM
+    (verified O4);
   - ownership is RELEASED on orderly shutdown and a restarted instance
     acquires cleanly (verified O3b/O3c); the heartbeat is refreshed per
-    serialized op.
+    serialized op AND on an interval while an op is in flight
+    (interval = staleMs/3, floored at 1 s — verified O9c).
+- **Ownership LOSS fails closed (correction pass 2; verified O2b/O6).**
+  Ownership is verified against the lock file at THREE points: before any
+  spawn/dispatch (heartbeat refresh), immediately before dispatch (after
+  queue wait + worker readiness), and continuously while an op is in
+  flight. If the lock is MISSING or no longer carries THIS instance's id —
+  removed or replaced externally — the instance sets a permanent lost flag:
+  the current request (if not yet dispatched) fails with
+  `COGNEE_STORE_OWNED` and NO effect; an ALREADY-DISPATCHED op completes
+  (its outcome is real — the request was sent), after which the worker is
+  killed and poisoned; EVERY subsequent request of that instance fails
+  closed before spawn/dispatch. An active instance whose lock is replaced
+  or removed performs NO further operation.
+- **Stale recovery is race-safe (correction pass 2).** The old
+  read→unlink→create recovery had a TOCTOU window in which two contenders
+  could both acquire. Recovery now: (1) read + judge the stale lock from a
+  snapshot; (2) ATOMICALLY rename the lock out of the way to a unique
+  recovery file — exactly ONE contender can succeed (every other contender's
+  rename fails ENOENT and re-evaluates); (3) prove the moved lock is STILL
+  the exact bytes that were judged stale; a mismatch means a fresh owner
+  replaced it in the window — the contender FAILS CLOSED and RESTORES the
+  displaced lock (byte-identical) if the path is free, so the fresh owner
+  keeps working; (4) create its own lock via `O_EXCL`. Verified:
+  O7 (deterministic two-contender race: EXACTLY ONE acquires, the other is
+  refused, winner's lock intact) and O8 (a stale contender whose claim lands
+  after a fresh owner acquired NEVER removes the fresh lock — the fresh
+  owner's lock bytes are restored unchanged and the fresh owner keeps
+  holding). An exiting owner's lock becomes legitimately stale the moment
+  its pid dies (same-host exactness) — recovery by another contender is
+  then correct and permitted.
+- **Foreign-host heartbeat budget (correction pass 2).** Foreign-host
+  owners rely on the heartbeat; the heartbeat is refreshed per op and
+  DURING long in-flight operations, so the staleness budget (default
+  15 min) is NOT eroded by long-running operations: a live, running owner
+  is not stealable regardless of op duration; the budget is only the
+  maximum time a crashed foreign host's lock lingers (verified O9a fresh
+  heartbeat → refused; O9b stale heartbeat → recovered; O9c heartbeat
+  advanced during a 3 s op under a 1.5 s budget). If the lock is stolen or
+  removed mid-op DESPITE the refreshes, the in-flight op completes and the
+  instance then fails closed permanently (above).
 - `cognee.systemRoot` MUST be a pack-owned, per-runtime directory **(§3: one
   store per trust domain)**. The worker resolves **all seven destructive roots**
   (system/data/cache/logs/repos + `vector_db_url` + `graph_file_path`) at
@@ -479,9 +537,11 @@ guarantees must implement them outside this pack.
 - **Startup:** guard (§8) → ready message with versions (cognee, python) and the
   verified store boundary → ready budget 120–180 s (observed 10–36 s in the C3
   fresh-store runs on the RAM-constrained host).
-- **Deadlines:** every op carries a client deadline; on expiry the client fails the
-  op (`COGNEE_WRITE_UNKNOWN` for mutations / client timeout for reads) and applies
-  the §7.2 poison-and-respawn policy for mutations.
+- **Deadlines:** every op carries an ABSOLUTE deadline (context `deadlineAt`
+  preserved through queue + startup, re-checked immediately before dispatch;
+  on expiry the client fails the op — `COGNEE_WRITE_UNKNOWN` for mutations
+  already dispatched / `CLIENT_DEADLINE` for reads — and applies the §7.2
+  poison-and-respawn policy for mutations).
 - **Memory:** worker reports RSS per op (psutil); budget 2.5 GB (observed peak
   ~2.0 GB after cognify). Exceeding the budget ⇒ graceful restart after the op.
 - **Shutdown:** `shutdown` op → graceful exit 0 (observed ~0.5 s in C3).
@@ -556,8 +616,8 @@ proof-only crash harness; journal `worker/c4-journal.jsonl`):
 **C4 exit verification (this revision — four runs, all fresh stores):**
 
 1. **Real-runtime suite** (`pack/verify/verify.ts` →
-   `worker/c4-verify-results.json`, 22/22 checks PASS + 1 ABI OBSERVATION,
-   98 s): prior V0–V8 all green, plus:
+   `worker/c4-verify-results.json`, **26/27 PASS** — 27th is the recorded ABI
+   OBSERVATION, 67 s): prior V0–V8 all green, plus:
    - V9a–V9d **durable-mode fail-closed guard**: DURABLE graphs (add+cognify
      write graph; durable read graph; forgetDataset graph) in `test` AND
      `simulate` are refused by every real binding — run fails, **zero worker
@@ -566,41 +626,71 @@ proof-only crash harness; journal `worker/c4-journal.jsonl`):
      irreversible gate (that gate is normal-mode-only and `useDouble` is
      discarded on the durable path), so the binding's own mode guard is the
      only protection against a real purge — and it holds;
-   - V10a–V10c **fail-closed deadlines**: an expired `ctx.deadlineAt` and an
-     insufficient one (100 ms remaining) fail with `COGNEE_DEADLINE_EXCEEDED`
-     BEFORE the worker request — no spawn, no store change, and no fresh
-     timeout substitution; reads enforce the same;
+   - V10a–V10c **fail-closed deadlines** (real runtime): an expired
+     `ctx.deadlineAt` and an insufficient one (100 ms remaining) fail with
+     `COGNEE_DEADLINE_EXCEEDED` BEFORE the worker request — no spawn, no
+     store change, and no fresh timeout substitution; reads enforce the
+     same;
+   - V10d–V10f **deadline through startup and queueing** (correction pass
+     2, deterministic protocol stub worker on an isolated store): an
+     absolute deadline expiring DURING worker startup fails BEFORE dispatch
+     (nothing sent — stub servedOps proves it); a queued request whose
+     deadline expires behind an in-flight op fails BEFORE dispatch (never
+     sent); a mutation whose deadline expires AFTER dispatch reports
+     UNKNOWN (`COGNEE_WRITE_UNKNOWN`); a read reports a clean typed
+     failure (`CLIENT_DEADLINE`);
    - V11 **distributable worker**: the default `workerPath` resolves to
      `pack/src/worker/cognee_worker.py`, the file exists, and it contains NO
      `C4_FAULT` hook.
 2. **Ownership suite** (`pack/verify/ownership-verify.ts` →
-   `worker/c4-ownership-results.json`, 8/8 PASS, 24 s): O1 first instance
-   claims exclusive ownership; O2 second instance fails closed
-   (`COGNEE_STORE_OWNED`, pre-spawn); O2b a crafted LIVE-owner lock (live
-   pid, stale heartbeat) still fails closed and is never deleted (byte
-   comparison); O3a a real worker op runs under held ownership; O3b orderly
-   shutdown releases the lock; O3c a new instance acquires after restart;
-   O4 a verifiably dead-pid owner is recovered; O5 single worker spawn across
-   all tests.
+   `worker/c4-ownership-results.json`, **14/14 PASS**, ~27 s; run twice for
+   determinism): O1 first instance claims exclusive ownership; O2 second
+   instance fails closed (`COGNEE_STORE_OWNED`, pre-spawn); O3a a real
+   worker op runs under held ownership / O3b shutdown releases / O3c restart
+   reacquires; O4 dead-pid stale recovery (atomic rename claim);
+   **O2b (revised)** a crafted LIVE-owner lock replaces the active
+   instance's lock: the contender fails closed and the crafted lock is never
+   deleted AND the active instance whose lock was replaced performs NO
+   further operation (fail closed, sticky, no spawn, no dispatch);
+   **O6** a REMOVED lock fails the active instance closed on its next op
+   (sticky);
+   **O7** deterministic two-contender race for a stale lock (two concurrent
+   processes, both holding): EXACTLY ONE acquires, the other is refused, the
+   winner's lock is intact;
+   **O8** a stale contender whose delayed claim lands after a fresh owner
+   acquired NEVER removes the fresh lock — the fresh owner's lock bytes are
+   restored unchanged and the fresh owner keeps holding;
+   **O9a/O9b** foreign-host heartbeat liveness (fresh heartbeat → refused;
+   stale heartbeat → recovered) and **O9c** the heartbeat is refreshed
+   DURING a 3 s op under a 1.5 s budget (the foreign-host budget never
+   erodes while a live owner runs) with a second instance refused mid-op;
+   O5 resource recording (single spawn; refused ops never dispatch).
 3. **Cognify graph-equivalence proof** (`worker/graph_equiv_c4.mjs` →
-   `worker/c4-graph-equiv-results.json`, 7/7 PASS, 588 s, two ISOLATED fresh
-   stores): the crash+reissue graph is EQUIVALENT to the uninterrupted graph
-   (12 nodes / 12 edges both; zero identity or property differences after
-   excluding provably per-store random fields, exclusion list committed in
-   `worker/graph_dump_c4.py`). `cognify` therefore KEEPS
-   `ambiguity: 'keyedRetry'`. Full dumps committed:
-   `worker/c4-equiv-graph-{a,b}.json`.
+   `worker/c4-graph-equiv-results.json`, **8/8 PASS**, 221 s, two ISOLATED
+   fresh stores; correction pass 2): the crash+reissue graph is EQUIVALENT
+   to the uninterrupted graph under the STRENGTHENED comparator — RAW node
+   and edge counts asserted equal (12/12 nodes, 12/12 edges both sides),
+   per-identity MULTIPLICITIES asserted equal (duplicates can no longer be
+   silently overwritten — the dump normalizes each identity to a LIST of
+   property variants compared as multisets), zero identity or property-
+   variant differences after excluding provably per-store random fields
+   (each exclusion individually justified in `worker/graph_dump_c4.py`),
+   and NEGATIVE CONTROLS proving the comparator FAILS when an extra
+   duplicate node/edge instance (same identity — the exact case the old
+   key→props comparison collapsed) or an extra new-identity edge is
+   injected (g7). `cognify` therefore KEEPS `ambiguity: 'keyedRetry'`. Full
+   dumps committed: `worker/c4-equiv-graph-{a,b}.json`.
 4. **Worker-boundary regression** (`worker/proof_c4.mjs` →
    `worker/c4-results.json`, 32/32 PASS, 421 s): re-run end-to-end against
    the BUNDLED worker with crash injection via the separate proof harness
    (`worker/worker_proof.py`, `C4_PROOF_FAULT`) — no behavioral regressions.
 
 Resource limits recorded: real-runtime suite 1 worker spawn, 0 kills,
-RSS ~344 MB, wall 98 s; ownership suite 1 spawn, 24 s; graph-equivalence
-proof ran two workers SEQUENTIALLY on two isolated stores, wall 588 s;
-c4 battery 421 s on a fresh store. All stores are disposable per-run
-directories under `proof/` (gitignored), one worker / one store / one trust
-domain per run.
+RSS ~344 MB, wall 67 s; ownership suite 1 spawn, ~27 s (plus ~10 s of
+contender child processes); graph-equivalence proof ran two workers
+SEQUENTIALLY on two isolated stores, wall 221 s; c4 battery 421 s on a
+fresh store. All stores are disposable per-run directories under `proof/`
+(gitignored), one worker / one store / one trust domain per run.
 
 C3 evidence retained (`worker/c3-results.json`: 26/26 PASS, fresh store):
 
@@ -728,11 +818,16 @@ proof drivers and crash harness remain proof code; the SHIPPED worker is
   including `src/worker/cognee_worker.py` + `src/worker/guard_store_roots.py`,
   resolved peer/engine metadata, and a packaging test that installs the packed
   tarball into a clean consumer. Publication itself remains excluded.
-- Store-ownership residual risk: a foreign-host owner is only protected by its
-  heartbeat (default 15 min stale budget); a crashed foreign host frees its
-  lock only after that budget. Same-host owners are exact (pid probe). The
-  lock does not protect against out-of-band access to the store directory by
-  non-pack processes.
+- Store-ownership residual risk (updated by correction pass 2): a foreign-host
+  owner is protected by its heartbeat, which is refreshed per op AND during
+  in-flight operations, so long ops no longer erode the budget; a crashed
+  foreign host frees its lock only after that budget (default 15 min).
+  Same-host owners are exact (pid probe). If the lock is stolen or removed
+  externally mid-op DESPITE the refreshes, the already-dispatched op
+  completes (its outcome is real) and the instance then fails closed
+  permanently; the in-flight op itself cannot be un-run. The lock does not
+  protect against out-of-band access to the store directory by non-pack
+  processes.
 - Worker crashes (`0xC0000005`) under low free RAM remain an environment class
   (C1); the C4 batteries recorded no native crashes (free RAM ≥ ~2.5 GB), and
   one Cognee-internal `CognifyFailedError` (ladybug lock contention from a

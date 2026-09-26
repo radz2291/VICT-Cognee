@@ -13,11 +13,19 @@
  *                        (worker/worker_proof.py, C4_PROOF_FAULT) ->
  *                        COGNEE_WRITE_UNKNOWN -> keyed reissue cognify(key B)
  * Both stores then get their FULL graph dumped (worker/graph_dump_c4.py,
- * ladybug engine via cognee's graph adapter) and compared:
- *   - node set: identity (type, name) + properties (volatile per-store fields
- *     excluded: random ids, timestamps, pipeline-run provenance);
- *   - edge set: (source identity, target identity, relationship) + properties;
- *   - item counts from the receipts.
+ * ladybug engine via cognee's graph adapter) and compared as MULTISETS
+ * (correction pass 2 — duplicate identities count, never overwrite):
+ *   - RAW counts: total node/edge counts must match, not just identities;
+ *   - node identities: (type, name) with per-identity MULTIPLICITY, plus the
+ *     multiset of property variants (volatile per-store fields excluded:
+ *     random ids, timestamps, pipeline-run provenance — each exclusion
+ *     individually justified in graph_dump_c4.py);
+ *   - edge identities: (source identity, target identity, relationship) with
+ *     multiplicities and property-variant multisets;
+ *   - item counts from the receipts;
+ *   - NEGATIVE CONTROLS: the comparator is proven to FAIL when an extra
+ *     duplicate node/edge instance (same identity) or an extra edge is
+ *     injected (g7).
  *
  * Searchability alone is NOT accepted as equivalence — this proof is the
  * graph-diff granularity the contract previously lacked.
@@ -172,43 +180,112 @@ async function run() {
   const ga = JSON.parse(readFileSync(dumpA, 'utf8'));
   const gb = JSON.parse(readFileSync(dumpB, 'utf8'));
   record('g5', 'full graph dumps (ladybug, nodes + edges + properties)', 'PASS',
-    { a: { nodes: ga.nodeCount, edges: ga.edgeCount },
-      b: { nodes: gb.nodeCount, edges: gb.edgeCount } });
+    { a: { nodes: ga.nodeCount, edges: ga.edgeCount,
+      nodeIdentities: ga.nodeIdentityCount, edgeIdentities: ga.edgeIdentityCount,
+      duplicateNodeInstances: ga.duplicateNodeInstances,
+      duplicateEdgeInstances: ga.duplicateEdgeInstances },
+      b: { nodes: gb.nodeCount, edges: gb.edgeCount,
+        nodeIdentities: gb.nodeIdentityCount, edgeIdentities: gb.edgeIdentityCount,
+        duplicateNodeInstances: gb.duplicateNodeInstances,
+        duplicateEdgeInstances: gb.duplicateEdgeInstances } });
 
-  // ---- structural comparison --------------------------------------------------
-  const diff = { missingInB: [], extraInB: [], propertyDiffs: [] };
-  const keys = (obj) => new Set(Object.keys(obj));
-  for (const k of keys(ga.nodes)) if (!gb.nodes[k]) diff.missingInB.push(['node', k]);
-  for (const k of keys(gb.nodes)) if (!ga.nodes[k]) diff.extraInB.push(['node', k]);
-  for (const k of keys(ga.edges)) if (!gb.edges[k]) diff.missingInB.push(['edge', k]);
-  for (const k of keys(gb.edges)) if (!ga.edges[k]) diff.extraInB.push(['edge', k]);
-  const propDiff = (kind, tableA, tableB) => {
-    for (const k of Object.keys(tableA)) {
-      if (!tableB[k]) continue;
-      const pa2 = tableA[k], pb2 = tableB[k];
-      const allKeys = new Set([...Object.keys(pa2), ...Object.keys(pb2)]);
-      for (const pk of allKeys) {
-        if (JSON.stringify(pa2[pk]) !== JSON.stringify(pb2[pk])) {
-          diff.propertyDiffs.push({ kind, identity: k.slice(0, 120), property: pk,
-            inA: pa2[pk], inB: pb2[pk] });
-        }
-      }
+  // ---- structural comparison (MULTISET semantics; correction pass 2) ----------
+  // Per identity key, the property-variant LIST is compared as a multiset:
+  // duplicate identities count (a duplicate in one store with no counterpart
+  // in the other is a difference — the previous key→props comparison silently
+  // overwrote duplicates and could not detect this). RAW counts are asserted
+  // as well: raw node/edge totals AND per-identity multiplicities must match,
+  // not just the set of identities.
+  function multisetDiff(listA, listB) {
+    const count = (arr) => {
+      const m = new Map();
+      for (const v of arr) { const k = JSON.stringify(v); m.set(k, (m.get(k) ?? 0) + 1); }
+      return m;
+    };
+    const ma = count(listA), mb = count(listB);
+    const missing = [], extra = [];
+    for (const [k, n] of ma) {
+      const d = n - (mb.get(k) ?? 0);
+      for (let i = 0; i < d; i++) missing.push(JSON.parse(k));
     }
-  };
-  propDiff('node', ga.nodes, gb.nodes);
-  propDiff('edge', ga.edges, gb.edges);
-  const equivalent = diff.missingInB.length === 0 && diff.extraInB.length === 0 &&
-    diff.propertyDiffs.length === 0;
-  record('g6', 'GRAPH EQUIVALENCE (nodes, edges, identities, properties)',
-    equivalent ? 'PASS' : 'FAIL',
-    { missingInB: diff.missingInB.slice(0, 10), extraInB: diff.extraInB.slice(0, 10),
-      propertyDiffs: diff.propertyDiffs.slice(0, 10),
-      counts: { missingInB: diff.missingInB.length, extraInB: diff.extraInB.length,
-        propertyDiffs: diff.propertyDiffs.length } });
-  record('verdict', equivalent
-    ? 'cognify keyedRetry SUPPORTED by graph equivalence'
+    for (const [k, n] of mb) {
+      const d = n - (ma.get(k) ?? 0);
+      for (let i = 0; i < d; i++) extra.push(JSON.parse(k));
+    }
+    return { missing, extra };
+  }
+  function compareGraphs(ga2, gb2) {
+    const diff = { missingInB: [], extraInB: [], multiplicityDiffs: [], rawCountDiffs: [] };
+    for (const [kind, rawA, rawB] of [['node', ga2.nodeCount, gb2.nodeCount],
+      ['edge', ga2.edgeCount, gb2.edgeCount]]) {
+      if (rawA !== rawB) diff.rawCountDiffs.push({ kind, inA: rawA, inB: rawB });
+    }
+    const compareTable = (kind, ta, tb) => {
+      const idents = new Set([...Object.keys(ta), ...Object.keys(tb)]);
+      for (const k of idents) {
+        const la = ta[k] ?? [], lb = tb[k] ?? [];
+        if (la.length !== lb.length) {
+          diff.multiplicityDiffs.push({ kind, identity: k.slice(0, 160), inA: la.length, inB: lb.length });
+        }
+        const { missing, extra } = multisetDiff(la, lb);
+        for (const v of missing) diff.missingInB.push({ kind, identity: k.slice(0, 160), variant: v });
+        for (const v of extra) diff.extraInB.push({ kind, identity: k.slice(0, 160), variant: v });
+      }
+    };
+    compareTable('node', ga2.nodes, gb2.nodes);
+    compareTable('edge', ga2.edges, gb2.edges);
+    diff.equivalent = diff.rawCountDiffs.length === 0 &&
+      diff.multiplicityDiffs.length === 0 && diff.missingInB.length === 0 &&
+      diff.extraInB.length === 0;
+    return diff;
+  }
+  const diff = compareGraphs(ga, gb);
+  record('g6', 'GRAPH EQUIVALENCE (raw counts + per-identity multiplicities + identities + property-variant multisets)',
+    diff.equivalent ? 'PASS' : 'FAIL',
+    { rawCountDiffs: diff.rawCountDiffs, multiplicityDiffs: diff.multiplicityDiffs.slice(0, 10),
+      missingInB: diff.missingInB.slice(0, 10), extraInB: diff.extraInB.slice(0, 10),
+      counts: { rawCountDiffs: diff.rawCountDiffs.length,
+        multiplicityDiffs: diff.multiplicityDiffs.length,
+        missingInB: diff.missingInB.length, extraInB: diff.extraInB.length } });
+
+  // ---- NEGATIVE CONTROLS (correction pass 2): the comparator must FAIL when
+  // an extra duplicate instance (same identity, the exact case the old
+  // key→props comparison silently overwrote) or an extra edge is injected.
+  const controls = [];
+  {
+    // (i) extra duplicate NODE instance under an EXISTING identity
+    const nodeKey = Object.keys(ga.nodes)[0];
+    const dup = JSON.parse(JSON.stringify(ga.nodes[nodeKey][0]));
+    dup.__injected = 'negative-control-duplicate-node';
+    const mutated = { ...ga, nodes: { ...ga.nodes, [nodeKey]: [...ga.nodes[nodeKey], dup] } };
+    const d = compareGraphs(mutated, gb);
+    controls.push({ control: 'extra-duplicate-node', detected: !d.equivalent });
+  }
+  {
+    // (ii) extra duplicate EDGE instance under an EXISTING identity
+    const edgeKey = Object.keys(ga.edges)[0];
+    const dup = JSON.parse(JSON.stringify(ga.edges[edgeKey][0]));
+    dup.__injected = 'negative-control-duplicate-edge';
+    const mutated = { ...ga, edges: { ...ga.edges, [edgeKey]: [...ga.edges[edgeKey], dup] } };
+    const d = compareGraphs(mutated, gb);
+    controls.push({ control: 'extra-duplicate-edge', detected: !d.equivalent });
+  }
+  {
+    // (iii) extra edge with a NEW identity (topology change)
+    const edgeKey = Object.keys(ga.edges)[0];
+    const novel = JSON.parse(JSON.stringify(ga.edges[edgeKey][0]));
+    const mutated = { ...ga, edgeCount: ga.edgeCount + 1,
+      edges: { ...ga.edges, [edgeKey + '::NOVEL']: [novel] } };
+    const d = compareGraphs(mutated, gb);
+    controls.push({ control: 'extra-new-identity-edge', detected: !d.equivalent });
+  }
+  record('g7', 'negative controls: comparator FAILS on injected duplicate/extra node or edge',
+    controls.every((c) => c.detected) ? 'PASS' : 'FAIL', { controls });
+
+  record('verdict', diff.equivalent
+    ? 'cognify keyedRetry SUPPORTED by multiset graph equivalence (incl. raw counts + negative controls)'
     : 'graph equivalence NOT demonstrated -> cognify must be ambiguity: block',
-    equivalent ? 'PASS' : 'FAIL', {});
+    diff.equivalent && controls.every((c) => c.detected) ? 'PASS' : 'FAIL', {});
 }
 
 try {
@@ -223,7 +300,7 @@ try {
 const out = {
   proof: 'c4-exit-cognify-graph-equivalence',
   stores: { baseline: 'proof/.cognee-equiv-a', crashReissue: 'proof/.cognee-equiv-b' },
-  method: 'full ladybug graph dump (graph_dump_c4.py) + node/edge/property set diff; volatile per-store fields (random ids, timestamps, pipeline-run provenance) excluded and listed in graph_dump_c4.py',
+  method: 'full ladybug graph dump (graph_dump_c4.py) + MULTISET diff: raw node/edge counts + per-identity multiplicities + property-variant multisets; volatile per-store fields excluded with per-property justification in graph_dump_c4.py; negative controls prove the comparator fails on injected duplicates',
   started: new Date(t0).toISOString(),
   duration_s: Math.round((Date.now() - t0) / 1000),
   results,

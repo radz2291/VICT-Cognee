@@ -4,9 +4,9 @@
     "baseline": "proof/.cognee-equiv-a",
     "crashReissue": "proof/.cognee-equiv-b"
   },
-  "method": "full ladybug graph dump (graph_dump_c4.py) + node/edge/property set diff; volatile per-store fields (random ids, timestamps, pipeline-run provenance) excluded and listed in graph_dump_c4.py",
-  "started": "2026-09-26T03:10:14.056Z",
-  "duration_s": 588,
+  "method": "full ladybug graph dump (graph_dump_c4.py) + MULTISET diff: raw node/edge counts + per-identity multiplicities + property-variant multisets; volatile per-store fields excluded with per-property justification in graph_dump_c4.py; negative controls prove the comparator fails on injected duplicates",
+  "started": "2026-09-26T04:18:34.516Z",
+  "duration_s": 221,
   "results": [
     {
       "id": "g1",
@@ -56,32 +56,63 @@
       "detail": {
         "a": {
           "nodes": 12,
-          "edges": 12
+          "edges": 12,
+          "nodeIdentities": 12,
+          "edgeIdentities": 12,
+          "duplicateNodeInstances": 0,
+          "duplicateEdgeInstances": 0
         },
         "b": {
           "nodes": 12,
-          "edges": 12
+          "edges": 12,
+          "nodeIdentities": 12,
+          "edgeIdentities": 12,
+          "duplicateNodeInstances": 0,
+          "duplicateEdgeInstances": 0
         }
       }
     },
     {
       "id": "g6",
-      "name": "GRAPH EQUIVALENCE (nodes, edges, identities, properties)",
+      "name": "GRAPH EQUIVALENCE (raw counts + per-identity multiplicities + identities + property-variant multisets)",
       "outcome": "PASS",
       "detail": {
+        "rawCountDiffs": [],
+        "multiplicityDiffs": [],
         "missingInB": [],
         "extraInB": [],
-        "propertyDiffs": [],
         "counts": {
+          "rawCountDiffs": 0,
+          "multiplicityDiffs": 0,
           "missingInB": 0,
-          "extraInB": 0,
-          "propertyDiffs": 0
+          "extraInB": 0
         }
       }
     },
     {
+      "id": "g7",
+      "name": "negative controls: comparator FAILS on injected duplicate/extra node or edge",
+      "outcome": "PASS",
+      "detail": {
+        "controls": [
+          {
+            "control": "extra-duplicate-node",
+            "detected": true
+          },
+          {
+            "control": "extra-duplicate-edge",
+            "detected": true
+          },
+          {
+            "control": "extra-new-identity-edge",
+            "detected": true
+          }
+        ]
+      }
+    },
+    {
       "id": "verdict",
-      "name": "cognify keyedRetry SUPPORTED by graph equivalence",
+      "name": "cognify keyedRetry SUPPORTED by multiset graph equivalence (incl. raw counts + negative controls)",
       "outcome": "PASS",
       "detail": {}
     }

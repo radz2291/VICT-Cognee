@@ -621,6 +621,111 @@ const DURABLE_READ_GRAPH = {
   }
 }
 
+// ---- V10d-f: deadline honored through STARTUP and QUEUEING (deterministic,
+// supervision-level, protocol stub worker; the real-runtime entry refusals
+// above are V10a-c) -----------------------------------------------------------
+// A protocol stub worker (pack/verify/stub_worker.py) with artificial delays:
+//   V10d delayed worker startup (ready after 2.5 s; deadline 1 s) — must fail
+//       BEFORE dispatch: nothing is ever sent (stub servedOps stays 0);
+//   V10e queued request: op 1 occupies the worker (3 s), op 2 queued with a
+//       1 s deadline — op 2 must fail BEFORE dispatch while queued;
+//   V10f post-dispatch expiry: mutation dispatched with 0.8 s deadline, stub
+//       replies after 3 s — outcome must be UNKNOWN (COGNEE_WRITE_UNKNOWN);
+//       a read reports a clean typed failure (CLIENT_DEADLINE).
+const STUB_STORE = path.join(repo, 'proof', '.cognee-verify-stub');
+const STUB = path.join(here, 'stub_worker.py');
+{
+  for (let attempt = 0; ; attempt++) {
+    try { rmSync(STUB_STORE, { recursive: true, force: true }); break; }
+    catch { if (attempt >= 4) throw new Error(`cannot clear ${STUB_STORE}`); await new Promise((r) => setTimeout(r, 2_000)); }
+  }
+  mkdirSync(STUB_STORE, { recursive: true });
+  // Instance D: delayed READY (deadline expiry during startup).
+  const supD = createCogneePack({
+    pythonPath: PY, cwd: STUB_STORE, storeRoot: STUB_STORE, namespaces: ['qa'],
+    workerPath: STUB, readyBudgetMs: 60_000,
+    env: { STUB_READY_DELAY_MS: '2500' },
+    diag: (line) => console.error(`[stub-D] ${line.slice(0, 140)}`),
+  }).supervision;
+  try {
+    const t = Date.now();
+    let refused: unknown = null;
+    try {
+      await supD.request('add', { datasetName: 'qa.stub', content: 'x' },
+        { mutating: true, deadlineAt: Date.now() + 1_000 });
+    } catch (e) { refused = e; }
+    const we = refused instanceof WorkerError ? refused : null;
+    // Follow-up with a generous deadline proves NOTHING besides the probe
+    // itself was dispatched (the stub counts every request it RECEIVES;
+    // servedOps === 1 means exactly one request — the probe — reached it).
+    const probe = await supD.request('datasets_status', {},
+      { deadlineMs: 10_000 }) as { servedOps?: number };
+    check('V10d', 'deadline expiring during worker startup fails BEFORE dispatch (no effect; only the probe itself was served)',
+      we?.code === 'COGNEE_DEADLINE_EXCEEDED' && probe?.servedOps === 1,
+      { code: we?.code ?? String(refused), servedOps: probe?.servedOps }, Date.now() - t);
+  } finally {
+    await supD.shutdown();
+  }
+  // Instance E: per-op delay for the slow ops (queueing + post-dispatch expiry).
+  const supE = createCogneePack({
+    pythonPath: PY, cwd: STUB_STORE, storeRoot: STUB_STORE, namespaces: ['qa'],
+    workerPath: STUB, readyBudgetMs: 60_000,
+    env: { STUB_DELAY_OPS: 'slow_op,slow_mutation,slow_read', STUB_DELAY_MS: '3000' },
+    diag: (line) => console.error(`[stub-E] ${line.slice(0, 140)}`),
+  }).supervision;
+  try {
+    // V10e: queued request's deadline expires while the worker is occupied.
+    {
+      const t = Date.now();
+      const first = supE.request('slow_op', { marker: 'occupying' },
+        { mutating: true, deadlineAt: Date.now() + 30_000 });
+      // Wait until op 1 is dispatched, then enqueue op 2 with a 1 s deadline.
+      await new Promise((r) => setTimeout(r, 300));
+      let refused2: unknown = null;
+      try {
+        await supE.request('queued_op', { marker: 'queued' },
+          { mutating: true, deadlineAt: Date.now() + 1_000 });
+      } catch (e) { refused2 = e; }
+      const we2 = refused2 instanceof WorkerError ? refused2 : null;
+      const receipt = await first as { servedOps?: number };
+      const probe = await supE.request('datasets_status', {},
+        { deadlineMs: 10_000 }) as { servedOps?: number };
+      // servedOps after probe: op1 + probe = 2 — queued_op was NEVER dispatched.
+      check('V10e', 'queued request whose deadline expires while queued fails BEFORE dispatch (never sent)',
+        we2?.code === 'COGNEE_DEADLINE_EXCEEDED' &&
+          receipt?.servedOps === 1 && probe?.servedOps === 2,
+        { code: we2?.code ?? String(refused2), op1: receipt?.servedOps,
+          probeServed: probe?.servedOps }, Date.now() - t);
+    }
+    // V10f: deadline expires AFTER a mutation was dispatched => UNKNOWN.
+    {
+      const t = Date.now();
+      let timedOut: unknown = null;
+      try {
+        await supE.request('slow_mutation', { marker: 'mut' },
+          { mutating: true, deadlineAt: Date.now() + 800 });
+      } catch (e) { timedOut = e; }
+      const we = timedOut instanceof WorkerError ? timedOut : null;
+      check('V10f', 'deadline expiring AFTER a mutation was dispatched reports UNKNOWN outcome (COGNEE_WRITE_UNKNOWN)',
+        we?.code === 'COGNEE_WRITE_UNKNOWN',
+        { code: we?.code ?? String(timedOut), detail: we?.detail }, Date.now() - t);
+      // read variant: clean typed failure, not unknown
+      const t2 = Date.now();
+      let readTimeout: unknown = null;
+      try {
+        await supE.request('slow_read', { marker: 'read' },
+          { mutating: false, deadlineAt: Date.now() + 800 });
+      } catch (e) { readTimeout = e; }
+      const rw = readTimeout instanceof WorkerError ? readTimeout : null;
+      check('V10f', 'deadline expiring after a READ was dispatched reports a clean typed failure (CLIENT_DEADLINE)',
+        rw?.code === 'CLIENT_DEADLINE',
+        { code: rw?.code ?? String(readTimeout) }, Date.now() - t2);
+    }
+  } finally {
+    await supE.shutdown();
+  }
+}
+
 // ---- V11: the pack resolves its OWN BUNDLED worker (distributable surface) ----
 {
   const t = Date.now();

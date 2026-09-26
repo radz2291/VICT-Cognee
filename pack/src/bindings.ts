@@ -16,8 +16,12 @@
  *  - FAIL-CLOSED DEADLINES (C4 exit correction): an invocation whose
  *    CapabilityContext.deadlineAt is already expired (or has insufficient
  *    remaining time) fails immediately — it NEVER reaches the worker and is
- *    NEVER granted a fresh full timeout. Only invocations with no deadlineAt
- *    at all get the per-op fallback budget.
+ *    NEVER granted a fresh full timeout. The ABSOLUTE deadlineAt travels
+ *    through queue wait and worker startup unchanged and is re-checked
+ *    immediately before dispatch (expiry there = clean failure, no effect);
+ *    expiry AFTER a mutation was dispatched reports an UNKNOWN outcome
+ *    (COGNEE_WRITE_UNKNOWN). Only invocations with no deadlineAt at all get
+ *    the per-op fallback budget.
  *  - the retry key comes EXCLUSIVELY from CapabilityContext.idempotencyKey —
  *    never from input params (worker re-checks and rejects smuggled keys);
  *  - a mutating invocation with NO context key is REFUSED (it can never be
@@ -80,7 +84,10 @@ function requireNormalMode(ctx: InvocationContext, op: string): void {
   }
 }
 
-/** Fail-closed deadline mapping. Returns the per-op fallback ONLY when the
+/** Fail-closed deadline mapping. Returns the ABSOLUTE deadline timestamp
+ *  (ctx.deadlineAt passed through UNCHANGED — it must survive queue wait and
+ *  worker startup; supervision re-checks it immediately before dispatch and
+ *  anchors the response timer to it), or the per-op fallback ONLY when the
  *  context carries NO deadline at all. An expired or insufficient
  *  ctx.deadlineAt throws BEFORE any worker request (the operation never
  *  starts, so no unknown-outcome window is created). */
@@ -95,9 +102,9 @@ function deadlineFrom(ctx: InvocationContext, op: string, fallback: number): num
           'refusing before the worker request (the deadline is never replaced ' +
           'with a fresh timeout)');
     }
-    return remaining;
+    return ctx.deadlineAt; // absolute — preserved through queue + startup
   }
-  return fallback;
+  return Date.now() + fallback; // no ctx deadline: absolute fallback budget
 }
 
 function requireKey(ctx: InvocationContext, op: string): string {
@@ -137,7 +144,7 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
     const key = requireKey(ctx, 'cognee.add');
     return await sup.request('add',
       { datasetName: input.datasetName, content: input.content },
-      { mutating: true, deadlineMs: deadlineFrom(ctx, 'cognee.add', DEFAULT_MUTATING_DEADLINE_MS),
+      { mutating: true, deadlineAt: deadlineFrom(ctx, 'cognee.add', DEFAULT_MUTATING_DEADLINE_MS),
         ctx: { idempotencyKey: key, ...(ctx.attemptNumber !== undefined
           ? { attemptNumber: ctx.attemptNumber } : {}) } }) as Promise<MutatingReceipt>;
   };
@@ -147,7 +154,7 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
     const input = rawInput as DatasetRef;
     const key = requireKey(ctx, 'cognee.cognify');
     return await sup.request('cognify', { datasetName: input.datasetName },
-      { mutating: true, deadlineMs: deadlineFrom(ctx, 'cognee.cognify', DEFAULT_MUTATING_DEADLINE_MS),
+      { mutating: true, deadlineAt: deadlineFrom(ctx, 'cognee.cognify', DEFAULT_MUTATING_DEADLINE_MS),
         ctx: { idempotencyKey: key, ...(ctx.attemptNumber !== undefined
           ? { attemptNumber: ctx.attemptNumber } : {}) } }) as Promise<MutatingReceipt>;
   };
@@ -158,7 +165,7 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
     return await sup.request('search_chunks',
       { datasets: [...input.datasets], query: input.query,
         ...(input.topK !== undefined ? { topK: input.topK } : {}) },
-      { mutating: false, deadlineMs: deadlineFrom(ctx, 'cognee.searchChunks', DEFAULT_READ_DEADLINE_MS) }) as Promise<SearchOutput>;
+      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.searchChunks', DEFAULT_READ_DEADLINE_MS) }) as Promise<SearchOutput>;
   };
 
   const searchSummaries: Invoke = async (rawInput: unknown, ctx: InvocationContext) => {
@@ -167,13 +174,13 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
     return await sup.request('search_summaries',
       { datasets: [...input.datasets], query: input.query,
         ...(input.topK !== undefined ? { topK: input.topK } : {}) },
-      { mutating: false, deadlineMs: deadlineFrom(ctx, 'cognee.searchSummaries', DEFAULT_READ_DEADLINE_MS) }) as Promise<SearchOutput>;
+      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.searchSummaries', DEFAULT_READ_DEADLINE_MS) }) as Promise<SearchOutput>;
   };
 
   const datasetsStatus: Invoke = async (_input: unknown, ctx: InvocationContext) => {
     requireNormalMode(ctx, 'cognee.datasetsStatus');
     return await sup.request('datasets_status', {},
-      { mutating: false, deadlineMs: deadlineFrom(ctx, 'cognee.datasetsStatus', DEFAULT_READ_DEADLINE_MS) }) as Promise<StatusOutput>;
+      { mutating: false, deadlineAt: deadlineFrom(ctx, 'cognee.datasetsStatus', DEFAULT_READ_DEADLINE_MS) }) as Promise<StatusOutput>;
   };
 
   const forgetDataset: Invoke = async (rawInput: unknown, ctx: InvocationContext) => {
@@ -183,7 +190,7 @@ export function createCogneeBindings(sup: CogneeWorkerSupervision): PackBindings
     // denies irreversible capabilities in normal mode unless the run policy
     // sets allowIrreversible — the real handler is unreachable otherwise.
     return await sup.request('forget_dataset', { datasetName: input.datasetName },
-      { mutating: true, deadlineMs: deadlineFrom(ctx, 'cognee.forgetDataset', DEFAULT_MUTATING_DEADLINE_MS) }) as Promise<ForgetReceipt>;
+      { mutating: true, deadlineAt: deadlineFrom(ctx, 'cognee.forgetDataset', DEFAULT_MUTATING_DEADLINE_MS) }) as Promise<ForgetReceipt>;
   };
 
   // ---- test/simulate doubles (mutating capabilities only; reads fail closed)

@@ -45,13 +45,23 @@ _orig_load_dotenv(str(_ENV_FILE), override=True)
 # Node/edge properties that embed per-store random identity or wall-clock
 # time and are therefore NOT part of graph-structure equivalence. Everything
 # else (names, types, texts, source_content_hash, counts, index fields,
-# weights, pipeline/task names, default-user email) is compared exactly.
-# UUID-shaped and epoch-shaped fields observed in real dumps:
-#   id / source_chunk_id / edge_object_id / document_id / source_node_id
-#                                          -> per-store random UUIDs
-#   raw_data_location                      -> store-root + per-run UUID path
-#   created_at / updated_at                -> wall-clock epoch millis
-#   source_run_* / source_ref_keys etc.    -> pipeline-run provenance UUIDs
+# weights, pipeline/task names, default-user email) is compared exactly —
+# as MULTISETS (per-identity multiplicity included; CORRECTION PASS 2: the
+# previous key→props maps silently overwrote duplicate identities).
+# Per-property justification (why the field cannot be compared across two
+# independently initialized stores):
+#   id, source_chunk_id, edge_object_id, document_id, source_node_id,
+#     target_node_id  -> per-store random UUIDs (new UUID() per record;
+#                         provably not reproducible across stores)
+#   created_at / updated_at -> wall-clock epoch millis (store-init time;
+#                         differs by construction between runs)
+#   raw_data_location      -> embeds the store-root path + per-run UUID;
+#                         store A and store B live at different roots
+#   dataset_id / belongs_to_dataset_id / dataset_owner_id -> per-store
+#                         dataset/user surrogate keys (random UUIDs)
+#   source_run_ids / source_run_refs / source_ref_keys / source_dataset_ids
+#                         -> pipeline-run provenance: per-run random UUIDs
+#                         recorded by cognee at ingestion time
 VOLATILE_NODE_PROPERTIES = {
     "id", "created_at", "updated_at", "source_chunk_id", "dataset_id",
     "belongs_to_dataset_id", "dataset_owner_id", "document_id",
@@ -62,6 +72,25 @@ VOLATILE_EDGE_PROPERTIES = {
     "edge_object_id", "created_at", "updated_at", "source_node_id",
     "target_node_id",
     "source_run_ids", "source_run_refs", "source_ref_keys", "source_dataset_ids",
+}
+
+EXCLUSION_JUSTIFICATION = {
+    "id": "per-store random UUID (new UUID per node)",
+    "created_at": "wall-clock epoch millis (store-init time)",
+    "updated_at": "wall-clock epoch millis",
+    "source_chunk_id": "per-store random UUID",
+    "dataset_id": "per-store dataset surrogate key (random UUID)",
+    "belongs_to_dataset_id": "per-store dataset surrogate key (random UUID)",
+    "dataset_owner_id": "per-store user surrogate key (random UUID)",
+    "document_id": "per-store random UUID",
+    "raw_data_location": "store-root path + per-run UUID (roots differ by design)",
+    "edge_object_id": "per-store random UUID",
+    "source_node_id": "per-store random node UUID (edge endpoint surrogate)",
+    "target_node_id": "per-store random node UUID (edge endpoint surrogate)",
+    "source_run_ids": "pipeline-run provenance (per-run random UUIDs)",
+    "source_run_refs": "pipeline-run provenance (per-run random UUIDs)",
+    "source_ref_keys": "pipeline-run provenance (per-run random UUIDs)",
+    "source_dataset_ids": "pipeline-run provenance (per-run random UUIDs)",
 }
 
 
@@ -123,11 +152,15 @@ async def dump(raw: bool) -> dict:
                       for s, t, r, p in edges],
         }
 
+    # MULTISET normalization (correction pass 2): each identity key maps to a
+    # LIST of property variants — duplicate identities are preserved, never
+    # overwritten (the previous dict-based normalization silently collapsed
+    # duplicates, which would have hidden multiplicity differences).
     norm_nodes = {}
     for _nid, props in nodes:
         key = json.dumps({"type": props.get("type"), "name": props.get("name")},
                          sort_keys=True, ensure_ascii=False)
-        norm_nodes[key] = _clean(props or {}, VOLATILE_NODE_PROPERTIES)
+        norm_nodes.setdefault(key, []).append(_clean(props or {}, VOLATILE_NODE_PROPERTIES))
     norm_edges = {}
     for s, t, rel, props in edges:
         sn, tn = node_identity.get(s, {}), node_identity.get(t, {})
@@ -136,11 +169,14 @@ async def dump(raw: bool) -> dict:
             "target": {"type": tn.get("type"), "name": tn.get("name")},
             "relationship": rel,
         }, sort_keys=True, ensure_ascii=False)
-        norm_edges[key] = _clean(props or {}, VOLATILE_EDGE_PROPERTIES)
+        norm_edges.setdefault(key, []).append(_clean(props or {}, VOLATILE_EDGE_PROPERTIES))
     return {
         "graphFiles": [str(g) for g in graph_files],
         "nodeCount": len(nodes), "edgeCount": len(edges),
-        "distinctNodeCount": len(norm_nodes), "distinctEdgeCount": len(norm_edges),
+        "nodeIdentityCount": len(norm_nodes), "edgeIdentityCount": len(norm_edges),
+        "duplicateNodeInstances": sum(len(v) - 1 for v in norm_nodes.values()),
+        "duplicateEdgeInstances": sum(len(v) - 1 for v in norm_edges.values()),
+        "exclusionJustification": EXCLUSION_JUSTIFICATION,
         "nodes": norm_nodes, "edges": norm_edges,
     }
 

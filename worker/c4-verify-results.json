@@ -2,20 +2,20 @@
   "verification": "c4-pack-through-real-runtime",
   "victAbiReference": "radz2291/vict-02@5ea0afe257d5e7f67e050fcae169746a25fd3cc4 (read-only)",
   "store": "fresh (proof/.cognee-verify)",
-  "started": "2026-09-26T03:38:48.391Z",
-  "duration_s": 60,
+  "started": "2026-09-26T04:16:16.099Z",
+  "duration_s": 67,
   "environment": {
-    "freeRamGbStart": 4.44,
-    "freeRamGbEnd": 4.66,
+    "freeRamGbStart": 4.38,
+    "freeRamGbEnd": 4.44,
     "note": "Windows low-memory class: cognee cognify peaks ~2.0 GB; native crashes (0xC0000005) were observed in earlier batteries when free RAM dropped near 1.9 GB (agent observations, C1/C2). None occurred in this run; the supervision poison+respawn policy contains worker deaths as COGNEE_WRITE_UNKNOWN/COGNEE_WORKER_UNAVAILABLE."
   },
   "supervisionStats": {
     "spawns": 1,
     "respawns": 0,
     "kills": 0,
-    "lastRssBytes": 343306240,
+    "lastRssBytes": 342863872,
     "opsServed": 9,
-    "stderrLines": 162,
+    "stderrLines": 163,
     "stdoutViolations": 0
   },
   "results": [
@@ -26,7 +26,7 @@
       "detail": {
         "capabilities": 6
       },
-      "ms": 4
+      "ms": 2
     },
     {
       "id": "V1",
@@ -42,7 +42,7 @@
           "cognee.forgetDataset"
         ]
       },
-      "ms": 4
+      "ms": 3
     },
     {
       "id": "V2",
@@ -60,7 +60,7 @@
         },
         "spawns": 0
       },
-      "ms": 33
+      "ms": 16
     },
     {
       "id": "V2b",
@@ -76,7 +76,7 @@
           "storeFilesAfter": 0
         }
       },
-      "ms": 4
+      "ms": 2
     },
     {
       "id": "V3",
@@ -87,7 +87,7 @@
         "spawns": 0,
         "spawnsBefore": 0
       },
-      "ms": 3
+      "ms": 1
     },
     {
       "id": "ABI",
@@ -108,14 +108,14 @@
           "code": "VICT_RUNTIME_PERMISSION_DENIED",
           "details": {
             "capabilityId": "cognee.add",
-            "errorId": "err_804ed76eb506e3c7",
+            "errorId": "err_fa51230c5c35b5c4",
             "invokedVia": "real",
             "nodeId": "put"
           },
           "message": "Permission 'cognee.write' required by capability 'cognee.add' is not granted in this runtime; the handler was not invoked."
         }
       },
-      "ms": 35
+      "ms": 15
     },
     {
       "id": "V5",
@@ -125,7 +125,7 @@
         "status": "completed",
         "output": {
           "datasetName": "qa.verify",
-          "idempotencyKey": "idem_bcd3bec49aa6743391c92a5a31bfef03",
+          "idempotencyKey": "idem_0bfb4b914e3229250215f2bf608dc87d",
           "reconciled": "fresh-execution",
           "itemsBefore": 1,
           "itemsAfter": 1,
@@ -134,7 +134,7 @@
         "error": null,
         "spawns": 1
       },
-      "ms": 49288
+      "ms": 45852
     },
     {
       "id": "V5",
@@ -149,7 +149,7 @@
           "datasetName": "qa.verify"
         }
       },
-      "ms": 310
+      "ms": 281
     },
     {
       "id": "V5b",
@@ -165,7 +165,7 @@
             "nodeId": "put",
             "invokedVia": "real",
             "errorName": "Error",
-            "errorId": "err_d746913bdc2f629e"
+            "errorId": "err_e7dcca9624256d47"
           }
         }
       },
@@ -179,7 +179,7 @@
         "first": "fresh-execution",
         "replay": "replayed-known-outcome"
       },
-      "ms": 539
+      "ms": 588
     },
     {
       "id": "V6",
@@ -188,7 +188,7 @@
       "detail": {
         "got": "COGNEE_IDEMPOTENCY_MISMATCH"
       },
-      "ms": 5
+      "ms": 8
     },
     {
       "id": "V6",
@@ -197,7 +197,7 @@
       "detail": {
         "itemsAfter": 1
       },
-      "ms": 6586
+      "ms": 7104
     },
     {
       "id": "V7",
@@ -207,7 +207,7 @@
         "status": "blocked",
         "error": null
       },
-      "ms": 7
+      "ms": 8
     },
     {
       "id": "V7",
@@ -217,13 +217,13 @@
         "status": "completed",
         "receipt": {
           "datasetName": "qa.binding",
-          "datasetId": "e407b4fc-eb35-5ce0-912f-0af9717ae521",
+          "datasetId": "1e22b940-b88b-5738-94d8-55bca48f76ba",
           "purged": "file-level",
           "storeFilesBefore": 2,
           "storeFilesAfter": 0
         }
       },
-      "ms": 713
+      "ms": 658
     },
     {
       "id": "V9a",
@@ -234,7 +234,7 @@
         "spawns": 1,
         "storeUnchanged": true
       },
-      "ms": 22
+      "ms": 21
     },
     {
       "id": "V9b",
@@ -243,7 +243,7 @@
       "detail": {
         "status": "running"
       },
-      "ms": 7
+      "ms": 9
     },
     {
       "id": "V9c",
@@ -252,7 +252,7 @@
       "detail": {
         "status": "failed"
       },
-      "ms": 14
+      "ms": 12
     },
     {
       "id": "V9d",
@@ -270,7 +270,7 @@
       "detail": {
         "code": "COGNEE_DEADLINE_EXCEEDED"
       },
-      "ms": 8
+      "ms": 6
     },
     {
       "id": "V10b",
@@ -279,7 +279,7 @@
       "detail": {
         "code": "COGNEE_DEADLINE_EXCEEDED"
       },
-      "ms": 6
+      "ms": 5
     },
     {
       "id": "V10c",
@@ -287,6 +287,51 @@
       "outcome": "PASS",
       "detail": {},
       "ms": 0
+    },
+    {
+      "id": "V10d",
+      "name": "deadline expiring during worker startup fails BEFORE dispatch (no effect; only the probe itself was served)",
+      "outcome": "PASS",
+      "detail": {
+        "code": "COGNEE_DEADLINE_EXCEEDED",
+        "servedOps": 1
+      },
+      "ms": 2611
+    },
+    {
+      "id": "V10e",
+      "name": "queued request whose deadline expires while queued fails BEFORE dispatch (never sent)",
+      "outcome": "PASS",
+      "detail": {
+        "code": "COGNEE_DEADLINE_EXCEEDED",
+        "op1": 1,
+        "probeServed": 2
+      },
+      "ms": 3102
+    },
+    {
+      "id": "V10f",
+      "name": "deadline expiring AFTER a mutation was dispatched reports UNKNOWN outcome (COGNEE_WRITE_UNKNOWN)",
+      "outcome": "PASS",
+      "detail": {
+        "code": "COGNEE_WRITE_UNKNOWN",
+        "detail": {
+          "op": "slow_mutation",
+          "idempotencyKey": null,
+          "datasetName": null,
+          "deadlineHonored": true
+        }
+      },
+      "ms": 806
+    },
+    {
+      "id": "V10f",
+      "name": "deadline expiring after a READ was dispatched reports a clean typed failure (CLIENT_DEADLINE)",
+      "outcome": "PASS",
+      "detail": {
+        "code": "CLIENT_DEADLINE"
+      },
+      "ms": 812
     },
     {
       "id": "V11",
