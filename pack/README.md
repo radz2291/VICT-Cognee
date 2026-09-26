@@ -115,8 +115,12 @@ service or a published npm package. The tested installation route is a local
 `npm pack` tarball with VICT 0.3.1. Keep each trust domain's store on a
 persistent, disjoint absolute path and reserve memory for the model: the C6
 pilot observed a second concurrent worker failing to load GLiNER when free
-RAM was under ~1 GB. Do not infer a general concurrency capacity from the
-single-worker peak. Pre-warm the models and measure on the intended host.
+RAM was under ~1 GB, and the C7 closure runs reproduced the same failure
+(Windows os error 1455, paging file/commit limit) with ~3–4 GB free — the
+second worker must map the model while the first still holds it, so commit
+headroom, not free RAM alone, is the binding constraint. Do not infer a
+general concurrency capacity from the single-worker peak. Pre-warm the
+models and measure on the intended host.
 
 Search scores are raw candidate signals; off-corpus queries produced hits.
 The caller decides relevance. VICT 0.3.1 can return a durable cognify run

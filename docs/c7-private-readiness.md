@@ -50,10 +50,13 @@ candidate's local package version, not a published release.
 3. Provision the Python 3.12 venv and models before serving requests.
    Put all seven Cognee storage roots under an **absolute**, pack-owned
    persistent `storeRoot` with its store `.env`. The root guard refuses
-   out-of-bound paths. Budget memory for model loading and cognify; C6
-   observed a second worker fail to load GLiNER with less than ~1 GB free.
-   Two trust domains require separate runtime/worker/store/lock instances
-   and adequate capacity for both.
+   out-of-bound paths. Budget memory for model loading and cognify: C6
+   observed a second worker fail to load GLiNER with less than ~1 GB free,
+   and the C7 closure runs reproduced the same failure (Windows os error
+   1455, paging file/commit limit) with ~3–4 GB free — the second worker
+   maps the model while the first still holds it, so commit headroom is the
+   binding constraint. Two trust domains require separate
+   runtime/worker/store/lock instances and adequate capacity for both.
 4. Stop gracefully so the pack releases its attributable ownership lock.
    After an unclean stop it intentionally refuses to auto-recover an old
    lock. Use the verified operator procedure in
@@ -76,7 +79,7 @@ candidate's local package version, not a published release.
 | Observation | Current C7 treatment | Real-app decision |
 | --- | --- | --- |
 | Cognify retry timer can leave a VICT 0.3.1 run `running` without automatic resume | Surface incomplete status; no automatic fresh run or success claim | Choose a supported resume/recovery policy with the VICT runtime, then test a forced failure and restart |
-| Second worker's GLiNER load failed under low free RAM on the pilot host | Provision adequate RAM; avoid overlapping model-heavy work on a constrained host | Measure intended deployment with actual concurrent domains and workload |
+| Second worker's GLiNER load failed under commit-limit pressure on the pilot host (os error 1455; reproduced in the C7 closure runs at ~3–4 GB free RAM, worse at <1 GB) | Provision adequate commit headroom; avoid overlapping model-heavy work on a constrained host | Measure intended deployment with actual concurrent domains and workload |
 | Off-corpus search still returned candidates | Preserve raw candidates and dataset scope | Decide how the app judges relevance and communicates uncertainty |
 | Namespace isolation does not identify an end user | One runtime/store per trust domain; no actor-isolation claim | Add real app authorization before exposing multi-user data |
 
