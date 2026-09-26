@@ -1,0 +1,15 @@
+[A] store ownership acquired: pid=15776 host=MyTingkap instance=9e6e6c93 -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cog
+[A] send op=slow_add id=1 remainingMs=29870 bytes=47
+[l1] B displaced A's live lock at +26767ms; A's op still in flight (A.child=true)
+[C] store ownership acquired: pid=15776 host=MyTingkap instance=6b536844 -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cog
+[l1] S1 PASS C acquired the store while A held it in flight (constructor O_EXCL over the displaced gap) 
+[C] send op=slow_add id=1 remainingMs=29872 bytes=47
+[l1] S2 PASS restore overwrote C's lock with A's bytes (C was NOT restored by name) 
+[l1] S3 PASS C DISPATCHED its op before the restore (pre-dispatch verify could NOT catch the displacement) {"opsServed":1}
+[l1] S4 PASS CONCURRENT OPERATION: A's and C's workers were BOTH alive with in-flight ops after the restore {"aWorkerAlive":true,"cWorkerAlive":true,"aOpsInFlight":"opA pending","cOpsInFlight":"opC pending"}
+[l1] S5 PASS BOTH ops completed (their outcomes were real — both were dispatched and executed) {"a":"qa.a","c":"qa.c"}
+[l1] S5 PASS C fail-closed AFTER the overlap (sticky COGNEE_STORE_OWNED) and its worker was killed at settlement {"sticky":"COGNEE_STORE_OWNED","cKills":1,"cSpawns":1,"cOpsServed":1}
+[l1] S6 PASS A was unaware throughout (lock restored byte-identical; ownership still held) 
+[A] send op=shutdown id=2 remainingMs=24999 bytes=26
+[A] store ownership released: pid=15776 instance=9e6e6c93
+[l1] COMPLETE 7/7 PASS — CONCURRENT OPERATION OBSERVED

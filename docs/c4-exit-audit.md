@@ -17,13 +17,25 @@ Nothing published; no consumer integrated. **Implementation unchanged by this au
 evidence files in the working tree were overwritten by the reruns and then restored to HEAD bytes;
 `git status` clean).
 
-## Verdict: **C4 exit verified with non-blocking issues**
+## Verdict: **C4 exit verified with non-blocking issues** — AMENDED after the L1 revisit
 
 No blocking defect was found in the pack code, worker, guard, contracts, manifest, or the crash
 convergence claims. All four focused suites were **rerun end-to-end by the auditor on this audit
-day** and reproduce the committed evidence. The non-blocking issues below are evidence-tooling
-gates, doc/code alignment, and narrow fail-closed availability edges — none breaks the
-one-owner/no-effect-safety invariants the exit claims rest on.
+day** and reproduce the committed evidence. **Amendment (see finding L1, revised to Medium):** the
+store-ownership invariant "at most one live worker per store at all times" (contract §7.2/§3,
+supervision comment supervision.ts:322 "Either way NO second owner can exist") is **NOT
+unconditionally established**: a deterministic interleaving test against the unmodified code
+demonstrates two instances operating concurrently (both with in-flight ops) on one physical store
+through the stale-recovery restore path. The window is bounded (until the displaced instance's
+in-flight heartbeat tick or operation settlement), its fallout is typed cognee-level contention
+failures plus automatic fail-closed convergence (no silent corruption demonstrated), and reaching
+it in production requires the recovering thread to be preempted for at least the new instance's
+spawn-to-dispatch duration inside a microsecond-scale synchronous syscall window — pathological
+but not impossible on the documented RAM-constrained host. All other exit claims stand; the
+exclusive-restore correction (L1) is required before publication or any multi-process deployment.
+(An unconditional "verified" or a "not verified" verdict were both rejected deliberately: no
+corruption was demonstrated and every other claim reran green, but the previous report's assurance
+that the restore path cannot create an operating second owner was wrong and is withdrawn.)
 
 ## Reruns executed by this audit (fresh disposable stores, sequential)
 
@@ -64,21 +76,66 @@ journal) are unaffected, so this is a doc/code mismatch, not a safety gap. **Sma
 correction:** implement per-op RSS reporting + post-op budget respawn, or reword §9 to describe
 what is implemented (RSS on ready/status; restart on death/timeout only).
 
-### L1 (Low) — Stale-recovery restore path can overwrite a fresh live lock created in its gap
+### L1 (Medium — REVISED after deterministic interleaving test; was Low) — Stale-recovery restore path can displace a fresh live lock AND admits a two-worker concurrent-operation window
 `pack/src/supervision.ts:325–326`: in the mismatch branch, `existsSync(lockPath)` is checked and
 then `renameSync(trash, lockPath)` is executed — two non-atomic steps. Node's `renameSync`
 **overwrites an existing destination** (demonstrated on this platform during the audit). A third
 fresh instance acquiring during the gap (`acquireStoreOwnership`, supervision.ts:261 — the direct
-`O_EXCL` path succeeds whenever the path is momentarily absent) can have its brand-new live lock
-silently replaced by the restore rename. Consequence: the displaced freshest instance fail-closes
-at its next `verifyOwnershipIntact` (supervision.ts:349–357, instanceId mismatch) **before any
-spawn/dispatch** — the audited invariant "at most one live worker per store" is preserved; the
-effect is a false eviction (availability), consistent with the residual already stated in the
-exit report §4 risk 3. Verified by source + platform rename-overwrite demo; the end-to-end
-interleaving was not empirically reproduced (window is microscopic and the verification-only delay
-hook widens judgment→claim, not the restore gap). **Smallest correction:** restore via exclusive
-create (`openSync(lockPath, 'wx')` writing the displaced bytes; on `EEXIST` skip the restore and
-fail closed) so a fresh contender's lock can never be overwritten.
+`O_EXCL` path succeeds whenever the path is momentarily absent) has its brand-new live lock
+silently replaced by the restore rename.
+
+**Revisit (this amendment): can A and C operate on the same physical store concurrently?**
+**YES — demonstrated deterministically.** Full sequence against the unmodified code
+(audit-only driver, `docs/audit-evidence/l1-interleave.mts` on this branch; raw log
+`docs/audit-evidence/l1-interleave.log`):
+1. Recoverer B reads a lock (simulated externally with B's exact recovery sequence).
+2. Instance A acquires and dispatches a 5 s operation (A's lock is live; A's op in flight).
+3. B moves A's live lock (`renameSync(lock → trash)`); the path is now absent; B pauses
+   (the "descheduled recoverer" hypothesis).
+4. Instance C acquires the now-free path via the constructor's direct `O_EXCL` path and dispatches
+   a 4 s operation — **both of C's pre-dispatch verifications (refresh + pre-dispatch,
+   supervision.ts:541/554) pass**, because the path still carries C's own lock.
+5. B restores A's lock, overwriting C's live lock.
+
+Results (7/7, unmodified pack code):
+- C acquires over the displaced gap (constructor `O_EXCL`, supervision.ts:261) — PASS;
+- C **dispatches** its op before the restore (`opsServed: 1`; both verifies passed) — PASS;
+- the restore overwrites C's lock with A's bytes — PASS;
+- **A's worker and C's worker were simultaneously alive with in-flight ops** — PASS;
+- **both operations completed** (their outcomes were real) — PASS;
+- C fail-closes sticky (`COGNEE_STORE_OWNED`) and its worker is killed at settlement — PASS;
+- A was unaware throughout (lock restored byte-identical, ownership still held) — PASS.
+
+**Why neither heartbeat detection nor the pre-dispatch checks prevent the overlap.** C's loss is
+detected only by its in-flight heartbeat interval, `max(1_000, staleMs/3)` (supervision.ts:575;
+default 15 min ⇒ 5-minute tick), and is acted on only **at settlement** (supervision.ts:577–584:
+`lostMidOp` → poison + kill). So the overlap window runs from C's **dispatch** until C's operation
+settles — bounded by the operation's absolute deadline (up to ~4 min for mutations at the default
+budgets), not by immediate detection. A never detects anything (restored bytes are identical).
+Both instances' operations execute concurrently during that interval; with the real cognee worker
+the failure surface is the C2-observed contention class (ladybug `Could not set lock on file`,
+sqlite/lance write contention) — **typed failures and caller-side reconciliation, not silent
+corruption** — but "exclusive operation during the interval" is not established. Secondary facet:
+an operation that settles within one heartbeat interval leaves C's worker alive-orphaned
+(`verifyOwnershipIntact` never kills the child; the next request throws before `_lifecycle`).
+
+**Production reachability (honest bounds).** Without preemption, the recoverer's
+rename→read→compare→existsSync→rename span is one synchronous turn (microseconds): C can acquire
+in it (ordinary microsecond-scale cross-process interleaving) but cannot dispatch (spawn latency
+≫ the gap), so C is refused at its next verify and no overlap occurs. Overlap requires the
+recoverer's thread preempted for at least C's acquire→spawn→ready→dispatch duration (≥100 ms with
+a fast stub; 10–36 s with the real cognee worker) inside that microsecond window — a rare but
+nonzero scheduling event under the machine-wide stalls this repo's own environment records
+(RAM-constrained host, swap thrash class). It additionally requires a pre-existing stale lock and
+three racing instances. Trigger probability is very low; consequence is bounded, typed, and
+converging — hence **Medium, not High**; the previous Low rating is withdrawn because the interval
+is a real exclusivity violation, not a harmless false eviction.
+
+**Smallest correction (unchanged in shape, now load-bearing):** make the restore exclusive —
+`openSync(lockPath, 'wx')` writing the displaced bytes; on `EEXIST` skip the restore and fail
+closed — so a fresh contender's lock can never be overwritten; optionally also kill the child in
+`verifyOwnershipIntact`'s failure path (orphan facet). The exit report's residual §4.3 must be
+extended to state the bounded overlap window until this correction lands.
 
 ### L2 (Low) — Ready-budget expiry strands the instance while the worker stays alive
 `pack/src/supervision.ts:497–505`: when the ready timer fires, `readyResolve/readyReject` are
@@ -118,7 +175,9 @@ returning.
   The sequential engine honors doubles/mode eligibility (`runtime.ts:1336–1400`).
 - `StatusInputContract` (contracts.ts:211) accepts any object payload, slightly laxer than the
   "explicitly empty" wording (CONT-001); harmless.
-- The restore-race and mid-op displacement residuals are honestly documented (c4-exit-report §4.3).
+- The restore-race and mid-op displacement residuals are documented (c4-exit-report §4.3), but the
+  revisit above shows §4.3's assurance understates the interval: the restore path admits a bounded
+  two-worker overlap window (L1, now Medium) that the residual text does not describe.
 
 ## Audit coverage per the six mandated areas
 
@@ -134,10 +193,10 @@ returning.
    post-dispatch mutation → `COGNEE_WRITE_UNKNOWN`, read → `CLIENT_DEADLINE`). Pre-dispatch
    refusal vs unknown-after-dispatch is correctly distinguished.
 4. **Exclusive store ownership** — verified by rerun (O1–O9, incl. deterministic two-contender race
-   O7, stale-contender O8, foreign-host budget O9a–c). The pointed restore-gap question: a fresh
-   live lock **can** be displaced in the `existsSync`→`renameSync` gap (L1), but no double-owner
-   path exists because every owner re-verifies before spawn/dispatch and fails closed on loss.
-   PID reuse resolves fail-closed (contender refuses; no unsafe steal).
+   O7, stale-contender O8, foreign-host budget O9a–c). Double-ACQUISITION is impossible (verified);
+   however the L1 revisit demonstrates a bounded CONCURRENT-OPERATION window through the restore
+   path (see L1, revised to Medium) — the "at most one live worker at all times" claim carries
+   this demonstrated caveat. PID reuse resolves fail-closed (contender refuses; no unsafe steal).
 5. **Journal binding / crash-window convergence** — verified by rerun (c4 mismatches on all three
    axes with journal state intact; c5/c6 forced crashes → begun-without-commit → convergent
    reissue; g2–g7 multiset graph equivalence 12/12 nodes + 12/12 edges, zero variant diffs, with
