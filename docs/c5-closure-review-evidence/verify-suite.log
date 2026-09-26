@@ -1,0 +1,371 @@
+[sup] store ownership acquired: pid=15048 host=MyTingkap instance=f277f3db -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.cognee-verify\cognee-s
+[verify] V0 PASS manifest validates (vict.capability-pack@1, ^0.1.0) (3ms)
+[verify] V1 PASS installCapabilityPack installs all six capabilities atomically (3ms)
+[verify] V2 PASS test-mode run completes via declared doubles (add+cognify) (24ms)
+[verify] V2b PASS forget double runs in test mode (no real store touch) (2ms)
+[verify] V3 PASS read in test mode fails closed (no double declared) (2ms)
+[verify] ABI EXPECTED-OBSERVATION durable engine runs real bindings in test/simulate; pack bindings fail closed (UV-1) 
+[verify] V4 PASS ungranted write fails pre-handler (permission denied, no cognee) (21ms)
+[sup] [worker] 
+[2m2026-09-26T08:59:30.467868[0m [[32m[1minfo     [0m] [1mLog file created at: C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof
+[sup] [worker] 
+[2m2026-09-26T08:59:30.467868[0m [[33m[1mwarning  [0m] [1mCognee 1.0 changes: New API � remember/recall/forget/improve (V1 add/cognify/search s
+[sup] [worker] 
+[2m2026-09-26T08:59:38.909750[0m [[32m[1minfo     [0m] [1mauth posture: authentication=required, multi_tenant=enabled (default (no env vars set
+[sup] [worker] [worker] [store-guard:worker startup] OK � all destructive roots inside C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.cognee-verify
+[sup] [worker] [worker] [store-guard:worker startup]   cache_root -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.cognee-verify\cache
+[worker] [
+[sup] [worker] 
+[1msetup plugin alembic.autogenerate.schemas[0m
+[sup] [worker] 
+[1msetup plugin alembic.autogenerate.tables[0m
+[sup] [worker] 
+[1msetup plugin alembic.autogenerate.types[0m
+[sup] [worker] 
+[1msetup plugin alembic.autogenerate.constraints[0m
+[sup] [worker] 
+[1msetup plugin alembic.autogenerate.defaults[0m
+
+[1msetup plugin alembic.autogenerate.comments[0m
+[sup] [worker] 
+[1msetup plugin alembic.ext.checkconstraint_byname[0m
+[sup] [worker] 
+[1mUsing database: sqlite+aiosqlite:///C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.cognee-verify\system\databases/cognee_db[0
+[sup] [worker] 
+[1mContext impl SQLiteImpl.      [0m
+[sup] [worker] 
+[1mWill assume non-transactional DDL.[0m
+[sup] [worker] 
+[1mRunning upgrade  -> 8057ae7329c2, Initial migration[0m
+[sup] [worker] 
+[1mRunning upgrade 8057ae7329c2 -> 482cd6517ce4, Add default user[0m
+[sup] [worker] 
+[1mRunning upgrade 482cd6517ce4 -> 1d0bb7fede17, Add pipeline run status[0m
+[sup] [worker] 
+[1mRunning upgrade 1d0bb7fede17 -> ab7e313804ae, permission_system_rework[0m
+[sup] [worker] 
+[1mRunning upgrade ab7e313804ae -> e4ebee1091e7, Expand data model info[0m
+[sup] [worker] 
+[1mRunning upgrade e4ebee1091e7 -> b9274c27a25a, kuzu-11-migration[0m
+[sup] [worker] 
+[1mRunning upgrade b9274c27a25a -> 1daae0df1866, incremental_loading[0m
+[sup] [worker] 
+[1mRunning upgrade 1daae0df1866 -> 9e7a3cb85175, loader_separation[0m
+[sup] [worker] 
+[1mRunning upgrade 9e7a3cb85175 -> 45957f0a9849, Add notebook table[0m
+[sup] [worker] 
+[1mRunning upgrade 45957f0a9849 -> 211ab850ef3d, Add sync_operations table[0m
+[sup] [worker] sync_operations table already exists, skipping creation
+[sup] [worker] 
+[1mRunning upgrade 211ab850ef3d -> c946955da633, Multi Tenant Support[0m
+[sup] [worker] 
+[1mRunning upgrade c946955da633 -> 76625596c5c3, Expand dataset database for multi user[0m
+[sup] [worker] 
+[1mRunning upgrade 76625596c5c3 -> 46a6ce2bd2b2, Expand dataset database with json connection field[0m
+[sup] [worker] 
+[1mRunning upgrade 46a6ce2bd2b2 -> a1b2c3d4e5f6, Add label column to data table[0m
+[sup] [worker] 
+[1mRunning upgrade a1b2c3d4e5f6 -> e1ec1dcb50b6, add_last_accessed_to_data[0m
+[sup] [worker] 
+[1mRunning upgrade e1ec1dcb50b6 -> 1a58b986e6e1, Enable delete for old tutorial notebooks[0m
+[sup] [worker] 
+[1mRunning upgrade 1a58b986e6e1 -> 84e5d08260d6, Replace graph ledger table with nodes and edges tables[0m
+[sup] [worker] 
+[1mRunning upgrade 84e5d08260d6 -> 18f01b0a0b4c, create principal configuration table[0m
+[sup] [worker] principal_configuration table already exists, skipping creation
+[sup] [worker] 
+[1mRunning upgrade 18f01b0a0b4c -> b1c2d3e4f5a6, add_user_api_key_table[0m
+[sup] [worker] 
+[1mRunning upgrade b1c2d3e4f5a6 -> f1a2b3c4d5e6, add_importance_weight_to_data[0m
+[sup] [worker] 
+[1mRunning upgrade f1a2b3c4d5e6 -> d4e5f6a7b8c9, add dataset_configuration table[0m
+[sup] [worker] 
+[1mRunning upgrade d4e5f6a7b8c9 -> 6ee94db7381f, remove unique constraint tenant name[0m
+[sup] [worker] 
+[1mRunning upgrade 6ee94db7381f -> b2c3d4e5f6a7, add created_at index to queries and results tables[0m
+[sup] [worker] 
+[1mRunning upgrade b2c3d4e5f6a7 -> 7c5d4e2f8a91, Add parent_user_id to users[0m
+[sup] [worker] 
+[1mRunning upgrade 7c5d4e2f8a91 -> 24f5d4f64d0d, Add session lifecycle tables.[0m
+[sup] [worker] session_records table already exists, skipping creation
+session_model_usage table already exists, skipping creation
+[sup] [worker] 
+[1mRunning upgrade 24f5d4f64d0d -> 760ef4f08ef0, change node label and type to text[0m
+[sup] [worker] 
+[1mRunning upgrade 760ef4f08ef0 -> c1a2b3d4e5f9, Add Cognee version and migration revision tracking to dataset_database[0m
+[sup] [worker] 
+[1mRunning upgrade c1a2b3d4e5f9 -> d8f4a1b2c3e9, Add the single-row global_database_version table[0m
+[sup] [worker] 
+[1mRunning upgrade d8f4a1b2c3e9 -> aa753a730673, add pipeline run id to nodes and edges[0m
+[sup] [worker] 
+[1mRunning upgrade aa753a730673 -> b2c4d6e8f0a1, add_integration_credentials_table[0m
+[sup] [worker] 
+[1mRunning upgrade b2c4d6e8f0a1 -> c3d5e7f9a1b2, dedupe cache_session_context and add unique entry index[0m
+[sup] [worker] 
+[1mRunning upgrade c3d5e7f9a1b2 -> d4e6f8a0b2c3, add_integration_credentials_workspace_id[0m
+[sup] [worker] 
+[1mRunning upgrade d4e6f8a0b2c3 -> e5a7b9c1d3f4, add_dataset_id_to_queries_and_results[0m
+[sup] [worker] 
+[1mRunning upgrade e5a7b9c1d3f4 -> c5d7e9f1a3b5, add_dataset_id_to_data[0m
+[sup] [worker] 
+[1mRunning upgrade c5d7e9f1a3b5 -> d6e8f0a2b4c6, backfill_dataset_scoped_data_drop_dataset_data[0m
+[sup] [worker] 
+[1mRunning upgrade d6e8f0a2b4c6 -> f2b4c6d8e0a1, add_system_metadata_to_data[0m
+[sup] [worker] 
+[1mRunning upgrade f2b4c6d8e0a1 -> b8c1d3e5f7a9, Add provenance_entries table[0m
+[sup] [worker] 
+[1mRunning upgrade b8c1d3e5f7a9 -> a7f3c9e1b5d2, Extend pipeline_runs into the operation record (SDK-399)[0m
+[sup] [worker] 
+[1mRunning upgrade a7f3c9e1b5d2 -> c7e2a9b4d1f3, add_created_and_last_used_to_user_api_key[0m
+[sup] [worker] 
+[1mRunning upgrade c7e2a9b4d1f3 -> c4e8a1f6b3d7, Index pipeline_runs on (created_at, id)[0m
+[sup] [worker] 
+[1mRunning upgrade c4e8a1f6b3d7 -> b3d5f7a9c1e2, add_graph_metrics_has_full_metrics[0m
+[sup] [worker] 
+[1mRunning upgrade b3d5f7a9c1e2 -> d1e2f3a4b5c6, Add composite index on pipeline_runs for the /status latest-run lookup[0m
+[sup] [worker] 
+[1mRunning upgrade d1e2f3a4b5c6 -> f3a7b9c1d2e4, Add the compact graph edge evidence sidecar.[0m
+[sup] [worker] 
+[1mRunning upgrade f3a7b9c1d2e4 -> 1c22e6cb5aec, Reconcile every database to the chain's frozen truth[0m
+[sup] [worker] 
+[1mRunning upgrade 1c22e6cb5aec -> a7c2e9f4b8d1, Add agent_id to session_records for agent-to-search attribution[0m
+[sup] [worker] 
+[1mRunning upgrade a7c2e9f4b8d1 -> e7f9a1c3d5b8, Add composite index on data for the dataset listing[0m
+[sup] [worker] 
+[1mRelational migrations applied (target head).[0m
+[sup] send op=add id=1 remainingMs=166545 bytes=354
+[sup] [worker] [worker] journal at C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.cognee-verify\system\cognee_idempotency_journal.jsonl
+[sup] [worker] [worker] recv line bytes=354
+[sup] [worker] 
+[1mUsing database: sqlite+aiosqlite:///C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.cognee-verify\system\databases/cognee_db[0
+[sup] [worker] 
+[1mContext impl SQLiteImpl.      [0m
+[sup] [worker] 
+[1mWill assume non-transactional DDL.[0m
+[sup] [worker] 
+[1mRelational migrations applied (target head).[0m
+[sup] [worker] 
+[2m2026-09-26T08:59:43.377210[0m [[32m[1minfo     [0m] [1mSkipping LLM connection test: this pipeline has no LLM task.[0m [[0m[1m[34mcognee
+[sup] [worker] 
+[2m2026-09-26T08:59:43.377210[0m [[32m[1minfo     [0m] [1mTesting connection to Embedding endpoint...[0m [[0m[1m[34mcognee.shared.logging_u
+[sup] [worker] 
+[2m2026-09-26T09:00:16.096125[0m [[32m[1minfo     [0m] [1mLoading local model BAAI/bge-small-en-v1.5 from C:\Users\RZ1\AppData\Local\Temp\faste
+[sup] [worker] 
+[2m2026-09-26T09:00:21.659764[0m [[32m[1minfo     [0m] [1mPipeline run started: `fb3d8524-30a1-5eda-8cfb-441cced0ec30`[0m [[0m[1m[34mrun_ta
+[sup] [worker] 
+[2m2026-09-26T09:00:21.659764[0m [[32m[1minfo     [0m] [1mCoroutine task started: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[
+[sup] [worker] 
+[2m2026-09-26T09:00:21.670537[0m [[32m[1minfo     [0m] [1mCoroutine task started: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:21.670537[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset starting[0m [[0m[1m[34mcognee.tasks.ingestion.ingest
+[sup] [worker] 
+[2m2026-09-26T09:00:21.670537[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] starting: save files and compute content hash
+[sup] [worker] 
+[2m2026-09-26T09:00:21.670537[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] finished in 0.000 seconds[0m [[0m[1m[34mc
+[sup] [worker] 
+[2m2026-09-26T09:00:21.670537[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] starting: resolve data IDs (1 items)[0m [[0
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] finished in 0.016 seconds[0m [[0m[1m[34mc
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] starting: process files and build data record
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: pypdf_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.Loade
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: text_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.Loader
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: code_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.Loader
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: image_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.Loade
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: audio_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.Loade
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: video_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.Loade
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: csv_loader [0m [[0m[1m[34mcognee.infrastructure.loaders.Loader
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: advanced_pdf_loader[0m [[0m[1m[34mcognee.infrastructure.loader
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: docling_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.Loa
+[sup] [worker] 
+[2m2026-09-26T09:00:21.694257[0m [[32m[1minfo     [0m] [1mRegistered loader: dlt_csv_loader[0m [[0m[1m[34mcognee.infrastructure.loaders.Loa
+[sup] [worker] 
+[2m2026-09-26T09:00:21.711231[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] finished in 0.016 seconds[0m [[0m[1m[34mc
+[sup] [worker] 
+[2m2026-09-26T09:00:21.711231[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] starting: DB commit (1 new, 0 updated)[0m [
+[sup] [worker] 
+[2m2026-09-26T09:00:21.741298[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] finished in 0.031 seconds[0m [[0m[1m[34mc
+[sup] [worker] 
+[2m2026-09-26T09:00:21.741298[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset finished in 0.078 seconds[0m [[0m[1m[34mcognee.tasks
+[sup] [worker] 
+[2m2026-09-26T09:00:21.743316[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:21.743316[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base
+[sup] [worker] 
+[2m2026-09-26T09:00:21.743316[0m [[32m[1minfo     [0m] [1mPipeline run completed: `fb3d8524-30a1-5eda-8cfb-441cced0ec30`[0m [[0m[1m[34mrun_
+[sup] [worker] 
+[2m2026-09-26T09:00:21.905233[0m [[32m[1minfo     [0m] [1mLoaded JSON extension         [0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+[sup] send op=cognify id=2 remainingMs=299993 bytes=134
+[sup] [worker] [worker] recv line bytes=134
+[sup] [worker] 
+[2m2026-09-26T09:00:22.249796[0m [[33m[1mwarning  [0m] [1mExtracting the knowledge graph with the GLiNER demo extractor: cognee's open-source l
+[sup] [worker] 
+[2m2026-09-26T09:00:22.872663[0m [[32m[1minfo     [0m] [1mPipeline run started: `ad945f86-911f-58c5-8290-c620dbebee4d`[0m [[0m[1m[34mrun_ta
+[sup] [worker] 
+[2m2026-09-26T09:00:22.872663[0m [[32m[1minfo     [0m] [1mCoroutine task started: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0
+[sup] [worker] 
+[2m2026-09-26T09:00:22.872663[0m [[32m[1minfo     [0m] [1mCoroutine task started: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m]
+[sup] [worker] 
+[2m2026-09-26T09:00:22.895595[0m [[32m[1minfo     [0m] [1mLoading local model fastino/gliner2.5-base-v1 from C:\Users\RZ1\.cache\huggingface\hu
+[sup] [worker] C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.venv\Lib\site-packages\gliner2\models\boundary\model.py:2101: UserWarning: Checkpoint
+[sup] [worker] C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.venv\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` i
+[sup] [worker] C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.venv\Lib\site-packages\gliner2\models\boundary\model.py:1147: RuntimeWarning: Encoder
+[sup] [worker] 
+[2m2026-09-26T09:00:36.991105[0m [[32m[1minfo     [0m] [1mGLiNER model fastino/gliner2.5-base-v1 ready in 14.1s[0m [[0m[1m[34mgliner.extrac
+[sup] [worker] 
+[2m2026-09-26T09:00:41.847321[0m [[32m[1minfo     [0m] [1mGLiNER schema for text_718462799bf48e3a7e069e10c14096c2 resolved from label_bank: 3 e
+[sup] [worker] 
+[2m2026-09-26T09:00:41.847321[0m [[32m[1minfo     [0m] [1mAsync Generator task started: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_t
+[sup] [worker] 
+[2m2026-09-26T09:00:41.879712[0m [[32m[1minfo     [0m] [1mCoroutine task started: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mr
+[sup] [worker] 
+[2m2026-09-26T09:00:42.435555[0m [[32m[1minfo     [0m] [1mCoroutine task started: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:44.014023[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:44.014023[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34
+[sup] [worker] 
+[2m2026-09-26T09:00:44.016030[0m [[32m[1minfo     [0m] [1mAsync Generator task completed: `extract_chunks_from_documents`[0m [[0m[1m[34mrun
+[sup] [worker] 
+[2m2026-09-26T09:00:44.016030[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0
+[sup] [worker] 
+[2m2026-09-26T09:00:44.016030[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m]
+[sup] [worker] 
+[2m2026-09-26T09:00:44.016030[0m [[32m[1minfo     [0m] [1mPipeline run completed: `ad945f86-911f-58c5-8290-c620dbebee4d`[0m [[0m[1m[34mrun_
+[verify] V5 PASS normal-mode keyed write graph completes through real worker (74842ms)
+[sup] send op=search_chunks id=3 remainingMs=119996 bytes=85
+[sup] [worker] [worker] recv line bytes=85
+[sup] [worker] 
+[2m2026-09-26T09:00:44.290144[0m [[32m[1minfo     [0m] [1mStarting chunk retrieval for query: 'settlement windows'[0m [[0m[1m[34mChunksRetr
+[sup] [worker] 
+[2m2026-09-26T09:00:44.384714[0m [[32m[1minfo     [0m] [1mFound 1 chunks from vector search[0m [[0m[1m[34mChunksRetriever[0m][0m
+[verify] V5 PASS normal-mode scoped search returns in-scope hits (289ms)
+[verify] V5b PASS sequential-engine write refused (no CapabilityContext key) (1ms)
+[sup] send op=add id=4 remainingMs=239996 bytes=168
+[sup] [worker] [worker] recv line bytes=168
+[sup] [worker] 
+[2m2026-09-26T09:00:44.798180[0m [[32m[1minfo     [0m] [1mPipeline run started: `b7ed56a2-238a-5709-b251-fc5afd6ae22c`[0m [[0m[1m[34mrun_ta
+[sup] [worker] 
+[2m2026-09-26T09:00:44.798180[0m [[32m[1minfo     [0m] [1mCoroutine task started: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base[
+[sup] [worker] 
+[2m2026-09-26T09:00:44.798180[0m [[32m[1minfo     [0m] [1mCoroutine task started: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:44.798180[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset starting[0m [[0m[1m[34mcognee.tasks.ingestion.ingest
+[sup] [worker] 
+[2m2026-09-26T09:00:44.798180[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] starting: save files and compute content hash
+[sup] [worker] 
+[2m2026-09-26T09:00:44.801233[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 1/4] finished in 0.000 seconds[0m [[0m[1m[34mc
+[sup] [worker] 
+[2m2026-09-26T09:00:44.801233[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] starting: resolve data IDs (1 items)[0m [[0
+[sup] [worker] 
+[2m2026-09-26T09:00:44.801233[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 2/4] finished in 0.000 seconds[0m [[0m[1m[34mc
+[sup] [worker] 
+[2m2026-09-26T09:00:44.801233[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] starting: process files and build data record
+[sup] [worker] 
+[2m2026-09-26T09:00:44.820473[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 3/4] finished in 0.016 seconds[0m [[0m[1m[34mc
+[sup] [worker] 
+[2m2026-09-26T09:00:44.820473[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] starting: DB commit (1 new, 0 updated)[0m [
+[sup] [worker] 
+[2m2026-09-26T09:00:44.845239[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset [loop 4/4] finished in 0.031 seconds[0m [[0m[1m[34mc
+[sup] [worker] 
+[2m2026-09-26T09:00:44.845239[0m [[32m[1minfo     [0m] [1mcognee-core store_to_dataset finished in 0.047 seconds[0m [[0m[1m[34mcognee.tasks
+[sup] [worker] 
+[2m2026-09-26T09:00:44.845239[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `ingest_data`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:44.845239[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `resolve_data_directories`[0m [[0m[1m[34mrun_tasks_base
+[sup] [worker] 
+[2m2026-09-26T09:00:44.845239[0m [[32m[1minfo     [0m] [1mPipeline run completed: `b7ed56a2-238a-5709-b251-fc5afd6ae22c`[0m [[0m[1m[34mrun_
+[sup] [worker] 
+[2m2026-09-26T09:00:44.899933[0m [[32m[1minfo     [0m] [1mLoaded JSON extension         [0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+[sup] send op=add id=5 remainingMs=239997 bytes=168
+[sup] [worker] [worker] recv line bytes=168
+[verify] V6 PASS same key replays known outcome without re-execution (537ms)
+[sup] send op=add id=6 remainingMs=239997 bytes=152
+[sup] [worker] [worker] recv line bytes=152
+[verify] V6 PASS same key + different content rejected (COGNEE_IDEMPOTENCY_MISMATCH) (5ms)
+[sup] send op=cognify id=7 remainingMs=239996 bytes=89
+[sup] [worker] [worker] recv line bytes=89
+[sup] [worker] 
+[2m2026-09-26T09:00:45.225034[0m [[32m[1minfo     [0m] [1mPipeline run started: `23fef7c1-a127-547e-a8c7-c9833804f1c1`[0m [[0m[1m[34mrun_ta
+[sup] [worker] 
+[2m2026-09-26T09:00:45.225034[0m [[32m[1minfo     [0m] [1mCoroutine task started: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m][0
+[sup] [worker] 
+[2m2026-09-26T09:00:45.225034[0m [[32m[1minfo     [0m] [1mCoroutine task started: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0m]
+[sup] [worker] 
+[2m2026-09-26T09:00:49.920087[0m [[32m[1minfo     [0m] [1mGLiNER schema for text_c5f43ec26aefe1fbc858542f068c8794 resolved from empty: 0 entity
+[sup] [worker] 
+[2m2026-09-26T09:00:49.921089[0m [[32m[1minfo     [0m] [1mAsync Generator task started: `extract_chunks_from_documents`[0m [[0m[1m[34mrun_t
+[sup] [worker] 
+[2m2026-09-26T09:00:49.941740[0m [[32m[1minfo     [0m] [1mCoroutine task started: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34mr
+[sup] [worker] 
+[2m2026-09-26T09:00:49.941740[0m [[32m[1minfo     [0m] [1mCoroutine task started: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:49.947847[0m [[33m[1mwarning  [0m] [1mFalling back to class name 'TextSummary' as the edge_text label for node UUID('e91325
+[sup] [worker] 
+[2m2026-09-26T09:00:50.327560[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `add_data_points`[0m [[0m[1m[34mrun_tasks_base[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:50.327560[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `extract_graph_and_summarize_with_gliner`[0m [[0m[1m[34
+[sup] [worker] 
+[2m2026-09-26T09:00:50.327560[0m [[32m[1minfo     [0m] [1mAsync Generator task completed: `extract_chunks_from_documents`[0m [[0m[1m[34mrun
+[sup] [worker] 
+[2m2026-09-26T09:00:50.329567[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `prepare_gliner_schema`[0m [[0m[1m[34mrun_tasks_base[0
+[sup] [worker] 
+[2m2026-09-26T09:00:50.329567[0m [[32m[1minfo     [0m] [1mCoroutine task completed: `classify_documents`[0m [[0m[1m[34mrun_tasks_base[0m]
+[sup] [worker] 
+[2m2026-09-26T09:00:50.329567[0m [[32m[1minfo     [0m] [1mPipeline run completed: `23fef7c1-a127-547e-a8c7-c9833804f1c1`[0m [[0m[1m[34mrun_
+[verify] V6 PASS cognify via binding key (real graph for V7 forget) (5469ms)
+[verify] V7 PASS forget denied by default in normal mode (allowIrreversible gate) (6ms)
+[sup] send op=forget_dataset id=8 remainingMs=119996 bytes=59
+[sup] [worker] [worker] recv line bytes=59
+[sup] [worker] 
+[2m2026-09-26T09:00:50.937499[0m [[33m[1mwarning  [0m] [1mNo nodes found in the database[0m [[0m[1m[34mcognee.shared.logging_utils[0m][0m
+[sup] [worker] 
+[2m2026-09-26T09:00:50.939500[0m [[32m[1minfo     [0m] [1mDeleted 2 orphaned EdgeType node(s)[0m [[0m[1m[34mprovenance_delete_planner[0m]
+[sup] [worker] 
+[2m2026-09-26T09:00:51.011501[0m [[32m[1minfo     [0m] [1mLadybug database closed successfully[0m [[0m[1m[34mcognee.shared.logging_utils[0
+[sup] [worker] 
+[2m2026-09-26T09:00:51.115123[0m [[32m[1minfo     [0m] [1mforget: deleted dataset=f877305b-a861-5ef5-bfac-c46ed209d666 for user=61a818e3-96d7-4
+[verify] V7 PASS forget with allowIrreversible runs for real (file-level purge receipt) (673ms)
+[verify] V9a PASS durable write graph in test mode refused (no worker spawn, no store change) (17ms)
+[verify] V9b PASS durable write graph in simulate mode refused (no worker spawn, no store change) (8ms)
+[verify] V9c PASS durable read graph in test mode refused (no worker spawn, no store change) (14ms)
+[verify] V9d PASS durable forgetDataset graph in test mode refused (real purge unreachable) (10ms)
+[verify] V10a PASS expired ctx.deadlineAt fails BEFORE the worker request (7ms)
+[verify] V10b PASS insufficient ctx.deadlineAt fails BEFORE the worker request (no fresh timeout) (6ms)
+[verify] V10c PASS expired deadline on a read fails before the worker request (0ms)
+[stub-D] store ownership acquired: pid=15048 host=MyTingkap instance=3e2c1f51 -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.co
+[stub-D] send op=datasets_status id=1 remainingMs=9999 bytes=33
+[verify] V10d PASS deadline expiring during worker startup fails BEFORE dispatch (no effect; only the probe itself was served) (2614ms)
+[stub-D] send op=shutdown id=2 remainingMs=25000 bytes=26
+[stub-D] store ownership released: pid=15048 instance=3e2c1f51
+[stub-G] store ownership acquired: pid=15048 host=MyTingkap instance=7d095d4f -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.co
+[stub-G] stale worker exit ignored (code=null signal=SIGKILL)
+[stub-G] send op=datasets_status id=1 remainingMs=29919 bytes=33
+[verify] V10g PASS ready-budget expiry KILLS the stranded worker and the next request recovers via a fresh spawn (1306ms)
+[stub-G] send op=shutdown id=2 remainingMs=24999 bytes=26
+[stub-G] store ownership released: pid=15048 instance=7d095d4f
+[stub-E] store ownership acquired: pid=15048 host=MyTingkap instance=f5b3249b -> C:\Users\RZ1\Desktop\RZ\260925-VCT-Cognee-c5closure-review\proof\.co
+[stub-E] send op=slow_op id=1 remainingMs=29919 bytes=46
+[stub-E] send op=datasets_status id=2 remainingMs=9999 bytes=33
+[verify] V10e PASS queued request whose deadline expires while queued fails BEFORE dispatch (never sent) (3088ms)
+[stub-E] send op=slow_mutation id=3 remainingMs=796 bytes=46
+[verify] V10f PASS deadline expiring AFTER a mutation was dispatched reports UNKNOWN outcome (COGNEE_WRITE_UNKNOWN) (800ms)
+[stub-E] send op=slow_read id=4 remainingMs=416 bytes=43
+[verify] V10f PASS deadline expiring after a READ was dispatched reports a clean typed failure (CLIENT_DEADLINE) (814ms)
+[stub-E] send op=shutdown id=5 remainingMs=25000 bytes=26
+[stub-E] unexpected stdout message: {"id":"4","ok":true,"result":{"op":"slow_read","marker":"read","servedOps":1}}
+[stub-E] store ownership released: pid=15048 instance=f5b3249b
+[verify] V11 PASS pack resolves its OWN BUNDLED worker (no proof path; C4_FAULT absent) (1ms)
+[sup] send op=shutdown id=9 remainingMs=24999 bytes=26
+[sup] [worker] [worker] recv line bytes=26
+[sup] store ownership released: pid=15048 instance=f277f3db
+[verify] COMPLETE 97s — 27/28 PASS

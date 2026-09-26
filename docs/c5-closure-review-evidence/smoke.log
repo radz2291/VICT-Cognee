@@ -1,0 +1,12 @@
+# Reviewer rerun — clean-install smoke through the real VICT runtime — 2026-09-26T17:06:47+08:00
+# consumer: /tmp/c5-closure-review-install2-465 (pristine stock npm install of reviewer's 19-file tarball + VICT 0.3.1 file: deps)
+# smoke.mjs from this branch; PY repointed to the review clone's venv copy (original untouched)
+[smoke] S1 PASS installed pack manifest validates against @victframework/sdk
+[smoke] S2 PASS bundled worker + guard resolve inside node_modules/@victframework/cognee/dist (no repo-relative path)
+[smoke] S3 PASS keyed write graph (add + cognify) completes through the real worker (contract-conform receipts)
+[smoke] S4 PASS scoped search through the runtime returns the marker (in-scope)
+[smoke] S5 PASS second instance on the same store refuses (COGNEE_STORE_OWNED, pre-spawn)
+[smoke] S5 PASS orderly shutdown releases ownership (lock gone)
+[smoke] S6 PASS shipped worker + guard contain no test fault hook (C4_PROOF_FAULT absent)
+[smoke] COMPLETE — 7/7 PASS
+exit code: 0

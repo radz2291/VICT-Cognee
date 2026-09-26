@@ -1,0 +1,21 @@
+# Reviewer rerun — ownership suite incl. O11 (audit L-1 closure) — 2026-09-26T17:06:20+08:00
+# command: node ../260831-VCT-02/node_modules/tsx/dist/cli.mjs pack/verify/ownership-verify.ts  (fresh review clone @ 3509533)
+[own] O1 PASS first instance claims exclusive store ownership (lock held, pid recorded) (7ms)
+[own] O2 PASS second pack instance on the SAME store fails closed (COGNEE_STORE_OWNED, pre-spawn, operator guidance in message) (2ms)
+[own] O3a PASS worker op runs under held exclusive ownership (spawn + lock intact) (10105ms)
+[own] O3b PASS orderly shutdown RELEASES ownership (lock gone) (508ms)
+[own] O3c PASS restart: a new instance acquires ownership after orderly release (2ms)
+[own] O4 PASS crash/restart: dead-pid lock is refused (never auto-recovered, bytes untouched, owner record + procedure in message); after the §8.1 operator step a new instance acquires (52ms)
+[own] O2b PASS replaced lock: live owner protected (never deleted) AND the active instance fails closed on its next op (no spawn, no dispatch) (321ms)
+[own] O6 PASS removed lock: the active instance performs NO further operation (fail closed, sticky) (3ms)
+[own] O7a PASS two contenders vs a stale lock: BOTH refuse (no auto-recovery), lock bytes untouched by both (464ms)
+[own] O7b PASS after operator recovery, two fresh contenders race for the free store: EXACTLY ONE acquires (O_EXCL), the other fails closed, winner lock intact (449ms)
+[own] O8 PASS contender vs a fresh LIVE lock: refuses, lock bytes unchanged, owner keeps holding (763ms)
+[own] O9a PASS foreign-host owner with FRESH heartbeat is refused (heartbeat liveness) (4ms)
+[own] O9b PASS foreign-host owner with STALE heartbeat is REFUSED (no auto-recovery; foreign host named; operator procedure in message) (3ms)
+[own] O9c PASS long op: heartbeat refreshed DURING the op (budget never erodes) and a second instance is refused mid-op; op completes (4101ms)
+[own] O10 PASS auditor's three-process interleaving CLOSED: while A operates, B and C refuse pre-spawn (nothing dispatched, lock intact); supervision source has NO recovery-rename path (only the owner heartbeat replace) (4072ms)
+[own] O11 PASS release deletes ONLY a readable matching owner record: corrupt and foreign locks left byte-identical, own record deleted (audit L-1) (68ms)
+[own] O5 PASS resource recording (single worker spawn under packA; refused ops never dispatch) 
+[own] COMPLETE 22s — 17/17 PASS
+exit code: 0

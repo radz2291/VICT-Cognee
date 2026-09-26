@@ -1,0 +1,34 @@
+# Reviewer rerun — fresh-checkout build + pack (audit M-2/L-2 closure) — 2026-09-26T17:08:26+08:00
+# fresh review clone @ 3509533; only documented commands + declared dependencies
+$ cd pack && npm install --no-audit --no-fund
+added 3 packages in 2s — exit 0 (typescript 6.0.3, @types/node 22.20.4; recorded in pack/package-lock.json, dev: true)
+$ C5_VICT_HOME=Z:/definitely-nonexistent npm run build   # no sibling VICT clone, no C5_TSC
+exit 0; tsc (strict) clean; dist/ = 17 files incl. worker/cognee_worker.py + guard_store_roots.py; build log tail: DONE
+$ npm pack (dist present)
+total files: 19 — exit 0; set identical to docs/c5-evidence/tarball-contents.txt (prefix package/ only)
+$ mv dist <stash> && npm pack   # dist absent, scripts ENABLED
+prepack rebuilds dist -> total files: 19 — exit 0
+$ rm -rf dist && mv node_modules <stash> && npm pack   # dist absent, NO toolchain
+[build] tsc failed: ... — npm pack FAILS clearly, exit 1 (no incomplete tarball shipped)
+$ rm -rf dist && npm pack --ignore-scripts
+total files: 2 (README.md + package.json only) — exit 0 — the VOID case, documented in pack/README.md:80-84
+$ tar -tf victframework-cognee-0.1.0.tgz (final pack, dist rebuilt)
+  package/dist/bindings.js
+  package/dist/contracts.js
+  package/dist/index.js
+  package/dist/manifest.js
+  package/dist/supervision.js
+  package/package.json
+  package/dist/bindings.js.map
+  package/dist/contracts.js.map
+  package/dist/index.js.map
+  package/dist/manifest.js.map
+  package/dist/supervision.js.map
+  package/README.md
+  package/dist/worker/cognee_worker.py
+  package/dist/worker/guard_store_roots.py
+  package/dist/bindings.d.ts
+  package/dist/contracts.d.ts
+  package/dist/index.d.ts
+  package/dist/manifest.d.ts
+  package/dist/supervision.d.ts

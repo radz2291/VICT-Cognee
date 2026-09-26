@@ -1,0 +1,13 @@
+# Reviewer rerun — installed-artifact boundary probe (9 assertions) — 2026-09-26T17:07:37+08:00
+# script: docs/audit-evidence-c5/installed-probe.mjs from audit/c5-package-readiness; PY repointed to review-clone venv copy
+[probe] P1 PASS manifest validates via installed SDK; forgetDataset declares irreversible
+[probe] P2 PASS mode='test' refused pre-spawn (COGNEE_MODE_REFUSED)
+[probe] P3 PASS mutating add WITHOUT ctx.idempotencyKey refused (no unkeyed writes)
+[probe] P4 PASS expired ctx.deadlineAt refused before dispatch (COGNEE_DEADLINE_EXCEEDED, nothing sent)
+[probe] P5 PASS dataset 'outside.vault' (namespace not granted: qa) refused
+[probe] P6 PASS keyed add through the real worker returns a contract-conform receipt
+[probe] P7 PASS scoped search returns only qa.* datasets
+[probe] P8 PASS forgetDataset (irreversible) refused in mode='simulate' (COGNEE_MODE_REFUSED)
+[probe] P9 PASS second instance refuses (COGNEE_STORE_OWNED); shutdown releases ownership (lock gone)
+[probe] COMPLETE — 9/9 PASS
+exit code: 0

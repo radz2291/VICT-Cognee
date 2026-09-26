@@ -1,0 +1,15 @@
+# Reviewer rerun — pristine clean install (audit M-1 closure)
+# date: 2026-09-26T17:05:16+08:00
+# dir: /tmp/c5-closure-review-install2-465 — pristine (no package-lock.json, no node_modules beforehand)
+# npm: 10.9.2 stock · node v22.13.1 · NO --legacy-peer-deps, NO overrides, NO pre-existing lockfile
+# dependencies:
+#   @victframework/cognee -> file:<review-clone>/pack/victframework-cognee-0.1.0.tgz (reviewer's own npm pack; 19 files; peers ^0.3.1)
+#   @victframework/sdk=file:<vict>/packages/sdk (0.3.1), @victframework/runtime=file:<vict>/packages/runtime (0.3.1), zod ^3.25.0
+# result: added 4 packages in 2s — exit 0 (matches committed docs/c5-evidence/closure-install.log: 'added 4 packages', exit 0)
+
+$ npm install --no-audit --no-fund  (original run output, captured live)
+added 4 packages in 2s
+
+$ npm install --dry-run (re-captured for this log)
+
+up to date in 1s
