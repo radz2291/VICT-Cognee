@@ -1,0 +1,8 @@
+[smoke] S1 PASS installed pack manifest validates against @victframework/sdk
+[smoke] S2 PASS bundled worker + guard resolve inside node_modules/@victframework/cognee/dist (no repo-relative path)
+[smoke] S3 PASS keyed write graph (add + cognify) completes through the real worker (contract-conform receipts)
+[smoke] S4 PASS scoped search through the runtime returns the marker (in-scope)
+[smoke] S5 PASS second instance on the same store refuses (COGNEE_STORE_OWNED, pre-spawn)
+[smoke] S5 PASS orderly shutdown releases ownership (lock gone)
+[smoke] S6 PASS shipped worker + guard contain no test fault hook (C4_PROOF_FAULT absent)
+[smoke] COMPLETE — 7/7 PASS
