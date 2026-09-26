@@ -1,0 +1,4 @@
+node_modules/
+vendor/
+.pilot-stores/
+checks-summary.json

@@ -1,0 +1,21 @@
+{
+  "name": "vict-cognee-browser-pilot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "C6 disposable first-consumer pilot: a thin browser application over the @victframework/cognee capability pack through the real VICT runtime. The pack supplies all six capabilities; this app supplies only input mapping, display, and user interaction.",
+  "scripts": {
+    "setup": "node setup.mjs",
+    "start": "node server.mjs",
+    "checks": "node checks.mjs"
+  },
+  "dependencies": {
+    "@victframework/cognee": "file:vendor/victframework-cognee-0.1.0.tgz",
+    "@victframework/contracts": "file:vendor/victframework-contracts-0.3.1.tgz",
+    "@victframework/kernel": "file:vendor/victframework-kernel-0.3.1.tgz",
+    "@victframework/runtime": "file:vendor/victframework-runtime-0.3.1.tgz",
+    "@victframework/sdk": "file:vendor/victframework-sdk-0.3.1.tgz",
+    "zod": "^3.25.0"
+  },
+  "license": "UNLICENSED"
+}

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>C6 pilot — @victframework/cognee first-consumer browser pilot</title>
+<link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+<header>
+  <h1>Cognee browser pilot <span class="tag">C6 · disposable demo</span></h1>
+  <p class="lede">Thin consumer application over the <code>@victframework/cognee</code> pack
+  through the real VICT runtime. VICT graphs invoke all six capabilities; this app only maps
+  input, displays output, and takes your clicks.</p>
+  <div class="domains" id="domains"></div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1 · Add a note</h2>
+    <div class="row">
+      <label>Dataset <small>(must carry this domain's namespace prefix)</small></label>
+      <input id="datasetName" placeholder="notes.team" value="notes.team" />
+    </div>
+    <div class="row">
+      <label>Note</label>
+      <textarea id="note" rows="4" placeholder="Type a short note..."></textarea>
+    </div>
+    <div class="row buttons">
+      <button id="btnAdd">Add note</button>
+      <button id="btnCognify" title="Run cognee.cognify on the dataset above">Process with cognify</button>
+      <button id="btnSampleMixed" class="ghost">Fill Malay/English sample</button>
+    </div>
+    <pre id="addOut" class="out"></pre>
+  </section>
+
+  <section class="card">
+    <h2>2 · Search (mandatory dataset scope)</h2>
+    <div class="row">
+      <label>Datasets in scope <span class="hint">— pick at least one; there is no "search everything"</span></label>
+      <div id="datasetPicker" class="picker"></div>
+    </div>
+    <div class="row">
+      <label>Query</label>
+      <input id="query" placeholder="e.g. settlement windows" />
+    </div>
+    <div class="row buttons">
+      <button id="btnSearch">Search passages (chunks)</button>
+      <button id="btnSearchSummaries" class="ghost">Search summaries</button>
+      <button id="btnOffCorpus" class="ghost">Fill off-corpus query</button>
+    </div>
+    <div id="candidates" class="candidates"></div>
+    <pre id="searchOut" class="out"></pre>
+  </section>
+
+  <section class="card">
+    <h2>3 · Dataset status <button id="btnStatus" class="ghost small">Refresh</button></h2>
+    <div id="statusOut" class="status"></div>
+    <p class="note">Namespaces (<code id="nsNote"></code>) are the pack's <strong>store-safety rail</strong>, not per-user
+    authorization. This single-user pilot holds its authority profile server-side; the browser cannot grant itself
+    permissions. Real end-user authorization is a runtime/application concern outside this pack.</p>
+  </section>
+
+  <section class="card">
+    <h2>4 · Deletion (denied by default)</h2>
+    <p class="note">The <code>cognee.forgetDataset</code> capability is <strong>irreversible</strong>. VICT denies it
+    unless the run carries an explicit <code>{ policy: { allowIrreversible: true } }</code>. This demo holds that switch
+    server-side, never in the page. Deletion is only demonstrated on the disposable demo stores.</p>
+    <div class="row buttons">
+      <button id="btnForgetDefault">Try delete — default policy (expect denial)</button>
+    </div>
+    <div class="row buttons" id="armedRow">
+      <input id="forgetConfirm" placeholder="type dataset name to confirm" />
+      <button id="btnForgetArmed" class="danger">Delete dataset (armed, irreversible)</button>
+    </div>
+    <pre id="forgetOut" class="out"></pre>
+  </section>
+
+  <footer>
+    <p><strong>What you are seeing:</strong> every hit above is a <em>retrieval candidate</em> straight from the pack —
+    the pilot adds no threshold, no ranking of its own, and never composes an answer. Scores are raw similarity
+    values from the pack's search; treat every score as a candidate signal, not a correctness guarantee. Cross-domain
+    isolation: domain A and domain B run separate runtimes, workers, and stores; neither can name or read the
+    other's datasets.</p>
+  </footer>
+</main>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
